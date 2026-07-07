@@ -7,4 +7,8 @@ urlpatterns = [
     path('api/quizzes/', include('apps.quizzes.urls')),
     path('api/', include('apps.questions.urls')),
     path('api/', include('apps.attempts.urls')),
+    path('api/', include('apps.leaderboard.urls')),   
+    path('api/', include('apps.notifications.urls')),  
+    path('api/analytics/', include('apps.analytics.urls')),
+    path('api/otp/', include('apps.otp.urls')),  
 ]

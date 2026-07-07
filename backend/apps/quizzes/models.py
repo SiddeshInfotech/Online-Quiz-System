@@ -32,6 +32,20 @@ class Quiz(models.Model):
     share_link = models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    GRADE_CHOICES = [
+        ('8', 'Class 8'),
+        ('9', 'Class 9'),
+        ('10', 'Class 10'),
+        ('11', 'Class 11'),
+        ('12', 'Class 12'),
+    ]
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('published', 'Published'),
+    ]
+    
+    grade_level = models.CharField(max_length=10, choices=GRADE_CHOICES, blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
 
     def __str__(self):
         return self.title

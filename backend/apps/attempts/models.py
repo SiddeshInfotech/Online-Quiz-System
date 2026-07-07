@@ -11,6 +11,7 @@ class QuizAttempt(models.Model):
     time_taken = models.TimeField(null=True, blank=True)
     started_at = models.DateTimeField(auto_now_add=True)
     submitted_at = models.DateTimeField(null=True, blank=True)
+    time_spent_seconds = models.IntegerField(default=0)
 
 class UserAnswer(models.Model):
     attempt = models.ForeignKey(QuizAttempt, on_delete=models.CASCADE)
@@ -19,6 +20,7 @@ class UserAnswer(models.Model):
     answer_text = models.TextField(null=True, blank=True)
     is_correct = models.BooleanField(null=True, blank=True)
     marks_obtained = models.IntegerField(default=0)
+    
 
 class Result(models.Model):
     attempt = models.OneToOneField(QuizAttempt, on_delete=models.CASCADE)

@@ -1,6 +1,8 @@
 import os
 import environ
 import dj_database_url
+import ssl
+import certifi
 from pathlib import Path
 from datetime import timedelta
 
@@ -12,6 +14,7 @@ environ.Env.read_env(ENV_FILE)
 
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG', default=False)
+GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID')
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
@@ -30,6 +33,8 @@ INSTALLED_APPS = [
     'apps.attempts',
     'apps.notifications',
     'apps.otp',
+    'apps.leaderboard',
+    'apps.analytics',
 ]
 
 MIDDLEWARE = [
@@ -71,6 +76,17 @@ DATABASES = {
     )
 }
 DATABASES['default']['OPTIONS'] = {'ssl': {}}
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
