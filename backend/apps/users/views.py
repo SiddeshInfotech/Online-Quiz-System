@@ -104,13 +104,14 @@ class ForgotPasswordView(APIView):
             expires_at=expires_at
         )
 
-        send_mail(
-            subject='Password Reset OTP - Online Quiz System',
-            message=f'Hello {user.full_name or user.username},\n\nYour OTP for password reset is: {otp_code}\n\nThis OTP is valid for 10 minutes.\n\nIf you did not request this, please ignore this email.\n\n- Online Quiz Team',
-            from_email=None,
-            recipient_list=[email],
-            fail_silently=False,
-        )
+        # send_mail(
+#     subject='Password Reset OTP - Online Quiz System',
+#     message=f'Hello {user.full_name or user.username},\n\nYour OTP for password reset is: {otp_code}\n\nThis OTP is valid for 10 minutes.\n\nIf you did not request this, please ignore this email.\n\n- Online Quiz Team',
+#     from_email=None,
+#     recipient_list=[email],
+#     fail_silently=False,
+# )
+
 
         return Response({
             "message": "OTP sent successfully to your email",
