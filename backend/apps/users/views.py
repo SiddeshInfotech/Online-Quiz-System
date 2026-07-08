@@ -197,3 +197,27 @@ class ResetPasswordView(APIView):
         otp_record.delete()
 
         return Response({"message": "Password reset successfully"}, status=status.HTTP_200_OK)
+from django.http import JsonResponse
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+def create_admin(request):
+    username = 'admin'
+    email = 'admin@test.com'
+    password = 'Admin@123'
+    
+    if User.objects.filter(username=username).exists():
+        user = User.objects.get(username=username)
+        user.set_password(password)
+        user.is_staff = True
+        user.is_superuser = True
+        user.save()
+        return JsonResponse({"message": f"✅ Admin password reset to '{password}'"})
+    else:
+        User.objects.create_superuser(
+            username=username,
+            email=email,
+            password=password
+        )
+        return JsonResponse({"message": f"✅ Admin created with password '{password}'"})
