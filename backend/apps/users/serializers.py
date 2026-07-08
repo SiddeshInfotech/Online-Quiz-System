@@ -3,30 +3,42 @@ from google.auth.transport import requests
 from django.conf import settings
 from rest_framework import serializers
 from .models import User
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=6)
     first_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
     last_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    full_name = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'full_name', 'password', 'role']
+        extra_kwargs = {
+            'role': {'required': False},
+        }
 
     def create(self, validated_data):
         first_name = validated_data.pop('first_name', '')
         last_name = validated_data.pop('last_name', '')
-        full_name = validated_data.get('full_name', '')
+        full_name = validated_data.pop('full_name', '')
+        password = validated_data.pop('password')
         
         if not full_name and (first_name or last_name):
             full_name = f"{first_name} {last_name}".strip()
-            validated_data['full_name'] = full_name
             
-        if not validated_data.get('full_name'):
-            validated_data['full_name'] = validated_data['username']
+        if not full_name:
+            full_name = validated_data.get('username')
+            
+        validated_data['full_name'] = full_name
+
+        if 'role' not in validated_data or not validated_data['role']:
+            validated_data['role'] = 'Student'
         
         user = User(**validated_data)
-        user.set_password(validated_data['password'])
+        user.set_password(password)
         user.save()
         return user
 
