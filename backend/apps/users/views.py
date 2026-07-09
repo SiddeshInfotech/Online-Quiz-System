@@ -4,8 +4,16 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
+from django.http import JsonResponse
+from django.contrib.auth import get_user_model
+import random
+from django.core.mail import send_mail
+from django.utils import timezone
+
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, GoogleAuthSerializer
 from .models import User
+from apps.otp.models import OTPVerification
+
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -25,6 +33,7 @@ class RegisterView(generics.CreateAPIView):
                 "access_token": str(refresh.access_token),
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
@@ -48,12 +57,15 @@ class LoginView(generics.GenericAPIView):
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class ProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.request.user
+
+
 class GoogleLoginView(APIView):
     permission_classes = [AllowAny]
 
@@ -72,13 +84,9 @@ class GoogleLoginView(APIView):
                     "full_name": user.full_name,
                     "role": user.role
                 }
-            })
-        return Response(serializer.errors, status=400)
+            }, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-import random
-from django.core.mail import send_mail
-from django.utils import timezone
-from apps.otp.models import OTPVerification 
 
 class ForgotPasswordView(APIView):
     permission_classes = [AllowAny]
@@ -104,19 +112,11 @@ class ForgotPasswordView(APIView):
             expires_at=expires_at
         )
 
-        # send_mail(
-#     subject='Password Reset OTP - Online Quiz System',
-#     message=f'Hello {user.full_name or user.username},\n\nYour OTP for password reset is: {otp_code}\n\nThis OTP is valid for 10 minutes.\n\nIf you did not request this, please ignore this email.\n\n- Online Quiz Team',
-#     from_email=None,
-#     recipient_list=[email],
-#     fail_silently=False,
-# )
-
-
         return Response({
-            "message": "OTP sent successfully to your email",
+            "message": "OTP sent successfully",
             "otp": otp_code 
         }, status=status.HTTP_200_OK)
+
 
 class VerifyOTPView(APIView):
     permission_classes = [AllowAny]
@@ -149,6 +149,7 @@ class VerifyOTPView(APIView):
         otp_record.save()
 
         return Response({"message": "OTP verified successfully"}, status=status.HTTP_200_OK)
+
 
 class ResetPasswordView(APIView):
     permission_classes = [AllowAny]
@@ -193,31 +194,6 @@ class ResetPasswordView(APIView):
 
         user.set_password(new_password)
         user.save()
-
         otp_record.delete()
 
         return Response({"message": "Password reset successfully"}, status=status.HTTP_200_OK)
-from django.http import JsonResponse
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-
-def create_admin(request):
-    username = 'admin'
-    email = 'admin@test.com'
-    password = 'Admin@123'
-    
-    if User.objects.filter(username=username).exists():
-        user = User.objects.get(username=username)
-        user.set_password(password)
-        user.is_staff = True
-        user.is_superuser = True
-        user.save()
-        return JsonResponse({"message": f"✅ Admin password reset to '{password}'"})
-    else:
-        User.objects.create_superuser(
-            username=username,
-            email=email,
-            password=password
-        )
-        return JsonResponse({"message": f"✅ Admin created with password '{password}'"})
