@@ -4,6 +4,7 @@ from django.conf import settings
 from rest_framework import serializers
 from .models import User
 from django.contrib.auth import get_user_model
+import uuid
 
 User = get_user_model()
 
@@ -59,45 +60,63 @@ class LoginSerializer(serializers.Serializer):
         data['user'] = user
         return data
 
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'full_name', 'role', 'bio', 'date_joined']
 
-class GoogleAuthSerializer(serializers.Serializer):
-    access_token = serializers.CharField(required=True)
 
-    def validate_access_token(self, value):
+class GoogleAuthSerializer(serializers.Serializer):
+    id_token = serializers.CharField(required=False, allow_blank=True)
+    access_token = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, data):
+        token = data.get('id_token') or data.get('access_token')
+        if not token:
+            raise serializers.ValidationError("Google token is required (id_token or access_token)")
+
+        client_id = getattr(settings, 'GOOGLE_CLIENT_ID', None)
+        if not client_id:
+            raise serializers.ValidationError("Google Client ID not configured on server.")
+
         try:
-            # Verify Google token
             idinfo = google.oauth2.id_token.verify_oauth2_token(
-                value,
+                token,
                 requests.Request(),
-                settings.GOOGLE_CLIENT_ID
+                client_id
             )
-            
             if idinfo.get('iss') not in ['accounts.google.com', 'https://accounts.google.com']:
-                raise serializers.ValidationError("Invalid issuer")
+                raise serializers.ValidationError("Invalid token issuer")
 
             email = idinfo.get('email')
             if not email:
-                raise serializers.ValidationError("Email not found")
+                raise serializers.ValidationError("Email not provided by Google")
 
-            # Get or create user
+            base_username = email.split('@')[0]
+            username = base_username
+            suffix = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}_{suffix}"
+                suffix += 1
+
             user, created = User.objects.get_or_create(
                 email=email,
                 defaults={
-                    'username': email.split('@')[0] + str(User.objects.count()),
-                    'full_name': idinfo.get('name', ''),
+                    'username': username,
+                    'full_name': idinfo.get('name', base_username),
                     'role': 'Student'
                 }
             )
-            if not created and idinfo.get('name'):
-                user.full_name = idinfo.get('name')
-                user.save()
+
+            if not created:
+                desired_full_name = idinfo.get('name', base_username)
+                if not user.full_name or (idinfo.get('name') and user.full_name != idinfo.get('name')):
+                    user.full_name = desired_full_name
+                    user.save()
 
             self.context['user'] = user
-            return value
+            return data
 
         except ValueError as e:
             raise serializers.ValidationError(f"Invalid Google token: {str(e)}")
