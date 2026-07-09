@@ -253,7 +253,10 @@ class VerifyEmailView(APIView):
             return Response({"error": "Email and OTP are required"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.filter(email=email, is_active=False).order_by('-id').first()
+            if not user:
+                return Response({"error": "No inactive user found with this email"}, status=status.HTTP_404_NOT_FOUND)
+
         except User.DoesNotExist:
             return Response({"error": "No user found"}, status=status.HTTP_404_NOT_FOUND)
 
