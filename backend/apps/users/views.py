@@ -292,3 +292,60 @@ class VerifyEmailView(APIView):
             }
         }, status=status.HTTP_200_OK)
 
+class ResendOTPView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        purpose = request.data.get('purpose', 'Email Verification')
+
+        if not email:
+            return Response({"error": "Email is required"}, status=400)
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({"error": "No user found with this email"}, status=404)
+
+        if purpose == 'Email Verification' and user.is_active:
+            return Response({"error": "Email already verified"}, status=400)
+
+        OTPVerification.objects.filter(user=user, purpose=purpose).delete()
+
+        otp_code = str(random.randint(100000, 999999))
+        expires_at = timezone.now() + timezone.timedelta(minutes=10)
+
+        OTPVerification.objects.create(
+            user=user,
+            otp_code=otp_code,
+            purpose=purpose,
+            expires_at=expires_at
+        )
+
+        try:
+            from_email = os.environ.get('FROM_EMAIL', 'noreply@quizsystem.com')
+            subject = 'Resend OTP - Online Quiz System'
+            if purpose == 'Password Reset':
+                subject = 'New Password Reset OTP'
+            message = Mail(
+                from_email=from_email,
+                to_emails=email,
+                subject=subject,
+                html_content=f"""
+                <p>Hello {user.full_name or user.username},</p>
+                <p>Your new OTP is: <b>{otp_code}</b></p>
+                <p>This OTP is valid for 10 minutes.</p>
+                <p>- Online Quiz Team</p>
+                """
+            )
+            sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+            sg.send(message)
+        except Exception as e:
+            print(f"Email failed: {e}")
+
+        return Response({
+            "message": "OTP resent successfully",
+            "otp": otp_code
+        }, status=200)
+
+
