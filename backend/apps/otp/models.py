@@ -6,6 +6,7 @@ class OTPVerification(models.Model):
         ('Registration', 'Registration'),
         ('Login', 'Login'),
         ('Password Reset', 'Password Reset'),
+        ('Email Verification', 'Email Verification'), 
     )
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     otp_code = models.CharField(max_length=10)

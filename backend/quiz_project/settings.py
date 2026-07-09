@@ -14,7 +14,7 @@ environ.Env.read_env(ENV_FILE)
 
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG', default=False)
-GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
