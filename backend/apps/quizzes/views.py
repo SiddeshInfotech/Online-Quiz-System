@@ -1,10 +1,14 @@
 from rest_framework import generics, permissions, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
-from .models import Quiz
-from .serializers import QuizLibrarySerializer, QuizSerializer
-from apps.quizzes.models import QuizCategory
+from .models import Quiz, QuizCategory
+from .serializers import QuizLibrarySerializer, QuizSerializer, QuizCategorySerializer
 from django.db.models import Count
+
+class CategoryListView(generics.ListAPIView):
+    queryset = QuizCategory.objects.all().order_by('category_name')
+    serializer_class = QuizCategorySerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 class QuizLibraryListView(generics.ListAPIView):
     serializer_class = QuizLibrarySerializer
