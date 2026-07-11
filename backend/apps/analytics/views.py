@@ -30,6 +30,8 @@ class DashboardSummaryView(APIView):
             submitted_at__date=timezone.now().date()
         ).count()
 
+        daily_goal = getattr(user, 'daily_quiz_goal', 3)
+
         current_streak = user.current_streak if hasattr(user, 'current_streak') else 0
         best_streak = user.longest_streak if hasattr(user, 'longest_streak') else 0
 
@@ -57,7 +59,7 @@ class DashboardSummaryView(APIView):
             "quizzes_available_count": total_quizzes,
             "todays_goal": {
                 "completed": todays_count,
-                "target": 3
+                "target": daily_goal
             },
             "notifications": notifications,
         })
