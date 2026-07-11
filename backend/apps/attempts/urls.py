@@ -4,7 +4,8 @@ from .views import (
     SubmitAttemptView, 
     UserResultsView, 
     ResultDetailView,
-    AttemptDetailView
+    AttemptDetailView, 
+    UserAttemptsHistoryView
 )
 
 urlpatterns = [
@@ -17,5 +18,7 @@ urlpatterns = [
     
     path('results/<int:pk>/', ResultDetailView.as_view(), name='result-detail'),
     
-    path('attempts/<int:attempt_id>/', AttemptDetailView.as_view(), name='attempt-detail'),
+    path('attempts/<int:attempt_id>/', AttemptDetailView.as_view(), name='attempt-detail'),     
+
+    path('history/', UserAttemptsHistoryView.as_view(), name='user-attempts-history'),
 ]

@@ -4,6 +4,8 @@ from rest_framework.views import APIView
 from django.utils import timezone
 from datetime import datetime
 from .models import QuizAttempt, UserAnswer, Result
+from rest_framework.permissions import IsAuthenticated
+from django.db.models import Avg, Max, Count
 from .serializers import StartAttemptSerializer, SubmitAnswerSerializer, AttemptSerializer, ResultSerializer
 from apps.quizzes.models import Quiz
 from apps.questions.models import Question, QuestionOption
@@ -339,3 +341,51 @@ class AttemptDetailView(generics.RetrieveAPIView):
             "percentage": attempt.percentage,
             "answers": answers_data
         }, status=status.HTTP_200_OK)
+
+class UserAttemptsHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        attempts_qs = QuizAttempt.objects.filter(
+            user=user, 
+            submitted_at__isnull=False
+        ).order_by('-submitted_at')
+
+        total_attempts = attempts_qs.count()
+        avg_score = attempts_qs.aggregate(Avg('percentage'))['percentage__avg'] or 0
+        best_score = attempts_qs.aggregate(Max('percentage'))['percentage__max'] or 0
+
+        passed_count = attempts_qs.filter(percentage__gte=50).count()
+        success_rate = round((passed_count / total_attempts * 100), 2) if total_attempts > 0 else 0
+
+        history_list = []
+        for attempt in attempts_qs:
+            result = getattr(attempt, 'result', None)
+            correct_answers = result.correct_answers if result else 0
+            wrong_answers = result.wrong_answers if result else 0
+            unanswered = result.unanswered_questions if result else 0
+            total_questions = correct_answers + wrong_answers + unanswered
+
+            history_list.append({
+                "id": attempt.id,
+                "quiz_title": attempt.quiz.title,
+                "category": attempt.quiz.category.category_name if attempt.quiz.category else "Uncategorized",
+                "difficulty_level": attempt.quiz.difficulty,
+                "date": attempt.submitted_at.strftime("%Y-%m-%d %H:%M"),
+                "correct_count": correct_answers,
+                "total_questions": total_questions,
+                "time_spent_seconds": attempt.time_spent_seconds or 0,
+                "score": attempt.percentage,
+                "status": "Passed" if attempt.percentage >= 50 else "Failed"
+            })
+
+        return Response({
+            "stats": {
+                "total_attempts": total_attempts,
+                "average_score": round(avg_score, 2),
+                "best_score": round(best_score, 2),
+                "success_rate": success_rate
+            },
+            "attempts": history_list
+        })
