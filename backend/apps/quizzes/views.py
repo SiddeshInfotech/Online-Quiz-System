@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from .models import Quiz, QuizCategory
 from .serializers import QuizLibrarySerializer, QuizSerializer, QuizCategorySerializer
 from django.db.models import Count
+from rest_framework import status
 
 class CategoryListView(generics.ListAPIView):
     queryset = QuizCategory.objects.all().order_by('category_name')
@@ -55,8 +56,15 @@ class QuizListCreateView(generics.ListCreateAPIView):
     serializer_class = QuizSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def create(self, request, *args, **kwargs):
+        return Response(
+            {"error": "Manual quiz creation is disabled. Please use the AI Generator."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        pass
+
 
 class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Quiz.objects.all()
