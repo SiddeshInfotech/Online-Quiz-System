@@ -11,6 +11,8 @@ class User(AbstractUser):
     current_streak = models.IntegerField(default=0)
     longest_streak = models.IntegerField(default=0)
     last_active_date = models.DateField(null=True, blank=True)
+    total_points = models.IntegerField(default=0, db_index=True)  
+    quizzes_completed = models.IntegerField(default=0) 
 
     def __str__(self):
         return self.username

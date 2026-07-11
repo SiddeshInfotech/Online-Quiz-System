@@ -6,6 +6,10 @@ from django.db import connection
 from apps.attempts.models import QuizAttempt, Result
 from apps.quizzes.models import Quiz
 from .serializers import LeaderboardEntrySerializer, QuizLeaderboardSerializer
+from rest_framework.permissions import IsAuthenticated
+from django.db.models import F, Window
+from django.db.models.functions import Rank
+from apps.users.models import User
 
 class QuizLeaderboardView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -72,51 +76,39 @@ class QuizLeaderboardView(APIView):
         }, status=status.HTTP_200_OK)
 
 class GlobalLeaderboardView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT 
-                    u.id,
-                    u.username,
-                    u.full_name,
-                    u.email,
-                    COUNT(a.id) as total_attempts,
-                    AVG(a.percentage) as avg_percentage,
-                    MAX(a.percentage) as best_percentage
-                FROM users_user u
-                JOIN attempts_quizattempt a ON u.id = a.user_id
-                WHERE a.submitted_at IS NOT NULL
-                GROUP BY u.id, u.username, u.full_name, u.email
-                ORDER BY best_percentage DESC, avg_percentage DESC
-                LIMIT 20
-            """)
-            rows = cursor.fetchall()
+        ranked_users = User.objects.annotate(
+            calculated_rank=Window(
+                expression=Rank(),
+                order_by=F('total_points').desc()
+            )
+        ).order_by('calculated_rank')
 
-        if not rows:
-            return Response({
-                "message": "No attempts found.",
-                "top_users": []
-            }, status=status.HTTP_200_OK)
-
-        result = []
-        rank = 1
-        for row in rows:
-            result.append({
-                "rank": rank,
-                "user": {
-                    "id": row[0],
-                    "username": row[1],
-                    "full_name": row[2],
-                    "email": row[3]
-                },
-                "total_attempts": row[4],
-                "avg_percentage": round(row[5], 2) if row[5] else 0,
-                "best_percentage": round(row[6], 2) if row[6] else 0
+        all_rankings = []
+        for user in ranked_users:
+            all_rankings.append({
+                "rank": user.calculated_rank,
+                "full_name": user.full_name or user.username,
+                "username": user.username,
+                "points": user.total_points,
+                "quizzes_count": user.quizzes_completed
             })
-            rank += 1
+
+        top_3 = all_rankings[:3]
+
+        current_user = next(
+            (u for u in all_rankings if u["username"] == request.user.username),
+            None
+        )
 
         return Response({
-            "top_users": result
-        }, status=status.HTTP_200_OK)
+            "personal_stats": {
+                "your_rank": current_user["rank"] if current_user else None,
+                "your_points": request.user.total_points,
+                "quizzes_completed": request.user.quizzes_completed
+            },
+            "top_3_podium": top_3,
+            "all_rankings_list": all_rankings
+        })
