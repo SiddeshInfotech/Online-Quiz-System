@@ -65,6 +65,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'full_name', 'role', 'bio', 'date_joined']
+        read_only_fields = ['id', 'username', 'email', 'role', 'date_joined']
 
 
 class GoogleAuthSerializer(serializers.Serializer):
