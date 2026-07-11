@@ -13,6 +13,15 @@ class User(AbstractUser):
     last_active_date = models.DateField(null=True, blank=True)
     total_points = models.IntegerField(default=0, db_index=True)  
     quizzes_completed = models.IntegerField(default=0) 
+    theme_preference = models.CharField(
+        max_length=20,
+        choices=[('light', 'Light'), ('dark', 'Dark')],
+        default='light'
+    )
+    email_notifications = models.BooleanField(default=True)
+    push_notifications = models.BooleanField(default=False)
+    daily_quiz_goal = models.IntegerField(default=3)
+    deactivated_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.username
