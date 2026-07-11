@@ -104,6 +104,18 @@ class ProfileView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         return self.request.user
 
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        
+        return Response({
+            "message": "Profile updated successfully",
+            "user": serializer.data
+        })
+
 class GoogleLoginView(APIView):
     permission_classes = [AllowAny]
 
