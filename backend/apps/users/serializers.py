@@ -104,7 +104,7 @@ class GoogleAuthSerializer(serializers.Serializer):
                 email=email,
                 defaults={
                     'username': username,
-                    'full_name': idinfo.get('name', base_username),
+                    'full_name': (idinfo.get('name') or base_username).title(),
                     'role': 'Student'
                 }
             )
