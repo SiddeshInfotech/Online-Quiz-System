@@ -62,6 +62,7 @@ class LoginSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.SerializerMethodField()
     profile_completion = serializers.SerializerMethodField()
 
     class Meta:
@@ -72,6 +73,10 @@ class UserSerializer(serializers.ModelSerializer):
             'subject_interests', 'profile_completion'
         ]
         read_only_fields = ['id', 'username', 'email', 'role', 'date_joined']
+    def get_profile_picture(self, obj):
+        if obj.profile_picture:
+            return obj.profile_picture.url
+        return None
 
     def get_profile_completion(self, obj):
         total_fields = 6
