@@ -438,10 +438,10 @@ class UserSettingsView(APIView):
     def get(self, request):
         user = request.user
         return Response({
-            "appearance": user.theme_preference,
-            "email_notifications": user.email_notifications,
-            "push_notifications": user.push_notifications,
-            "daily_quiz_goal": user.daily_quiz_goal
+            "appearance": getattr(user, 'theme_preference', 'light'),
+            "email_notifications": getattr(user, 'email_notifications', True),
+            "push_notifications": getattr(user, 'push_notifications', False),
+            "daily_quiz_goal": getattr(user, 'daily_quiz_goal', 3)
         })
 
     def patch(self, request):
@@ -457,7 +457,8 @@ class UserSettingsView(APIView):
         if 'daily_quiz_goal' in data:
             user.daily_quiz_goal = int(data['daily_quiz_goal'])
 
-        user.save(update_fields=['theme_preference', 'email_notifications', 'push_notifications', 'daily_quiz_goal'])
+        user.save()
+        user.refresh_from_db()
 
         return Response({
             "message": "Settings updated successfully",
@@ -468,6 +469,7 @@ class UserSettingsView(APIView):
                 "daily_quiz_goal": user.daily_quiz_goal
             }
         }, status=status.HTTP_200_OK)
+
 
 class AccountDestructionView(APIView):
     permission_classes = [IsAuthenticated]
