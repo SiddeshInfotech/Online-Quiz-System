@@ -1,0 +1,2 @@
+google-api-core==2.31.0
+grpcio-status==1.71.2
