@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     QuizListCreateView, QuizDetailView, QuizLibraryListView,
-    RecommendedQuizzesListView, QuizLibraryMetaView, CategoryListView
+    RecommendedQuizzesListView, QuizLibraryMetaView, CategoryListView, QuizStartView
 )
 
 
@@ -12,4 +12,5 @@ urlpatterns = [
     path('library/recommended/', RecommendedQuizzesListView.as_view(), name='quiz-recommended-list'),
     path('library/meta/', QuizLibraryMetaView.as_view(), name='quiz-library-meta'),
     path('categories/', CategoryListView.as_view(), name='category-list'),
+    path('<int:pk>/start/', QuizStartView.as_view(), name='quiz-start'),
 ]

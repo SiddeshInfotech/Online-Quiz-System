@@ -20,6 +20,7 @@ class UserAnswer(models.Model):
     answer_text = models.TextField(null=True, blank=True)
     is_correct = models.BooleanField(null=True, blank=True)
     marks_obtained = models.IntegerField(default=0)
+    marked_for_review = models.BooleanField(default=False)
     
 
 class Result(models.Model):
