@@ -15,7 +15,7 @@ class QuizLibraryListView(generics.ListAPIView):
     serializer_class = QuizLibrarySerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
-    filterset_fields = ['difficulty', 'grade_level', 'category']
+     filterset_fields = ['difficulty', 'grade_level', 'category', 'subject'] 
     search_fields = ['title', 'subject', 'description']
     ordering_fields = ['created_at', 'title', 'duration_minutes']
     ordering = ['-created_at']
