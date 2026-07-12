@@ -140,14 +140,13 @@ class SubmitAttemptView(APIView):
 
         quiz = attempt.quiz
         duration = quiz.duration_minutes
-        elapsed = (timezone.now() - attempt.started_at).total_seconds() / 60  
+        elapsed = (timezone.now() - attempt.started_at).total_seconds() / 60
 
         if elapsed > duration:
             is_auto_submitted = True
-            print(f"⚠️ Attempt {attempt_id} submitted after time limit: {elapsed:.2f} mins")
         else:
             is_auto_submitted = False
-            
+
         answers_data = request.data.get('answers', [])
         if not answers_data:
             return Response({"error": "No answers provided."}, status=status.HTTP_400_BAD_REQUEST)
@@ -177,7 +176,6 @@ class SubmitAttemptView(APIView):
 
             answered_question_ids.append(question_id)
 
-            
             is_correct = False
             marks_obtained = 0
 
@@ -190,21 +188,10 @@ class SubmitAttemptView(APIView):
                     except QuestionOption.DoesNotExist:
                         return Response({"error": f"Invalid option for question {question_id}."}, status=status.HTTP_400_BAD_REQUEST)
                 else:
-                    
                     is_correct = False
                     marks_obtained = 0
 
-            elif question.question_type == 'True/False':
-                if answer_text:
-                    
-                    is_correct = answer_text.strip().lower() == question.correct_answer.strip().lower()
-                    marks_obtained = question.marks if is_correct else 0
-                else:
-                    is_correct = False
-                    marks_obtained = 0
-
-            elif question.question_type == 'Fill in the Blank':
-                
+            elif question.question_type in ['True/False', 'Fill in the Blank']:
                 if answer_text:
                     is_correct = answer_text.strip().lower() == question.correct_answer.strip().lower()
                     marks_obtained = question.marks if is_correct else 0
@@ -212,7 +199,6 @@ class SubmitAttemptView(APIView):
                     is_correct = False
                     marks_obtained = 0
 
-            
             UserAnswer.objects.create(
                 attempt=attempt,
                 question=question,
@@ -230,11 +216,10 @@ class SubmitAttemptView(APIView):
             else:
                 wrong_count += 1
 
-        
         unanswered_count = all_questions.count() - len(answered_question_ids)
+
         for q in all_questions:
             if q.id not in answered_question_ids:
-                # Save as unanswered
                 UserAnswer.objects.create(
                     attempt=attempt,
                     question=q,
@@ -242,19 +227,11 @@ class SubmitAttemptView(APIView):
                     marks_obtained=0
                 )
 
-       
         attempt.submitted_at = timezone.now()
         attempt.score = total_score
         attempt.percentage = (total_score / total_marks * 100) if total_marks > 0 else 0
         attempt.save()
 
-       
-        time_diff = attempt.submitted_at - attempt.started_at
-        time_taken_seconds = time_diff.total_seconds()
-        time_taken_minutes = time_taken_seconds // 60
-        time_taken_remaining = time_taken_seconds % 60
-
-       
         result = Result.objects.create(
             attempt=attempt,
             correct_answers=correct_count,
@@ -266,19 +243,33 @@ class SubmitAttemptView(APIView):
             pass_status=(total_score / total_marks * 100) >= 40 if total_marks > 0 else False
         )
 
+        time_diff = attempt.submitted_at - attempt.started_at
+        time_taken_seconds = int(time_diff.total_seconds())
+        time_remaining_seconds = max(0, (quiz.duration_minutes * 60) - time_taken_seconds)
+
         return Response({
-            "message": "Quiz submitted successfully.",
             "attempt_id": attempt.id,
+            "quiz": {
+                "id": quiz.id,
+                "title": quiz.title,
+                "category": quiz.category.category_name if quiz.category else "Uncategorized",
+                "difficulty": quiz.difficulty,
+                "total_questions": all_questions.count(),
+                "time_limit_minutes": quiz.duration_minutes,
+                "passing_marks": int(0.4 * all_questions.count()),
+                "marks_per_question": 1
+            },
             "score": total_score,
-            "total_marks": total_marks,
             "percentage": result.percentage,
-            "grade": result.grade,
-            "pass_status": result.pass_status,
+            "passed": result.pass_status,
             "correct_answers": correct_count,
-            "wrong_answers": wrong_count,
-            "unanswered_questions": unanswered_count,
-            "time_taken": f"{int(time_taken_minutes)}:{int(time_taken_remaining):02d}",
-            "result_id": result.id,
+            "incorrect_answers": wrong_count,
+            "unanswered": unanswered_count,
+            "accuracy": result.percentage,
+            "points_earned": total_score,
+            "time_taken_seconds": time_taken_seconds,
+            "time_remaining_seconds": time_remaining_seconds,
+            "submitted_at": attempt.submitted_at.isoformat(),
             "auto_submitted": is_auto_submitted
         }, status=status.HTTP_200_OK)
 
@@ -296,6 +287,7 @@ class SubmitAttemptView(APIView):
         else:
             return "F"
 
+
 class UserResultsView(generics.ListAPIView):
     serializer_class = ResultSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -305,11 +297,44 @@ class UserResultsView(generics.ListAPIView):
 
 
 class ResultDetailView(generics.RetrieveAPIView):
-    serializer_class = ResultSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         return Result.objects.filter(attempt__user=self.request.user)
+
+    def retrieve(self, request, *args, **kwargs):
+        result = self.get_object()
+        attempt = result.attempt
+        quiz = attempt.quiz
+
+        time_diff = attempt.submitted_at - attempt.started_at
+        time_taken_seconds = int(time_diff.total_seconds()) if attempt.submitted_at else 0
+        time_remaining_seconds = max(0, (quiz.duration_minutes * 60) - time_taken_seconds)
+
+        return Response({
+            "attempt_id": attempt.id,
+            "quiz": {
+                "id": quiz.id,
+                "title": quiz.title,
+                "category": quiz.category.category_name if quiz.category else "Uncategorized",
+                "difficulty": quiz.difficulty,
+                "total_questions": quiz.question_set.count(),
+                "time_limit_minutes": quiz.duration_minutes,
+                "passing_marks": int(0.4 * quiz.question_set.count()),
+                "marks_per_question": 1
+            },
+            "score": result.total_score,
+            "percentage": result.percentage,
+            "passed": result.pass_status,
+            "correct_answers": result.correct_answers,
+            "incorrect_answers": result.wrong_answers,
+            "unanswered": result.unanswered_questions,
+            "accuracy": result.percentage,
+            "points_earned": result.total_score,
+            "time_taken_seconds": time_taken_seconds,
+            "time_remaining_seconds": time_remaining_seconds,
+            "submitted_at": attempt.submitted_at.isoformat() if attempt.submitted_at else None
+        })
 
 
 class AttemptResultDetailView(generics.RetrieveAPIView):
