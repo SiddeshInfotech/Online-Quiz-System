@@ -11,6 +11,7 @@ from apps.quizzes.models import Quiz
 from apps.questions.models import Question, QuestionOption
 from apps.questions.serializers import QuestionSerializer
 from django.shortcuts import get_object_or_404
+from apps.questions.serializers import AttemptQuestionSerializer
 
 
 from django.utils import timezone
@@ -437,7 +438,10 @@ class AttemptDetailView(generics.RetrieveAPIView):
         }
 
         questions = attempt.quiz.question_set.all().order_by('question_order')
-        question_data = QuestionSerializer(questions, many=True).data
+        question_data = AttemptQuestionSerializer(questions, many=True).data
+        for q in question_data:
+            if 'question_text' not in q and 'question' in q:
+                q['question_text'] = q.pop('question')
 
         for q in question_data:
             q['selected_option_id'] = answer_map.get(q['id'], {}).get('selected_option_id')

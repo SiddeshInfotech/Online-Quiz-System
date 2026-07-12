@@ -11,6 +11,7 @@ from apps.attempts.models import QuizAttempt
 from apps.questions.serializers import QuestionSerializer
 from django.db.models import Count
 from rest_framework import status
+from apps.questions.serializers import AttemptQuestionSerializer
 
 class CategoryListView(generics.ListAPIView):
     queryset = QuizCategory.objects.all().order_by('category_name')
@@ -114,7 +115,7 @@ class QuizStartView(APIView):
         remaining = max(0, (quiz.duration_minutes * 60) - elapsed)
 
         questions = quiz.question_set.all().order_by('question_order')
-        question_data = QuestionSerializer(questions, many=True).data
+        question_data = AttemptQuestionSerializer(questions, many=True).data
 
         return Response({
             "attempt_id": attempt.id,

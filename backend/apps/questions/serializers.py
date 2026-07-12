@@ -12,7 +12,7 @@ class QuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
         fields = ['id', 'quiz', 'question_text', 'question_type', 'marks', 'question_order', 'options']
-        read_only_fields = ['quiz']  # Hum URL se quiz_id set karenge
+        read_only_fields = ['quiz']  
 
     def create(self, validated_data):
         options_data = validated_data.pop('questionoption_set', [])
@@ -34,3 +34,13 @@ class QuestionSerializer(serializers.ModelSerializer):
         for option_data in options_data:
             QuestionOption.objects.create(question=instance, **option_data)
         return instance
+    
+class AttemptQuestionSerializer(serializers.ModelSerializer):
+    options = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Question
+        fields = ['id', 'question_text', 'question_type', 'marks', 'options']
+
+    def get_options(self, obj):
+        return [opt.option_text for opt in obj.questionoption_set.all().order_by('id')]
