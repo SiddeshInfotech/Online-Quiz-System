@@ -6,9 +6,11 @@ from datetime import datetime
 from .models import QuizAttempt, UserAnswer, Result
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Avg, Max, Count
-from .serializers import StartAttemptSerializer, SubmitAnswerSerializer, AttemptSerializer, ResultSerializer
+from .serializers import StartAttemptSerializer, SubmitAnswerSerializer, AttemptSerializer, ResultSerializer, QuizAttemptSerializer
 from apps.quizzes.models import Quiz
 from apps.questions.models import Question, QuestionOption
+from apps.questions.serializers import QuestionSerializer
+
 
 
 from django.utils import timezone
@@ -309,7 +311,7 @@ class ResultDetailView(generics.RetrieveAPIView):
         return Result.objects.filter(attempt__user=self.request.user)
 
 
-class AttemptDetailView(generics.RetrieveAPIView):
+class AttemptResultDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, attempt_id):
@@ -389,3 +391,27 @@ class UserAttemptsHistoryView(APIView):
             },
             "attempts": history_list
         })
+
+class AttemptDetailView(generics.RetrieveAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = QuizAttemptSerializer  
+
+    def get(self, request, *args, **kwargs):
+        attempt_id = kwargs.get('pk')
+        try:
+            attempt = QuizAttempt.objects.get(id=attempt_id, user=request.user)
+        except QuizAttempt.DoesNotExist:
+            return Response({"error": "Attempt not found or unauthorized"}, status=status.HTTP_404_NOT_FOUND)
+
+        questions = attempt.quiz.question_set.all().order_by('question_order')
+        question_serializer = QuestionSerializer(questions, many=True)
+
+        return Response({
+            "attempt_id": attempt.id,
+            "quiz_id": attempt.quiz.id,
+            "quiz_title": attempt.quiz.title,
+            "started_at": attempt.started_at,
+            "submitted_at": attempt.submitted_at,
+            "questions": question_serializer.data
+        })
+
