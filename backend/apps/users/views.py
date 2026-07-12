@@ -14,7 +14,7 @@ from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, Go
 from .models import User
 from apps.otp.models import OTPVerification
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+from sendgrid.helpers.mail import Mail, Content
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -79,9 +79,14 @@ class LoginView(generics.GenericAPIView):
             user = serializer.validated_data['user']
             
             if not user.is_active:
-                return Response({
-                    "error": "Please verify your email before logging in."
-                }, status=status.HTTP_403_FORBIDDEN)
+                if hasattr(user, 'deactivated_at') and user.deactivated_at:
+                    return Response({
+                        "error": f"Your account was deactivated on {user.deactivated_at.strftime('%Y-%m-%d')}. Please contact support to reactivate."
+                    }, status=status.HTTP_403_FORBIDDEN)
+                else:
+                    return Response({
+                        "error": "Please verify your email before logging in."
+                    }, status=status.HTTP_403_FORBIDDEN)
             
             refresh = RefreshToken.for_user(user)
             return Response({
@@ -97,6 +102,7 @@ class LoginView(generics.GenericAPIView):
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class ProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
@@ -110,7 +116,7 @@ class ProfileView(generics.RetrieveUpdateAPIView):
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-        
+
         return Response({
             "message": "Profile updated successfully",
             "user": serializer.data
@@ -144,6 +150,7 @@ class ForgotPasswordView(APIView):
         email = request.data.get('email')
         if not email:
             return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
@@ -151,7 +158,7 @@ class ForgotPasswordView(APIView):
 
         otp_code = str(random.randint(100000, 999999))
         expires_at = timezone.now() + timezone.timedelta(minutes=10)
-        
+
         OTPVerification.objects.filter(user=user, purpose='Password Reset').delete()
         OTPVerification.objects.create(
             user=user,
@@ -161,28 +168,59 @@ class ForgotPasswordView(APIView):
         )
 
         try:
-            from_email = os.environ.get('FROM_EMAIL', 'zeeshanansari1081015@gmail.com')
+            from_email = f"QuizGen AI <{os.environ.get('FROM_EMAIL', 'zeeshanansari1081015@gmail.com')}>"
+            
             message = Mail(
                 from_email=from_email,
                 to_emails=email,
-                subject='Password Reset OTP - Online Quiz System',
-                html_content=f"""
-                <p>Hello {user.full_name or user.username},</p>
-                <p>Your OTP for password reset is: <b>{otp_code}</b></p>
-                <p>This OTP is valid for 10 minutes.</p>
-                <p>If you did not request this, please ignore this email.</p>
-                <p>- Online Quiz Team</p>
-                """
+                subject='Password Reset OTP - Online Quiz System'
             )
+
+            text_content = f"""
+Hello {user.full_name or user.username},
+
+Your OTP for password reset is: {otp_code}
+
+This OTP is valid for 10 minutes.
+
+If you did not request this, please ignore this email.
+
+- Online Quiz Team
+"""
+            message.add_content(Content("text/plain", text_content))
+
+            html_content = f"""
+<div style="font-family: Arial, sans-serif; max-width: 500px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+    <h2 style="color: #4F46E5;">Password Reset OTP</h2>
+    <p>Hello <b>{user.full_name or user.username}</b>,</p>
+    <p>Your OTP for password reset is:</p>
+    <div style="font-size: 28px; font-weight: bold; color: #4F46E5; padding: 15px 0; text-align: center;">
+        {otp_code}
+    </div>
+    <p>This OTP is valid for <b>10 minutes</b>.</p>
+    <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">
+    <p style="font-size: 12px; color: #888;">
+        If you did not request this, please ignore this email.
+    </p>
+    <p style="font-size: 12px; color: #888; margin-top: 10px;">
+        - Online Quiz Team
+    </p>
+</div>
+"""
+            message.add_content(Content("text/html", html_content))
+
             sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
-            sg.send(message)
+            response = sg.send(message)
+            print(f"✅ Email sent to {email}, status: {response.status_code}")
+
         except Exception as e:
-            pass
+            print(f"❌ Email send failed: {e}")
 
         return Response({
             "message": "OTP sent successfully to your email",
             "otp": otp_code
         }, status=status.HTTP_200_OK)
+
 
 class VerifyOTPView(APIView):
     permission_classes = [AllowAny]
@@ -393,5 +431,56 @@ class PasswordChangeView(APIView):
             {"message": "Password updated successfully"},
             status=status.HTTP_200_OK
         )
+
+class UserSettingsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        return Response({
+            "appearance": user.theme_preference,
+            "email_notifications": user.email_notifications,
+            "push_notifications": user.push_notifications,
+            "daily_quiz_goal": user.daily_quiz_goal
+        })
+
+    def patch(self, request):
+        user = request.user
+        data = request.data
+
+        if 'appearance' in data:
+            user.theme_preference = data['appearance']
+        if 'email_notifications' in data:
+            user.email_notifications = data['email_notifications']
+        if 'push_notifications' in data:
+            user.push_notifications = data['push_notifications']
+        if 'daily_quiz_goal' in data:
+            user.daily_quiz_goal = int(data['daily_quiz_goal'])
+
+        user.save(update_fields=['theme_preference', 'email_notifications', 'push_notifications', 'daily_quiz_goal'])
+
+        return Response({
+            "message": "Settings updated successfully",
+            "settings": {
+                "appearance": user.theme_preference,
+                "email_notifications": user.email_notifications,
+                "push_notifications": user.push_notifications,
+                "daily_quiz_goal": user.daily_quiz_goal
+            }
+        }, status=status.HTTP_200_OK)
+
+class AccountDestructionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        user = request.user
+        
+        user.is_active = False
+        user.deactivated_at = timezone.now()
+        user.save(update_fields=['is_active', 'deactivated_at'])
+        
+        return Response({
+            "message": "Your account has been deactivated. It will be permanently deleted after 30 days. You can contact support to reactivate."
+        }, status=status.HTTP_200_OK)
 
 
