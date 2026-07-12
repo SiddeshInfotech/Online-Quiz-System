@@ -419,11 +419,11 @@ class UserAttemptsHistoryView(APIView):
         })
 
 class AttemptDetailView(generics.RetrieveAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request, attempt_id):
+    def get(self, request, pk):   
         try:
-            attempt = QuizAttempt.objects.get(id=attempt_id, user=request.user, submitted_at__isnull=True)
+            attempt = QuizAttempt.objects.get(id=pk, user=request.user, submitted_at__isnull=True)
         except QuizAttempt.DoesNotExist:
             return Response({"error": "Attempt not found."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -443,6 +443,9 @@ class AttemptDetailView(generics.RetrieveAPIView):
             q['selected_option_id'] = answer_map.get(q['id'], {}).get('selected_option_id')
             q['marked_for_review'] = answer_map.get(q['id'], {}).get('marked_for_review', False)
 
+        elapsed = (timezone.now() - attempt.started_at).total_seconds()
+        remaining = max(0, (attempt.quiz.duration_minutes * 60) - elapsed)
+
         return Response({
             "attempt_id": attempt.id,
             "quiz": {
@@ -453,9 +456,10 @@ class AttemptDetailView(generics.RetrieveAPIView):
                 "total_questions": attempt.quiz.question_set.count()
             },
             "questions": question_data,
-            "remaining_time_seconds": max(0, (attempt.quiz.duration_minutes * 60) - (timezone.now() - attempt.started_at).total_seconds()),
+            "remaining_time_seconds": int(remaining),
             "started_at": attempt.started_at
         }, status=status.HTTP_200_OK)
+
 
     
 class SaveAnswerView(APIView):
