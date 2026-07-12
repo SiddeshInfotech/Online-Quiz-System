@@ -93,8 +93,8 @@ class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
 class QuizStartView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, quiz_id):
-        quiz = get_object_or_404(Quiz, id=quiz_id, status='published')
+    def post(self, request, pk):  
+        quiz = get_object_or_404(Quiz, id=pk, status='published')
         user = request.user
 
         existing_attempt = QuizAttempt.objects.filter(
@@ -110,11 +110,8 @@ class QuizStartView(APIView):
                 started_at=timezone.now()
             )
 
-        if attempt.started_at:
-            elapsed = (timezone.now() - attempt.started_at).total_seconds()
-            remaining = max(0, (quiz.duration_minutes * 60) - elapsed)
-        else:
-            remaining = quiz.duration_minutes * 60
+        elapsed = (timezone.now() - attempt.started_at).total_seconds()
+        remaining = max(0, (quiz.duration_minutes * 60) - elapsed)
 
         questions = quiz.question_set.all().order_by('question_order')
         question_data = QuestionSerializer(questions, many=True).data
@@ -133,4 +130,5 @@ class QuizStartView(APIView):
             "remaining_time_seconds": int(remaining),
             "started_at": attempt.started_at
         }, status=status.HTTP_200_OK)
+
 
