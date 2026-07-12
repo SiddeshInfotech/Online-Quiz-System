@@ -22,6 +22,15 @@ class User(AbstractUser):
     push_notifications = models.BooleanField(default=False)
     daily_quiz_goal = models.IntegerField(default=3)
     deactivated_at = models.DateTimeField(null=True, blank=True)
+    profile_picture = models.ImageField(
+    upload_to='profile_pics/', 
+    null=True, 
+    blank=True
+    )
+    school = models.CharField(max_length=255, blank=True)
+    grade = models.CharField(max_length=20, blank=True)
+    subject_interests = models.JSONField(default=list, blank=True)
+
 
     def __str__(self):
         return self.username

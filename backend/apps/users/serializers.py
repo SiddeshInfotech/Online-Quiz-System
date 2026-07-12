@@ -62,10 +62,34 @@ class LoginSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    profile_completion = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'full_name', 'role', 'bio', 'date_joined']
+        fields = [
+            'id', 'username', 'email', 'full_name', 'role', 'bio',
+            'date_joined', 'profile_picture', 'school', 'grade',
+            'subject_interests', 'profile_completion'
+        ]
         read_only_fields = ['id', 'username', 'email', 'role', 'date_joined']
+
+    def get_profile_completion(self, obj):
+        total_fields = 6
+        filled = 0
+        if obj.full_name:
+            filled += 1
+        if obj.bio:
+            filled += 1
+        if obj.profile_picture:
+            filled += 1
+        if obj.school:
+            filled += 1
+        if obj.grade:
+            filled += 1
+        if obj.subject_interests and len(obj.subject_interests) > 0:
+            filled += 1
+        return int((filled / total_fields) * 100)
+
 
 
 class GoogleAuthSerializer(serializers.Serializer):
