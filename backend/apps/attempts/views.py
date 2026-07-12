@@ -10,7 +10,7 @@ from .serializers import StartAttemptSerializer, SubmitAnswerSerializer, Attempt
 from apps.quizzes.models import Quiz
 from apps.questions.models import Question, QuestionOption
 from apps.questions.serializers import QuestionSerializer
-
+from django.shortcuts import get_object_or_404
 
 
 from django.utils import timezone
@@ -140,14 +140,14 @@ class SubmitAttemptView(APIView):
 
         quiz = attempt.quiz
         duration = quiz.duration_minutes
-        elapsed = (timezone.now() - attempt.started_at).total_seconds() / 60  # minutes
+        elapsed = (timezone.now() - attempt.started_at).total_seconds() / 60  
 
         if elapsed > duration:
-            return Response({
-                "error": f"Time limit exceeded. You had {duration} minutes.",
-                "elapsed_minutes": elapsed
-            }, status=status.HTTP_400_BAD_REQUEST)
-
+            is_auto_submitted = True
+            print(f"⚠️ Attempt {attempt_id} submitted after time limit: {elapsed:.2f} mins")
+        else:
+            is_auto_submitted = False
+            
         answers_data = request.data.get('answers', [])
         if not answers_data:
             return Response({"error": "No answers provided."}, status=status.HTTP_400_BAD_REQUEST)
@@ -278,7 +278,8 @@ class SubmitAttemptView(APIView):
             "wrong_answers": wrong_count,
             "unanswered_questions": unanswered_count,
             "time_taken": f"{int(time_taken_minutes)}:{int(time_taken_remaining):02d}",
-            "result_id": result.id
+            "result_id": result.id,
+            "auto_submitted": is_auto_submitted
         }, status=status.HTTP_200_OK)
 
     def _calculate_grade(self, percentage):
@@ -393,24 +394,72 @@ class UserAttemptsHistoryView(APIView):
         })
 
 class AttemptDetailView(generics.RetrieveAPIView):
-    permission_classes = [permissions.IsAuthenticated] 
+    permission_classes = [IsAuthenticated]
 
-    def get(self, request, *args, **kwargs):
-        attempt_id = kwargs.get('pk')
+    def get(self, request, attempt_id):
         try:
-            attempt = QuizAttempt.objects.get(id=attempt_id, user=request.user)
+            attempt = QuizAttempt.objects.get(id=attempt_id, user=request.user, submitted_at__isnull=True)
         except QuizAttempt.DoesNotExist:
-            return Response({"error": "Attempt not found or unauthorized"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Attempt not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        user_answers = UserAnswer.objects.filter(attempt=attempt)
+        answer_map = {
+            ua.question_id: {
+                "selected_option_id": ua.selected_option_id,
+                "marked_for_review": getattr(ua, 'marked_for_review', False)
+            }
+            for ua in user_answers
+        }
 
         questions = attempt.quiz.question_set.all().order_by('question_order')
-        question_serializer = QuestionSerializer(questions, many=True)
+        question_data = QuestionSerializer(questions, many=True).data
+
+        for q in question_data:
+            q['selected_option_id'] = answer_map.get(q['id'], {}).get('selected_option_id')
+            q['marked_for_review'] = answer_map.get(q['id'], {}).get('marked_for_review', False)
 
         return Response({
             "attempt_id": attempt.id,
-            "quiz_id": attempt.quiz.id,
-            "quiz_title": attempt.quiz.title,
-            "started_at": attempt.started_at,
-            "submitted_at": attempt.submitted_at,
-            "questions": question_serializer.data
-        })
+            "quiz": {
+                "id": attempt.quiz.id,
+                "title": attempt.quiz.title,
+                "difficulty": attempt.quiz.difficulty,
+                "time_limit_minutes": attempt.quiz.duration_minutes,
+                "total_questions": attempt.quiz.question_set.count()
+            },
+            "questions": question_data,
+            "remaining_time_seconds": max(0, (attempt.quiz.duration_minutes * 60) - (timezone.now() - attempt.started_at).total_seconds()),
+            "started_at": attempt.started_at
+        }, status=status.HTTP_200_OK)
+
+    
+class SaveAnswerView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, attempt_id):
+        try:
+            attempt = QuizAttempt.objects.get(id=attempt_id, user=request.user, submitted_at__isnull=True)
+        except QuizAttempt.DoesNotExist:
+            return Response({"error": "Attempt not found or already submitted."}, status=status.HTTP_404_NOT_FOUND)
+
+        question_id = request.data.get('question_id')
+        selected_option_id = request.data.get('selected_option_id')
+        marked_for_review = request.data.get('marked_for_review', False)
+
+        if not question_id:
+            return Response({"error": "question_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        question = get_object_or_404(Question, id=question_id, quiz=attempt.quiz)
+
+        answer, created = UserAnswer.objects.update_or_create(
+            attempt=attempt,
+            question=question,
+            defaults={
+                'selected_option_id': selected_option_id,
+                'marked_for_review': marked_for_review
+            }
+        )
+
+        return Response({"success": True}, status=status.HTTP_200_OK)
+
 
