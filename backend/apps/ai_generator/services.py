@@ -1,15 +1,14 @@
 import os
 import json
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 
 class GeminiService:
     def __init__(self):
         api_key = os.environ.get('GEMINI_API_KEY')
         if not api_key:
             raise ValueError("GEMINI_API_KEY not configured")
-        self.client = genai.Client(api_key=api_key)
-        self.model = "gemini-1.5-flash"
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel('gemini-1.5-flash')
 
     def generate_quiz(self, subject, difficulty, question_type, num_questions, prompt_topic=""):
         if question_type == "True/False":
@@ -48,17 +47,16 @@ Return ONLY valid JSON. No extra text.
 """
 
         try:
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=prompt,
-                config=types.GenerateContentConfig(
+            response = self.model.generate_content(
+                prompt,
+                generation_config=genai.types.GenerationConfig(
                     temperature=0.7,
                     max_output_tokens=2048,
                 )
             )
             raw_text = response.text.strip()
 
-            
+            # Clean markdown
             if raw_text.startswith('```json'):
                 raw_text = raw_text[7:]
             if raw_text.startswith('```'):
