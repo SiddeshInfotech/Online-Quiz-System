@@ -10,50 +10,32 @@ class StartAttemptSerializer(serializers.Serializer):
 class SubmitAnswerSerializer(serializers.Serializer):
     question_id = serializers.IntegerField()
     selected_option_id = serializers.IntegerField(required=False, allow_null=True)
-    answer_text = serializers.CharField(required=False, allow_blank=True)
+    answer_text = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
     def validate(self, data):
         question_id = data.get('question_id')
         selected_option_id = data.get('selected_option_id')
         answer_text = data.get('answer_text', '')
 
-       
+        # Get the question to know its type
         try:
             question = Question.objects.get(id=question_id)
         except Question.DoesNotExist:
-            raise serializers.ValidationError(f"Question with id {question_id} does not exist.")
+            raise serializers.ValidationError("Invalid question ID")
 
-        attempt = self.context.get('attempt')
-        if attempt and question.quiz_id != attempt.quiz_id:
-            raise serializers.ValidationError(
-                f"Question {question_id} does not belong to the quiz of this attempt."
-            )
-        
-        if question.question_type == 'MCQ':
+        # For MCQ and True/False, selected_option_id is required
+        if question.question_type in ['MCQ', 'True/False']:
             if not selected_option_id:
-                raise serializers.ValidationError("MCQ questions require a selected option.")
-            
-            try:
-                option = QuestionOption.objects.get(id=selected_option_id, question=question)
-            except QuestionOption.DoesNotExist:
                 raise serializers.ValidationError(
-                    f"Option {selected_option_id} does not belong to question {question_id}."
+                    {"selected_option_id": "This field is required for MCQ and True/False questions."}
                 )
-           
-            data['_option'] = option
-
-        elif question.question_type == 'True/False':
-            if not answer_text:
-                raise serializers.ValidationError("True/False questions require an answer text.")
-
-            if answer_text.strip().lower() not in ['true', 'false']:
-                raise serializers.ValidationError("Answer must be 'True' or 'False'.")
-
+        # For Fill in the Blank, answer_text is required
         elif question.question_type == 'Fill in the Blank':
-            if not answer_text:
-                raise serializers.ValidationError("Fill in the Blank questions require an answer text.")
+            if not answer_text or not answer_text.strip():
+                raise serializers.ValidationError(
+                    {"answer_text": "This field is required for Fill in the Blank questions."}
+                )
 
-        data['_question'] = question
         return data
 
 class AttemptSerializer(serializers.ModelSerializer):
