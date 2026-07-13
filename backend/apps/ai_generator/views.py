@@ -1,13 +1,16 @@
 import json
+import traceback
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.shortcuts import get_object_or_404
+
 from .serializers import QuizGenerationPayloadSerializer
 from .services import GeminiService
 from apps.quizzes.models import Quiz, QuizCategory
 from apps.questions.models import Question, QuestionOption
+
 
 class GenerateAIQuizView(APIView):
     permission_classes = [IsAuthenticated]
@@ -21,6 +24,7 @@ class GenerateAIQuizView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         validated_data = serializer.validated_data
+
         user = request.user
         subject = validated_data['subject']
         difficulty = validated_data['difficulty']
@@ -45,7 +49,8 @@ class GenerateAIQuizView(APIView):
         except Exception as e:
             return Response({
                 "error": "AI generation failed",
-                "details": str(e)
+                "details": str(e),
+                "traceback": traceback.format_exc()
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         category = None
@@ -56,9 +61,12 @@ class GenerateAIQuizView(APIView):
                 category_name=subject
             )
 
+        quiz_title = f"{subject}: {prompt_topic if prompt_topic else 'AI Generated Quiz'}"
+        quiz_description = f"AI-generated {quiz_mode} quiz on {subject} - {difficulty} difficulty"
+
         quiz = Quiz.objects.create(
-            title=f"{subject}: {prompt_topic if prompt_topic else 'AI Generated Quiz'}",
-            description=f"AI-generated {quiz_mode} quiz on {subject} - {difficulty} difficulty",
+            title=quiz_title,
+            description=quiz_description,
             subject=subject,
             difficulty=difficulty,
             question_type='MCQ' if quiz_mode == 'Theory' else 'Coding',
@@ -86,19 +94,7 @@ class GenerateAIQuizView(APIView):
                 question_order=idx + 1
             )
 
-            if q_type in ['MCQ', 'True/False'] and options:
-                try:
-                    correct_index = options.index(correct_answer)
-                except ValueError:
-                    correct_index = 0
-                for opt_idx, opt_text in enumerate(options):
-                    QuestionOption.objects.create(
-                        question=question,
-                        option_text=opt_text,
-                        is_correct=(opt_idx == correct_index)
-                    )
-
-            elif q_type == 'Fill in the Blank' and options:
+            if q_type in ['MCQ', 'True/False', 'Fill in the Blank'] and options:
                 try:
                     correct_index = options.index(correct_answer)
                 except ValueError:
