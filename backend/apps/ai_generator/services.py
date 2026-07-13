@@ -8,7 +8,7 @@ class GeminiService:
         if not api_key:
             raise ValueError("GEMINI_API_KEY not configured")
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-3.5-flash')
+        self.model = genai.GenerativeModel('gemini-2.5-flash')
 
     def generate_quiz(self, subject, difficulty, num_questions, prompt_topic="", quiz_mode="Theory"):
         if quiz_mode == "Coding":
