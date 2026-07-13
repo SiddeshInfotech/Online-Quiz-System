@@ -7,8 +7,9 @@ class AIService:
         self.api_key = os.environ.get('OPENROUTER_API_KEY')
         if not self.api_key:
             raise ValueError("OPENROUTER_API_KEY not configured")
+        
         self.api_url = "https://openrouter.ai/api/v1/chat/completions"
-        self.model = "openai/gpt-3.5-turbo"
+        
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -22,96 +23,128 @@ class AIService:
 
     def _generate_theory_quiz(self, subject, difficulty, num_questions, prompt_topic):
         prompt = f"""
-        You are an expert quiz generator. Generate exactly {num_questions} theory questions on "{subject}".
-        🔹 Difficulty: {difficulty}
-        🔹 Focus: {prompt_topic if prompt_topic else 'General'}
-        🔸 QUESTION TYPES (mix them evenly):
-        1. MCQ (Multiple Choice) — 4 options, one correct.
-        2. True/False — 4 options (True, False, and 2 distractors), one correct.
-        3. Fill in the Blank — statement with a missing word, 4 options, one correct.
-        🔴 IMPORTANT:
-        - EVERY question must have EXACTLY 4 options.
-        - For Fill in the Blank: the correct answer must be one of the 4 options.
-        📋 OUTPUT — Return a JSON array:
-        [
-          {{
-            "question_type": "MCQ",
-            "question_text": "Question text",
-            "options": ["A", "B", "C", "D"],
-            "correct_answer": "A"
-          }}
-        ]
-        Return ONLY valid JSON. No extra text.
-        """
+You are an expert quiz generator. Generate exactly {num_questions} theory questions on "{subject}".
+
+🔹 Difficulty: {difficulty}
+🔹 Focus: {prompt_topic if prompt_topic else 'General'}
+
+🔸 QUESTION TYPES (mix them evenly):
+1. MCQ (Multiple Choice) — 4 options, one correct.
+2. True/False — 4 options (True, False, and 2 distractors), one correct.
+3. Fill in the Blank — statement with a missing word, 4 options, one correct.
+
+🔴 IMPORTANT:
+- EVERY question must have EXACTLY 4 options.
+- For Fill in the Blank: the correct answer must be one of the 4 options.
+
+📋 OUTPUT — Return a JSON array:
+[
+  {{
+    "question_type": "MCQ",
+    "question_text": "Question text",
+    "options": ["A", "B", "C", "D"],
+    "correct_answer": "A"
+  }}
+]
+
+Return ONLY valid JSON. No extra text.
+"""
         return self._call_openrouter(prompt, num_questions)
 
     def _generate_coding_quiz(self, subject, difficulty, num_questions, prompt_topic):
         prompt = f"""
-        Generate {num_questions} coding problems on "{subject}" with difficulty {difficulty}.
-        Focus: {prompt_topic if prompt_topic else 'General'}.
-        Each problem must have:
-        - Problem statement
-        - Constraints
-        - Sample Input
-        - Sample Output
-        - Expected Answer (solution approach)
-        Output JSON array:
-        [
-          {{
-            "question_type": "Coding",
-            "question_text": "Problem statement with constraints and sample I/O",
-            "options": [],
-            "correct_answer": "Expected solution"
-          }}
-        ]
-        Return ONLY valid JSON.
-        """
+Generate {num_questions} coding problems on "{subject}" with difficulty {difficulty}.
+Focus: {prompt_topic if prompt_topic else 'General'}.
+
+Each problem must have:
+- Problem statement
+- Constraints
+- Sample Input
+- Sample Output
+- Expected Answer (solution approach)
+
+Output JSON array:
+[
+  {{
+    "question_type": "Coding",
+    "question_text": "Problem statement with constraints and sample I/O",
+    "options": [],
+    "correct_answer": "Expected solution"
+  }}
+]
+
+Return ONLY valid JSON.
+"""
         return self._call_openrouter(prompt, num_questions)
 
     def _call_openrouter(self, prompt, num_questions):
-        payload = {
-            "model": self.model,
-            "messages": [
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.7,
-            "max_tokens": 2000,
-        }
-        try:
-            response = requests.post(
-                self.api_url,
-                headers=self.headers,
-                json=payload,
-                timeout=60
-            )
-            if response.status_code != 200:
-                error_detail = response.text
-                raise ValueError(f"OpenRouter API error {response.status_code}: {error_detail}")
-            data = response.json()
-            raw_text = data['choices'][0]['message']['content'].strip()
-            if raw_text.startswith('```json'):
-                raw_text = raw_text[7:]
-            if raw_text.startswith('```'):
-                raw_text = raw_text[3:]
-            if raw_text.endswith('```'):
-                raw_text = raw_text[:-3]
-            raw_text = raw_text.strip()
-            questions = json.loads(raw_text)
-            if not isinstance(questions, list):
-                raise ValueError("Response is not a list")
-            for q in questions:
-                q_type = q.get('question_type', '')
-                options = q.get('options', [])
-                if q_type in ['MCQ', 'True/False', 'Fill in the Blank']:
-                    if len(options) != 4:
-                        raise ValueError(f"Question '{q.get('question_text', '')}' does not have exactly 4 options")
-                    correct = q.get('correct_answer', '')
-                    if correct not in options:
-                        raise ValueError(f"Correct answer '{correct}' not found in options")
-            return questions
-        except requests.exceptions.RequestException as e:
-            raise ValueError(f"OpenRouter API request failed: {str(e)}")
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON response: {e}")
-        except Exception as e:
-            raise ValueError(f"AI generation failed: {str(e)}")
+        models_to_try = [
+            "openai/gpt-3.5-turbo",
+            "mistralai/mistral-7b-instruct",
+            "google/gemini-2.0-flash-001",
+            "anthropic/claude-3-haiku"
+        ]
+        
+        last_error = None
+        
+        for model in models_to_try:
+            try:
+                payload = {
+                    "model": model,
+                    "messages": [
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": 0.7,
+                    "max_tokens": 2000,
+                }
+                
+                response = requests.post(
+                    self.api_url,
+                    headers=self.headers,
+                    json=payload,
+                    timeout=60
+                )
+                
+                if response.status_code == 200:
+                    print(f"✅ AI generation successful with model: {model}")
+                    data = response.json()
+                    raw_text = data['choices'][0]['message']['content'].strip()
+                    
+                    if raw_text.startswith('```json'):
+                        raw_text = raw_text[7:]
+                    if raw_text.startswith('```'):
+                        raw_text = raw_text[3:]
+                    if raw_text.endswith('```'):
+                        raw_text = raw_text[:-3]
+                    raw_text = raw_text.strip()
+                    
+                    questions = json.loads(raw_text)
+                    if not isinstance(questions, list):
+                        raise ValueError("Response is not a list")
+                    
+                    for q in questions:
+                        q_type = q.get('question_type', '')
+                        options = q.get('options', [])
+                        if q_type in ['MCQ', 'True/False', 'Fill in the Blank']:
+                            if len(options) != 4:
+                                raise ValueError(f"Question '{q.get('question_text', '')}' does not have exactly 4 options")
+                            correct = q.get('correct_answer', '')
+                            if correct not in options:
+                                raise ValueError(f"Correct answer '{correct}' not found in options")
+                    
+                    return questions
+                else:
+                    last_error = f"{model} failed with status {response.status_code}: {response.text}"
+                    print(f"⚠️ {last_error}, trying next model...")
+                    
+            except requests.exceptions.RequestException as e:
+                last_error = f"{model} request error: {str(e)}"
+                print(f"⚠️ {last_error}, trying next model...")
+            except json.JSONDecodeError as e:
+                last_error = f"{model} JSON decode error: {str(e)}"
+                print(f"⚠️ {last_error}, trying next model...")
+            except Exception as e:
+                last_error = f"{model} error: {str(e)}"
+                print(f"⚠️ {last_error}, trying next model...")
+        
+        raise ValueError(f"All AI models failed. Last error: {last_error}")
