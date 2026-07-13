@@ -482,17 +482,21 @@ class SaveAnswerView(APIView):
         if not question_id:
             return Response({"error": "question_id is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        question = get_object_or_404(Question, id=question_id, quiz=attempt.quiz)
+        try:
+            question = Question.objects.get(id=question_id, quiz=attempt.quiz)
+        except Question.DoesNotExist:
+            return Response({"error": "Question does not belong to this quiz."}, status=status.HTTP_400_BAD_REQUEST)
 
-        answer, created = UserAnswer.objects.update_or_create(
+        
+        UserAnswer.objects.filter(attempt=attempt, question=question).delete()
+
+        
+        UserAnswer.objects.create(
             attempt=attempt,
             question=question,
-            defaults={
-                'selected_option_id': selected_option_id,
-                'marked_for_review': marked_for_review
-            }
+            selected_option_id=selected_option_id,
+            marked_for_review=marked_for_review
         )
 
         return Response({"success": True}, status=status.HTTP_200_OK)
-
 
