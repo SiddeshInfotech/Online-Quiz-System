@@ -16,7 +16,7 @@ class AIService:
         }
 
     def _generate_theory_quiz(self, subject, difficulty, num_questions, prompt_topic):
-    prompt = f"""
+        prompt = f"""
 You are an expert quiz generator. Generate exactly {num_questions} theory questions on "{subject}".
 
 🔹 Difficulty: {difficulty}
