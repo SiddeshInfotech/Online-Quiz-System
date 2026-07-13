@@ -143,14 +143,11 @@ class SubmitAttemptView(APIView):
         duration = quiz.duration_minutes
         elapsed = (timezone.now() - attempt.started_at).total_seconds() / 60
 
-        if elapsed > duration:
-            is_auto_submitted = True
-        else:
-            is_auto_submitted = False
+        is_auto_submitted = elapsed > duration
 
+        
         answers_data = request.data.get('answers', [])
-        if not answers_data:
-            return Response({"error": "No answers provided."}, status=status.HTTP_400_BAD_REQUEST)
+        
 
         correct_count = 0
         wrong_count = 0
@@ -161,64 +158,18 @@ class SubmitAttemptView(APIView):
         all_questions = Question.objects.filter(quiz=quiz)
         answered_question_ids = []
 
+        
         for answer_data in answers_data:
             serializer = SubmitAnswerSerializer(data=answer_data, context={'attempt': attempt})
             if not serializer.is_valid():
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            question_id = serializer.validated_data['question_id']
-            selected_option_id = serializer.validated_data.get('selected_option_id')
-            answer_text = serializer.validated_data.get('answer_text', '')
+           
 
-            try:
-                question = Question.objects.get(id=question_id, quiz=quiz)
-            except Question.DoesNotExist:
-                return Response({"error": f"Question {question_id} does not belong to this quiz."}, status=status.HTTP_400_BAD_REQUEST)
-
-            answered_question_ids.append(question_id)
-
-            is_correct = False
-            marks_obtained = 0
-
-            if question.question_type == 'MCQ':
-                if selected_option_id:
-                    try:
-                        option = QuestionOption.objects.get(id=selected_option_id, question=question)
-                        is_correct = option.is_correct
-                        marks_obtained = question.marks if is_correct else 0
-                    except QuestionOption.DoesNotExist:
-                        return Response({"error": f"Invalid option for question {question_id}."}, status=status.HTTP_400_BAD_REQUEST)
-                else:
-                    is_correct = False
-                    marks_obtained = 0
-
-            elif question.question_type in ['True/False', 'Fill in the Blank']:
-                if answer_text:
-                    is_correct = answer_text.strip().lower() == question.correct_answer.strip().lower()
-                    marks_obtained = question.marks if is_correct else 0
-                else:
-                    is_correct = False
-                    marks_obtained = 0
-
-            UserAnswer.objects.create(
-                attempt=attempt,
-                question=question,
-                selected_option_id=selected_option_id,
-                answer_text=answer_text,
-                is_correct=is_correct,
-                marks_obtained=marks_obtained
-            )
-
-            total_marks += question.marks
-            total_score += marks_obtained
-
-            if is_correct:
-                correct_count += 1
-            else:
-                wrong_count += 1
-
+        
         unanswered_count = all_questions.count() - len(answered_question_ids)
 
+        
         for q in all_questions:
             if q.id not in answered_question_ids:
                 UserAnswer.objects.create(
@@ -232,6 +183,7 @@ class SubmitAttemptView(APIView):
         attempt.score = total_score
         attempt.percentage = (total_score / total_marks * 100) if total_marks > 0 else 0
         attempt.save()
+
 
         result = Result.objects.create(
             attempt=attempt,
