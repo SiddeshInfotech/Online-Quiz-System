@@ -42,5 +42,9 @@ class AttemptQuestionSerializer(serializers.ModelSerializer):
         model = Question
         fields = ['id', 'question_text', 'question_type', 'marks', 'options']
 
-    def get_options(self, obj):
-        return [opt.option_text for opt in obj.questionoption_set.all().order_by('id')]
+     def get_options(self, obj):
+        
+        return [
+            {"id": opt.id, "text": opt.option_text}
+            for opt in obj.questionoption_set.all().order_by('id')
+        ]
