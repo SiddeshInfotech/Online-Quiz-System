@@ -407,6 +407,7 @@ class UserAttemptsHistoryView(APIView):
 
             history_list.append({
                 "id": attempt.id,
+                "quiz_id": attempt.quiz.id,  
                 "quiz_title": attempt.quiz.title,
                 "category": attempt.quiz.category.category_name if attempt.quiz.category else "Uncategorized",
                 "difficulty_level": attempt.quiz.difficulty,
