@@ -15,26 +15,39 @@ class SubmitAnswerSerializer(serializers.Serializer):
     def validate(self, data):
         question_id = data.get('question_id')
         selected_option_id = data.get('selected_option_id')
-        answer_text = data.get('answer_text', '')
+        answer_text = data.get('answer_text', '').strip()
 
-        # Get the question to know its type
         try:
             question = Question.objects.get(id=question_id)
         except Question.DoesNotExist:
-            raise serializers.ValidationError("Invalid question ID")
+            raise serializers.ValidationError({"question_id": "Invalid question ID"})
 
-        # For MCQ and True/False, selected_option_id is required
-        if question.question_type in ['MCQ', 'True/False']:
+        q_type = question.question_type
+
+       
+        if q_type in ['MCQ', 'True/False']:
             if not selected_option_id:
-                raise serializers.ValidationError(
-                    {"selected_option_id": "This field is required for MCQ and True/False questions."}
-                )
-        # For Fill in the Blank, answer_text is required
-        elif question.question_type == 'Fill in the Blank':
-            if not answer_text or not answer_text.strip():
-                raise serializers.ValidationError(
-                    {"answer_text": "This field is required for Fill in the Blank questions."}
-                )
+                raise serializers.ValidationError({
+                    "selected_option_id": "This field is required for MCQ and True/False questions."
+                })
+
+        
+        elif q_type == 'Fill in the Blank':
+            
+            has_options = question.questionoption_set.exists()
+            
+            if has_options:
+                
+                if not selected_option_id:
+                    raise serializers.ValidationError({
+                        "selected_option_id": "Please select an option for this Fill in the Blank question."
+                    })
+            else:
+                
+                if not answer_text:
+                    raise serializers.ValidationError({
+                        "answer_text": "Please provide an answer for this Fill in the Blank question."
+                    })
 
         return data
 
