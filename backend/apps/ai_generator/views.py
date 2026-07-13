@@ -7,7 +7,7 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 
 from .serializers import QuizGenerationPayloadSerializer
-from .services import GeminiService
+from .services import AIService
 from apps.quizzes.models import Quiz, QuizCategory
 from apps.questions.models import Question, QuestionOption
 
@@ -34,8 +34,8 @@ class GenerateAIQuizView(APIView):
         quiz_mode = validated_data.get('quiz_mode', 'Theory')
 
         try:
-            gemini = GeminiService()
-            questions_data = gemini.generate_quiz(
+            ai_service = AIService()
+            questions_data = ai_service.generate_quiz(
                 subject=subject,
                 difficulty=difficulty,
                 num_questions=num_questions,
