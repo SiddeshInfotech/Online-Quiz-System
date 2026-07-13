@@ -8,7 +8,7 @@ class AIService:
         if not self.api_key:
             raise ValueError("OPENROUTER_API_KEY not configured")
         self.api_url = "https://openrouter.ai/api/v1/chat/completions"
-        self.model = "google/gemini-2.0-flash-001"
+        self.model = "openai/gpt-3.5-turbo"
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -47,7 +47,8 @@ class AIService:
 
     def _generate_coding_quiz(self, subject, difficulty, num_questions, prompt_topic):
         prompt = f"""
-        Generate {num_questions} coding problems on "{subject}" with difficulty {difficulty}. Focus: {prompt_topic if prompt_topic else 'General'}.
+        Generate {num_questions} coding problems on "{subject}" with difficulty {difficulty}.
+        Focus: {prompt_topic if prompt_topic else 'General'}.
         Each problem must have:
         - Problem statement
         - Constraints
@@ -78,9 +79,14 @@ class AIService:
         }
         try:
             response = requests.post(
-                self.api_url, headers=self.headers, json=payload, timeout=60
+                self.api_url,
+                headers=self.headers,
+                json=payload,
+                timeout=60
             )
-            response.raise_for_status()
+            if response.status_code != 200:
+                error_detail = response.text
+                raise ValueError(f"OpenRouter API error {response.status_code}: {error_detail}")
             data = response.json()
             raw_text = data['choices'][0]['message']['content'].strip()
             if raw_text.startswith('```json'):
