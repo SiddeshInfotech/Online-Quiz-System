@@ -145,9 +145,19 @@ class SubmitAttemptView(APIView):
 
         is_auto_submitted = elapsed > duration
 
-        
+        # 🔥 Get answers data — support both array and object formats
         answers_data = request.data.get('answers', [])
-        
+
+        # If answers_data is a dict (like {"100": 347}), convert to list of objects
+        if isinstance(answers_data, dict):
+            answers_data = [
+                {"question_id": int(q_id), "selected_option_id": opt_id}
+                for q_id, opt_id in answers_data.items()
+            ]
+
+        # If empty, treat as empty array
+        if not answers_data:
+            answers_data = []
 
         correct_count = 0
         wrong_count = 0
@@ -158,18 +168,63 @@ class SubmitAttemptView(APIView):
         all_questions = Question.objects.filter(quiz=quiz)
         answered_question_ids = []
 
-        
+        # Process each answer
         for answer_data in answers_data:
             serializer = SubmitAnswerSerializer(data=answer_data, context={'attempt': attempt})
             if not serializer.is_valid():
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-           
+            question_id = serializer.validated_data['question_id']
+            selected_option_id = serializer.validated_data.get('selected_option_id')
+            answer_text = serializer.validated_data.get('answer_text', '')
 
-        
+            try:
+                question = Question.objects.get(id=question_id, quiz=quiz)
+            except Question.DoesNotExist:
+                return Response({"error": f"Question {question_id} does not belong to this quiz."}, status=status.HTTP_400_BAD_REQUEST)
+
+            answered_question_ids.append(question_id)
+
+            is_correct = False
+            marks_obtained = 0
+
+            if question.question_type == 'MCQ' or question.question_type == 'True/False':
+                if selected_option_id:
+                    try:
+                        option = QuestionOption.objects.get(id=selected_option_id, question=question)
+                        is_correct = option.is_correct
+                        marks_obtained = question.marks if is_correct else 0
+                    except QuestionOption.DoesNotExist:
+                        return Response({"error": f"Invalid option for question {question_id}."}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    is_correct = False
+                    marks_obtained = 0
+
+            elif question.question_type == 'Fill in the Blank':
+                if answer_text:
+                    is_correct = answer_text.strip().lower() == question.correct_answer.strip().lower()
+                    marks_obtained = question.marks if is_correct else 0
+
+            UserAnswer.objects.create(
+                attempt=attempt,
+                question=question,
+                selected_option_id=selected_option_id,
+                answer_text=answer_text,
+                is_correct=is_correct,
+                marks_obtained=marks_obtained
+            )
+
+            total_marks += question.marks
+            total_score += marks_obtained
+
+            if is_correct:
+                correct_count += 1
+            else:
+                wrong_count += 1
+
         unanswered_count = all_questions.count() - len(answered_question_ids)
 
-        
+        # Save unanswered as wrong
         for q in all_questions:
             if q.id not in answered_question_ids:
                 UserAnswer.objects.create(
@@ -184,7 +239,7 @@ class SubmitAttemptView(APIView):
         attempt.percentage = (total_score / total_marks * 100) if total_marks > 0 else 0
         attempt.save()
 
-
+        # Create Result
         result = Result.objects.create(
             attempt=attempt,
             correct_answers=correct_count,
@@ -196,12 +251,14 @@ class SubmitAttemptView(APIView):
             pass_status=(total_score / total_marks * 100) >= 40 if total_marks > 0 else False
         )
 
+        # Build response
         time_diff = attempt.submitted_at - attempt.started_at
         time_taken_seconds = int(time_diff.total_seconds())
         time_remaining_seconds = max(0, (quiz.duration_minutes * 60) - time_taken_seconds)
 
         return Response({
             "attempt_id": attempt.id,
+            "result_id": result.id,
             "quiz": {
                 "id": quiz.id,
                 "title": quiz.title,
@@ -213,14 +270,15 @@ class SubmitAttemptView(APIView):
                 "marks_per_question": 1
             },
             "score": total_score,
-            "percentage": result.percentage,
-            "passed": result.pass_status,
+            "total_questions": all_questions.count(),
             "correct_answers": correct_count,
             "incorrect_answers": wrong_count,
             "unanswered": unanswered_count,
+            "percentage": result.percentage,
             "accuracy": result.percentage,
+            "passed": result.pass_status,
             "points_earned": total_score,
-            "time_taken_seconds": time_taken_seconds,
+            "time_spent_seconds": time_taken_seconds,
             "time_remaining_seconds": time_remaining_seconds,
             "submitted_at": attempt.submitted_at.isoformat(),
             "auto_submitted": is_auto_submitted
@@ -239,7 +297,6 @@ class SubmitAttemptView(APIView):
             return "D"
         else:
             return "F"
-
 
 class UserResultsView(generics.ListAPIView):
     serializer_class = ResultSerializer
