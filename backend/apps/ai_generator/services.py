@@ -69,27 +69,35 @@ Return ONLY valid JSON. No extra text.
 
     def _generate_coding_quiz(self, subject, difficulty, num_questions, prompt_topic):
         prompt = f"""
-Generate {num_questions} coding problems on "{subject}" with difficulty {difficulty}.
-Focus: {prompt_topic if prompt_topic else 'General'}.
+You are an expert programming logic question generator. Generate {num_questions} programming MCQs on "{subject}".
 
-Each problem must have:
-- Problem statement
-- Constraints
-- Sample Input
-- Sample Output
-- Expected Answer (solution approach)
+🔹 Difficulty: {difficulty}
+🔹 Focus: {prompt_topic if prompt_topic else 'General'}
 
-Output JSON array:
+🔸 QUESTION TYPES (mix them):
+1. Predict the output — Show a code snippet, ask what it prints.
+2. Find the error — Show code with a bug, ask what's wrong.
+3. Complete the code — Show code with a blank, ask what goes there.
+4. Choose the correct code — Ask which code snippet solves the problem.
+5. Time Complexity — Ask about Big-O of given code.
+
+🔴 FORMAT:
+- Each question must have a short code snippet (2-10 lines).
+- Question text should be about that snippet.
+- Exactly 4 options, one correct.
+- The correct_answer must be the actual text of the correct option.
+
+📋 OUTPUT — Return a JSON array:
 [
   {{
     "question_type": "Coding",
-    "question_text": "Problem statement with constraints and sample I/O",
-    "options": [],
-    "correct_answer": "Expected solution"
+    "question_text": "What is the output of the following code?\n\n```python\nprint(2 + 3 * 4)\n```",
+    "options": ["10", "14", "20", "24"],
+    "correct_answer": "14"
   }}
 ]
 
-Return ONLY valid JSON.
+Return ONLY valid JSON. No extra text.
 """
         return self._call_openrouter(prompt, num_questions)
 
