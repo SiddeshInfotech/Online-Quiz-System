@@ -133,7 +133,7 @@ Return ONLY valid JSON. No extra text.
                     data = response.json()
                     raw_text = data['choices'][0]['message']['content'].strip()
                     
-                    
+                    # 🔥 STEP 1: Remove markdown code blocks
                     if raw_text.startswith('```json'):
                         raw_text = raw_text[7:]
                     if raw_text.startswith('```'):
@@ -142,20 +142,47 @@ Return ONLY valid JSON. No extra text.
                         raw_text = raw_text[:-3]
                     raw_text = raw_text.strip()
                     
+                    # 🔥 STEP 2: Remove ALL control characters (Unicode)
+                    # Keep only printable characters: newline, tab, and printable ASCII
+                    import unicodedata
+                    # Remove any character that is not printable (except newline, tab, carriage return)
+                    raw_text = ''.join(ch for ch in raw_text if unicodedata.category(ch)[0] != 'C' or ch in '\n\r\t')
                     
-                    raw_text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', raw_text)
-                    
-                    
+                    # 🔥 STEP 3: Try to extract JSON array using regex (most robust)
                     json_match = re.search(r'\[\s*\{.*\}\s*\]', raw_text, re.DOTALL)
                     if json_match:
-                        raw_text = json_match.group(0)
+                        json_str = json_match.group(0)
+                    else:
+                        json_str = raw_text
                     
+                    # 🔥 STEP 4: Fix common JSON issues
+                    # Replace single quotes with double quotes (for keys and strings)
+                    # But careful: don't break strings that contain single quotes
+                    # Use a simple approach: only replace single quotes around keys and values if they are not inside strings
+                    # Actually better: use ast.literal_eval for single-quoted JSON, but we'll just clean and parse with json
                     
-                    questions = json.loads(raw_text)
+                    # Remove trailing commas (before closing braces)
+                    json_str = re.sub(r',\s*}', '}', json_str)
+                    json_str = re.sub(r',\s*]', ']', json_str)
+                    
+                    # 🔥 STEP 5: Parse JSON
+                    try:
+                        questions = json.loads(json_str)
+                    except json.JSONDecodeError as e:
+                        # If still fails, try to use ast.literal_eval (for single quotes)
+                        import ast
+                        try:
+                            questions = ast.literal_eval(json_str)
+                        except:
+                            # Try to strip any extra text and parse again
+                            cleaned = re.sub(r'^[^{[]*', '', json_str)
+                            cleaned = re.sub(r'[^{[]*$', '', cleaned)
+                            questions = json.loads(cleaned)
+                    
                     if not isinstance(questions, list):
                         raise ValueError("Response is not a list")
                     
-                    
+                    # 🔥 STEP 6: Validate and sanitize each question
                     random_patterns = ['pizza', 'burger', 'cake', 'dog', 'cat', 'apple', 'banana', 'sandwich']
                     sensible_alternatives = [
                         "True, but only under certain conditions",
@@ -174,7 +201,7 @@ Return ONLY valid JSON. No extra text.
                             if len(options) != 4:
                                 raise ValueError(f"Question '{q.get('question_text', '')}' does not have exactly 4 options")
                             
-                            
+                            # True/False specific sanitation
                             if q_type == 'True/False':
                                 if len(options) >= 2:
                                     options[0] = "True"
@@ -195,7 +222,7 @@ Return ONLY valid JSON. No extra text.
                                 
                                 q['options'] = options
                             
-                            
+                            # Validate correct answer in options
                             correct = q.get('correct_answer', '')
                             if correct not in options:
                                 if correct in ['A', 'B', 'C', 'D']:
@@ -221,5 +248,5 @@ Return ONLY valid JSON. No extra text.
                 last_error = f"{model} error: {str(e)}"
                 print(f"⚠️ {last_error}, trying next model...")
         
-        
+        # If all models fail
         raise ValueError(f"All AI models failed. Last error: {last_error}")
