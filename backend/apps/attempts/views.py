@@ -511,7 +511,53 @@ class SaveAnswerView(APIView):
 
         return Response({"success": True}, status=status.HTTP_200_OK)
 
+class AttemptResultView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request, attempt_id):
+        try:
+            attempt = QuizAttempt.objects.get(id=attempt_id, user=request.user)
+        except QuizAttempt.DoesNotExist:
+            return Response({"error": "Attempt not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not attempt.submitted_at:
+            return Response({"error": "Attempt not submitted yet."}, status=status.HTTP_400_BAD_REQUEST)
+
+        result = getattr(attempt, 'result', None)
+        if not result:
+            return Response({"error": "Result not found for this attempt."}, status=status.HTTP_404_NOT_FOUND)
+
+        quiz = attempt.quiz
+        time_diff = attempt.submitted_at - attempt.started_at
+        time_taken_seconds = int(time_diff.total_seconds())
+        time_remaining_seconds = max(0, (quiz.duration_minutes * 60) - time_taken_seconds)
+
+        return Response({
+            "attempt_id": attempt.id,
+            "result_id": result.id,
+            "quiz": {
+                "id": quiz.id,
+                "title": quiz.title,
+                "category": quiz.category.category_name if quiz.category else "Uncategorized",
+                "difficulty": quiz.difficulty,
+                "total_questions": quiz.question_set.count(),
+                "time_limit_minutes": quiz.duration_minutes,
+                "passing_marks": int(0.4 * quiz.question_set.count()),
+                "marks_per_question": 1
+            },
+            "score": result.total_score,
+            "total_questions": quiz.question_set.count(),
+            "correct_answers": result.correct_answers,
+            "incorrect_answers": result.wrong_answers,
+            "unanswered": result.unanswered_questions,
+            "percentage": result.percentage,
+            "accuracy": result.percentage,
+            "passed": result.pass_status,
+            "points_earned": result.total_score,
+            "time_spent_seconds": time_taken_seconds,
+            "time_remaining_seconds": time_remaining_seconds,
+            "submitted_at": attempt.submitted_at.isoformat()
+        })
 
 class AttemptReviewView(APIView):
     permission_classes = [IsAuthenticated]
