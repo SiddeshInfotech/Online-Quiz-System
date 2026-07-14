@@ -94,7 +94,7 @@ class GenerateAIQuizView(APIView):
                 question_order=idx + 1
             )
 
-            if q_type in ['MCQ', 'True/False', 'Fill in the Blank'] and options:
+            if q_type in ['MCQ', 'True/False', 'Fill in the Blank', 'Coding'] and options:
                 try:
                     correct_index = options.index(correct_answer)
                 except ValueError:
