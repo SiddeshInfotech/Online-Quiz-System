@@ -44,7 +44,7 @@ class StartAttemptView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        if quiz.status != 'Published':
+        if quiz.status != 'published':
             return Response(
                 {"error": "This quiz is not published yet."},
                 status=status.HTTP_403_FORBIDDEN
@@ -563,9 +563,12 @@ class AttemptReviewView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, attempt_id):
+        print(f"🔍 AttemptReviewView called for attempt_id: {attempt_id}")
+        print(f"🔍 User: {request.user.username} (ID: {request.user.id})")
         try:
             attempt = QuizAttempt.objects.get(id=attempt_id, user=request.user)
         except QuizAttempt.DoesNotExist:
+            print(f"❌ Attempt {attempt_id} not found for user {request.user.id}")
             return Response({"error": "Attempt not found."}, status=status.HTTP_404_NOT_FOUND)
 
         if not attempt.submitted_at:
