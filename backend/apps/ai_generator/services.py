@@ -75,24 +75,24 @@ Return ONLY valid JSON. No extra text.
         prompt = f"""
 You are an expert programming logic question generator. Generate {num_questions} programming MCQs on "{subject}".
 
-🔹 Difficulty: {difficulty}
-🔹 Focus: {prompt_topic if prompt_topic else 'General'}
+Difficulty: {difficulty}
+Focus: {prompt_topic if prompt_topic else 'General'}
 
-🔸 QUESTION TYPES (mix them):
-1. Predict the output — Show a code snippet, ask what it prints.
-2. Find the error — Show code with a bug, ask what's wrong.
-3. Complete the code — Show code with a blank, ask what goes there.
-4. Choose the correct code — Ask which code snippet solves the problem.
-5. Time Complexity — Ask about Big-O of given code.
+QUESTION TYPES (mix them):
+1. Predict the output - Show a code snippet, ask what it prints.
+2. Find the error - Show code with a bug, ask what's wrong.
+3. Complete the code - Show code with a blank, ask what goes there.
+4. Choose the correct code - Ask which code snippet solves the problem.
+5. Time Complexity - Ask about Big-O of given code.
 
-🔴 FORMAT:
+FORMAT:
 - Each question must have a short code snippet (2-10 lines).
 - The code snippet MUST be inside a markdown code block with the language tag (e.g., ```python, ```cpp, ```java).
 - Use actual newlines in the question_text to format the code block properly.
 - Exactly 4 options, one correct.
 - The correct_answer must be the actual text of the correct option.
 
-📋 OUTPUT — Return a JSON array:
+OUTPUT - Return a JSON array:
 [
   {{
     "question_type": "Coding",
@@ -102,7 +102,7 @@ You are an expert programming logic question generator. Generate {num_questions}
   }}
 ]
 
-⚠️ IMPORTANT:
+IMPORTANT:
 - The question_text MUST contain a markdown code block with proper syntax highlighting.
 - Use real newlines (\n) in the question_text string for formatting.
 - Return ONLY valid JSON. No extra text.
@@ -139,7 +139,6 @@ You are an expert programming logic question generator. Generate {num_questions}
                     data = response.json()
                     raw_text = data['choices'][0]['message']['content'].strip()
 
-                    
                     if raw_text.startswith('```json'):
                         raw_text = raw_text[7:]
                     if raw_text.startswith('```'):
@@ -148,24 +147,20 @@ You are an expert programming logic question generator. Generate {num_questions}
                         raw_text = raw_text[:-3]
                     raw_text = raw_text.strip()
 
-                    
                     raw_text = ''.join(
                         ch for ch in raw_text
                         if unicodedata.category(ch)[0] != 'C' or ch in '\n\r\t'
                     )
 
-                    
                     json_match = re.search(r'\[\s*\{.*\}\s*\]', raw_text, re.DOTALL)
                     if json_match:
                         json_str = json_match.group(0)
                     else:
                         json_str = raw_text
 
-                    
                     json_str = re.sub(r',\s*}', '}', json_str)
                     json_str = re.sub(r',\s*]', ']', json_str)
 
-                    
                     try:
                         questions = json.loads(json_str, strict=False)
                     except json.JSONDecodeError:
@@ -179,7 +174,6 @@ You are an expert programming logic question generator. Generate {num_questions}
                     if not isinstance(questions, list):
                         raise ValueError("Response is not a list")
 
-                    
                     random_patterns = ['pizza', 'burger', 'cake', 'dog', 'cat', 'apple', 'banana', 'sandwich']
                     sensible_alternatives = [
                         "True, but only under certain conditions",
@@ -240,7 +234,74 @@ You are an expert programming logic question generator. Generate {num_questions}
                 last_error = f"{model} error: {str(e)}"
 
         raise ValueError(f"All AI models failed. Last error: {last_error}")
-    
+
     def call_openrouter(self, prompt, num_items):
         """Public wrapper for OpenRouter API calls."""
         return self._call_openrouter(prompt, num_items)
+
+    def generate_explanations(self, prompt, num_items):
+        """
+        Generate AI explanations (list of strings) using OpenRouter.
+        This is a simpler version that doesn't validate question structure.
+        """
+        models_to_try = [
+            "openai/gpt-3.5-turbo",
+            "anthropic/claude-3-haiku"
+        ]
+
+        last_error = None
+
+        for model in models_to_try:
+            try:
+                payload = {
+                    "model": model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.7,
+                    "max_tokens": 2000,
+                }
+
+                response = requests.post(
+                    self.api_url,
+                    headers=self.headers,
+                    json=payload,
+                    timeout=60
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    raw_text = data['choices'][0]['message']['content'].strip()
+
+                    # Clean markdown
+                    if raw_text.startswith('```json'):
+                        raw_text = raw_text[7:]
+                    if raw_text.startswith('```'):
+                        raw_text = raw_text[3:]
+                    if raw_text.endswith('```'):
+                        raw_text = raw_text[:-3]
+                    raw_text = raw_text.strip()
+
+                    # Remove control characters
+                    raw_text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', raw_text)
+
+                    # Extract JSON array
+                    json_match = re.search(r'\[\s*".*"\s*\]', raw_text, re.DOTALL)
+                    if json_match:
+                        json_str = json_match.group(0)
+                    else:
+                        json_str = raw_text
+
+                    explanations = json.loads(json_str, strict=False)
+
+                    if isinstance(explanations, list) and len(explanations) == num_items:
+                        return explanations
+                    else:
+                        raise ValueError(f"Expected {num_items} explanations, got {len(explanations)}")
+
+                else:
+                    last_error = f"{model} failed with status {response.status_code}"
+
+            except Exception as e:
+                last_error = f"{model} error: {str(e)}"
+                print(f"Warning: {last_error}, trying next model...")
+
+        raise ValueError(f"All AI models failed. Last error: {last_error}")

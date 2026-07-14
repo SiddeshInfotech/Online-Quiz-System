@@ -563,30 +563,29 @@ class AttemptReviewView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, attempt_id):
-        print(f"🔍 AttemptReviewView called for attempt_id: {attempt_id}")
-        print(f"🔍 User: {request.user.username} (ID: {request.user.id})")
         try:
-            attempt = QuizAttempt.objects.get(id=attempt_id, user=request.user)
+            # Superuser can view any attempt
+            if request.user.is_superuser:
+                attempt = QuizAttempt.objects.get(id=attempt_id)
+            else:
+                attempt = QuizAttempt.objects.get(id=attempt_id, user=request.user)
         except QuizAttempt.DoesNotExist:
-            print(f"❌ Attempt {attempt_id} not found for user {request.user.id}")
             return Response({"error": "Attempt not found."}, status=status.HTTP_404_NOT_FOUND)
 
         if not attempt.submitted_at:
             return Response({"error": "Attempt not submitted yet."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Get all user answers for this attempt
+        # Get all user answers
         user_answers = UserAnswer.objects.filter(attempt=attempt).select_related('question')
         questions = attempt.quiz.question_set.all().order_by('question_order')
 
         # Build question data
         questions_data = []
         for question in questions:
-            # Get user's answer for this question
             user_answer = user_answers.filter(question=question).first()
             selected_option_id = user_answer.selected_option_id if user_answer else None
             is_correct = user_answer.is_correct if user_answer else False
 
-            # Get options
             options = question.questionoption_set.all().order_by('id')
             correct_option = options.filter(is_correct=True).first()
             correct_option_id = correct_option.id if correct_option else None
@@ -602,17 +601,16 @@ class AttemptReviewView(APIView):
                 "selected_option_id": selected_option_id,
                 "correct_option_id": correct_option_id,
                 "is_correct": is_correct,
-                "ai_explanation": None  # Will be filled later
+                "ai_explanation": None
             })
 
         # Generate AI explanations
         if questions_data:
             try:
-                ai_explanations = self._generate_ai_explanations(attempt, questions_data)
+                explanations = self._generate_ai_explanations(attempt, questions_data)
                 for i, q_data in enumerate(questions_data):
-                    q_data["ai_explanation"] = ai_explanations[i] if i < len(ai_explanations) else None
+                    q_data["ai_explanation"] = explanations[i] if i < len(explanations) else ""
             except Exception as e:
-                # Log error but still return questions without explanations
                 print(f"AI explanation generation failed: {e}")
 
         return Response({
@@ -624,23 +622,19 @@ class AttemptReviewView(APIView):
 
     def _generate_ai_explanations(self, attempt, questions_data):
         """Generate explanations for all questions using OpenRouter."""
-        # Build prompt for all questions
         prompt = self._build_explanation_prompt(attempt.quiz.title, questions_data)
         
         try:
-            ai_service = AIService()
-            response_text = ai_service.call_openrouter(prompt, len(questions_data))
-            
-            # Parse the response - expect JSON array of explanations
-            import json
-            explanations = json.loads(response_text)
-            if isinstance(explanations, list) and len(explanations) == len(questions_data):
-                return explanations
-            else:
-                # Fallback: return empty strings
+            if AIService is None:
+                print("❌ AIService not available (import failed)")
                 return [""] * len(questions_data)
+                
+            ai_service = AIService()
+            explanations = ai_service.generate_explanations(prompt, len(questions_data))
+            return explanations
+            
         except Exception as e:
-            print(f"Explanation generation error: {e}")
+            print(f"❌ Explanation generation failed: {e}")
             return [""] * len(questions_data)
 
     def _build_explanation_prompt(self, quiz_title, questions_data):
@@ -650,7 +644,6 @@ class AttemptReviewView(APIView):
             selected_text = "None"
             correct_text = "Unknown"
             
-            # Find selected option text
             for opt in q['options']:
                 if opt['id'] == q['selected_option_id']:
                     selected_text = opt['text']
@@ -689,4 +682,3 @@ Example output:
 Return ONLY valid JSON. No extra text.
 """
         return prompt
-
