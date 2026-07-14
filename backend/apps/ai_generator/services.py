@@ -72,44 +72,40 @@ Return ONLY valid JSON. No extra text.
         return self._call_openrouter(prompt, num_questions)
 
     def _generate_coding_quiz(self, subject, difficulty, num_questions, prompt_topic):
-        # NOTE: \\n is used deliberately below so the MODEL sees the literal
-        # two characters \n in the example JSON (a valid escaped newline
-        # inside a JSON string). If this were a real newline character
-        # instead, the model would copy that pattern back into its answers,
-        # producing raw unescaped newlines inside JSON string values -
-        # which is invalid JSON and causes "Invalid control character" errors.
         prompt = f"""
 You are an expert programming logic question generator. Generate {num_questions} programming MCQs on "{subject}".
 
-Difficulty: {difficulty}
-Focus: {prompt_topic if prompt_topic else 'General'}
+🔹 Difficulty: {difficulty}
+🔹 Focus: {prompt_topic if prompt_topic else 'General'}
 
-QUESTION TYPES (mix them):
-1. Predict the output - Show a code snippet, ask what it prints.
-2. Find the error - Show code with a bug, ask what's wrong.
-3. Complete the code - Show code with a blank, ask what goes there.
-4. Choose the correct code - Ask which code snippet solves the problem.
-5. Time Complexity - Ask about Big-O of given code.
+🔸 QUESTION TYPES (mix them):
+1. Predict the output — Show a code snippet, ask what it prints.
+2. Find the error — Show code with a bug, ask what's wrong.
+3. Complete the code — Show code with a blank, ask what goes there.
+4. Choose the correct code — Ask which code snippet solves the problem.
+5. Time Complexity — Ask about Big-O of given code.
 
-FORMAT:
+🔴 FORMAT:
 - Each question must have a short code snippet (2-10 lines).
-- Question text should be about that snippet.
+- The code snippet MUST be inside a markdown code block with the language tag (e.g., ```python, ```cpp, ```java).
+- Use actual newlines in the question_text to format the code block properly.
 - Exactly 4 options, one correct.
 - The correct_answer must be the actual text of the correct option.
-- In question_text, code snippets must use \\n for line breaks (an escaped
-  newline), NOT a real line break, so the output stays valid JSON.
 
-OUTPUT - Return a JSON array:
+📋 OUTPUT — Return a JSON array:
 [
   {{
     "question_type": "Coding",
-    "question_text": "What is the output of the following code?\\n\\n```python\\nprint(2 + 3 * 4)\\n```",
-    "options": ["10", "14", "20", "24"],
-    "correct_answer": "14"
+    "question_text": "What is the output of the following C++ code?\n\n```cpp\n#include <iostream>\n\nint main() {{\n    std::cout << 10 / 3;\n    return 0;\n}}\n```",
+    "options": ["3", "3.33", "3.0", "Error"],
+    "correct_answer": "3"
   }}
 ]
 
-Return ONLY valid JSON. No extra text.
+⚠️ IMPORTANT:
+- The question_text MUST contain a markdown code block with proper syntax highlighting.
+- Use real newlines (\n) in the question_text string for formatting.
+- Return ONLY valid JSON. No extra text.
 """
         return self._call_openrouter(prompt, num_questions)
 
