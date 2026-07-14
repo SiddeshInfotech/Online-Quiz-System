@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import requests
 import traceback
 
@@ -102,7 +103,6 @@ Return ONLY valid JSON. No extra text.
         return self._call_openrouter(prompt, num_questions)
 
     def _call_openrouter(self, prompt, num_questions):
-        # 🔥 Use only models confirmed to work
         models_to_try = [
             "openai/gpt-3.5-turbo",
             "anthropic/claude-3-haiku"
@@ -133,7 +133,7 @@ Return ONLY valid JSON. No extra text.
                     data = response.json()
                     raw_text = data['choices'][0]['message']['content'].strip()
                     
-                    # Clean markdown
+                    
                     if raw_text.startswith('```json'):
                         raw_text = raw_text[7:]
                     if raw_text.startswith('```'):
@@ -142,11 +142,20 @@ Return ONLY valid JSON. No extra text.
                         raw_text = raw_text[:-3]
                     raw_text = raw_text.strip()
                     
+                    
+                    raw_text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', raw_text)
+                    
+                    
+                    json_match = re.search(r'\[\s*\{.*\}\s*\]', raw_text, re.DOTALL)
+                    if json_match:
+                        raw_text = json_match.group(0)
+                    
+                    
                     questions = json.loads(raw_text)
                     if not isinstance(questions, list):
                         raise ValueError("Response is not a list")
                     
-                    # Process each question with validation
+                    
                     random_patterns = ['pizza', 'burger', 'cake', 'dog', 'cat', 'apple', 'banana', 'sandwich']
                     sensible_alternatives = [
                         "True, but only under certain conditions",
@@ -165,7 +174,7 @@ Return ONLY valid JSON. No extra text.
                             if len(options) != 4:
                                 raise ValueError(f"Question '{q.get('question_text', '')}' does not have exactly 4 options")
                             
-                            # True/False specific sanitation
+                            
                             if q_type == 'True/False':
                                 if len(options) >= 2:
                                     options[0] = "True"
@@ -186,7 +195,7 @@ Return ONLY valid JSON. No extra text.
                                 
                                 q['options'] = options
                             
-                            # Validate correct answer in options
+                            
                             correct = q.get('correct_answer', '')
                             if correct not in options:
                                 if correct in ['A', 'B', 'C', 'D']:
@@ -211,5 +220,6 @@ Return ONLY valid JSON. No extra text.
             except Exception as e:
                 last_error = f"{model} error: {str(e)}"
                 print(f"⚠️ {last_error}, trying next model...")
+        
         
         raise ValueError(f"All AI models failed. Last error: {last_error}")
