@@ -559,7 +559,7 @@ class AttemptResultView(APIView):
             "submitted_at": attempt.submitted_at.isoformat()
         })
 
-from apps.ai_generator.services import AIService  # Add import at top
+
 
 class AttemptReviewView(APIView):
     permission_classes = [IsAuthenticated]
