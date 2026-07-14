@@ -498,15 +498,26 @@ class SaveAnswerView(APIView):
         except Question.DoesNotExist:
             return Response({"error": "Question does not belong to this quiz."}, status=status.HTTP_400_BAD_REQUEST)
 
-        
+        # 🔥 Compute is_correct
+        is_correct = False
+        if selected_option_id:
+            try:
+                option = QuestionOption.objects.get(id=selected_option_id, question=question)
+                is_correct = option.is_correct
+            except QuestionOption.DoesNotExist:
+                # Option not found, leave is_correct as False
+                pass
+
+        # Delete existing answer (if any)
         UserAnswer.objects.filter(attempt=attempt, question=question).delete()
 
-        
+        # Create new answer with is_correct
         UserAnswer.objects.create(
             attempt=attempt,
             question=question,
             selected_option_id=selected_option_id,
-            marked_for_review=marked_for_review
+            marked_for_review=marked_for_review,
+            is_correct=is_correct  # 🔥 Now set!
         )
 
         return Response({"success": True}, status=status.HTTP_200_OK)
