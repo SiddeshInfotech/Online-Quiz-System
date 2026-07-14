@@ -3,13 +3,16 @@ import json
 import re
 import requests
 import traceback
+import unicodedata
+import ast
+
 
 class AIService:
     def __init__(self):
         self.api_key = os.environ.get('OPENROUTER_API_KEY')
         if not self.api_key:
             raise ValueError("OPENROUTER_API_KEY not configured")
-        
+
         self.api_url = "https://openrouter.ai/api/v1/chat/completions"
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -23,7 +26,7 @@ class AIService:
             else:
                 return self._generate_theory_quiz(subject, difficulty, num_questions, prompt_topic)
         except Exception as e:
-            print(f"❌ AI generation error: {e}")
+            print(f"AI generation error: {e}")
             print(traceback.format_exc())
             raise
 
@@ -31,24 +34,24 @@ class AIService:
         prompt = f"""
 You are an expert quiz generator. Generate exactly {num_questions} theory questions on "{subject}".
 
-🔹 Difficulty: {difficulty}
-🔹 Focus: {prompt_topic if prompt_topic else 'General'}
+Difficulty: {difficulty}
+Focus: {prompt_topic if prompt_topic else 'General'}
 
-🔸 QUESTION TYPES (mix them evenly):
-1. MCQ (Multiple Choice) — 4 options, one correct.
-2. True/False — exactly 4 options where:
+QUESTION TYPES (mix them evenly):
+1. MCQ (Multiple Choice) - 4 options, one correct.
+2. True/False - exactly 4 options where:
    - Option A MUST be "True"
    - Option B MUST be "False"
    - Option C and D MUST be contextually relevant, logical alternatives (e.g., "True, but only under certain conditions", "False, except in specific cases", "Partially true", etc.)
    - DO NOT use random words like "Pizza", "Burger", or unrelated fillers.
-3. Fill in the Blank — statement with a missing word, 4 options, one correct.
+3. Fill in the Blank - statement with a missing word, 4 options, one correct.
 
-🔴 IMPORTANT:
+IMPORTANT:
 - EVERY question must have EXACTLY 4 options.
 - For True/False: A and B are fixed; C and D must be meaningful and related to the statement.
 - For Fill in the Blank: the correct answer must be one of the 4 options.
 
-📋 OUTPUT — Return a JSON array:
+OUTPUT - Return a JSON array:
 [
   {{
     "question_type": "MCQ",
@@ -69,30 +72,38 @@ Return ONLY valid JSON. No extra text.
         return self._call_openrouter(prompt, num_questions)
 
     def _generate_coding_quiz(self, subject, difficulty, num_questions, prompt_topic):
+        # NOTE: \\n is used deliberately below so the MODEL sees the literal
+        # two characters \n in the example JSON (a valid escaped newline
+        # inside a JSON string). If this were a real newline character
+        # instead, the model would copy that pattern back into its answers,
+        # producing raw unescaped newlines inside JSON string values -
+        # which is invalid JSON and causes "Invalid control character" errors.
         prompt = f"""
 You are an expert programming logic question generator. Generate {num_questions} programming MCQs on "{subject}".
 
-🔹 Difficulty: {difficulty}
-🔹 Focus: {prompt_topic if prompt_topic else 'General'}
+Difficulty: {difficulty}
+Focus: {prompt_topic if prompt_topic else 'General'}
 
-🔸 QUESTION TYPES (mix them):
-1. Predict the output — Show a code snippet, ask what it prints.
-2. Find the error — Show code with a bug, ask what's wrong.
-3. Complete the code — Show code with a blank, ask what goes there.
-4. Choose the correct code — Ask which code snippet solves the problem.
-5. Time Complexity — Ask about Big-O of given code.
+QUESTION TYPES (mix them):
+1. Predict the output - Show a code snippet, ask what it prints.
+2. Find the error - Show code with a bug, ask what's wrong.
+3. Complete the code - Show code with a blank, ask what goes there.
+4. Choose the correct code - Ask which code snippet solves the problem.
+5. Time Complexity - Ask about Big-O of given code.
 
-🔴 FORMAT:
+FORMAT:
 - Each question must have a short code snippet (2-10 lines).
 - Question text should be about that snippet.
 - Exactly 4 options, one correct.
 - The correct_answer must be the actual text of the correct option.
+- In question_text, code snippets must use \\n for line breaks (an escaped
+  newline), NOT a real line break, so the output stays valid JSON.
 
-📋 OUTPUT — Return a JSON array:
+OUTPUT - Return a JSON array:
 [
   {{
     "question_type": "Coding",
-    "question_text": "What is the output of the following code?\n\n```python\nprint(2 + 3 * 4)\n```",
+    "question_text": "What is the output of the following code?\\n\\n```python\\nprint(2 + 3 * 4)\\n```",
     "options": ["10", "14", "20", "24"],
     "correct_answer": "14"
   }}
@@ -107,9 +118,9 @@ Return ONLY valid JSON. No extra text.
             "openai/gpt-3.5-turbo",
             "anthropic/claude-3-haiku"
         ]
-        
+
         last_error = None
-        
+
         for model in models_to_try:
             try:
                 payload = {
@@ -120,20 +131,19 @@ Return ONLY valid JSON. No extra text.
                     "temperature": 0.7,
                     "max_tokens": 2000,
                 }
-                
+
                 response = requests.post(
                     self.api_url,
                     headers=self.headers,
                     json=payload,
                     timeout=60
                 )
-                
+
                 if response.status_code == 200:
-                    print(f"✅ AI generation successful with model: {model}")
                     data = response.json()
                     raw_text = data['choices'][0]['message']['content'].strip()
+
                     
-                    # 🔥 STEP 1: Remove markdown code blocks
                     if raw_text.startswith('```json'):
                         raw_text = raw_text[7:]
                     if raw_text.startswith('```'):
@@ -141,48 +151,39 @@ Return ONLY valid JSON. No extra text.
                     if raw_text.endswith('```'):
                         raw_text = raw_text[:-3]
                     raw_text = raw_text.strip()
+
                     
-                    # 🔥 STEP 2: Remove ALL control characters (Unicode)
-                    # Keep only printable characters: newline, tab, and printable ASCII
-                    import unicodedata
-                    # Remove any character that is not printable (except newline, tab, carriage return)
-                    raw_text = ''.join(ch for ch in raw_text if unicodedata.category(ch)[0] != 'C' or ch in '\n\r\t')
+                    raw_text = ''.join(
+                        ch for ch in raw_text
+                        if unicodedata.category(ch)[0] != 'C' or ch in '\n\r\t'
+                    )
+
                     
-                    # 🔥 STEP 3: Try to extract JSON array using regex (most robust)
                     json_match = re.search(r'\[\s*\{.*\}\s*\]', raw_text, re.DOTALL)
                     if json_match:
                         json_str = json_match.group(0)
                     else:
                         json_str = raw_text
+
                     
-                    # 🔥 STEP 4: Fix common JSON issues
-                    # Replace single quotes with double quotes (for keys and strings)
-                    # But careful: don't break strings that contain single quotes
-                    # Use a simple approach: only replace single quotes around keys and values if they are not inside strings
-                    # Actually better: use ast.literal_eval for single-quoted JSON, but we'll just clean and parse with json
-                    
-                    # Remove trailing commas (before closing braces)
                     json_str = re.sub(r',\s*}', '}', json_str)
                     json_str = re.sub(r',\s*]', ']', json_str)
+
                     
-                    # 🔥 STEP 5: Parse JSON
                     try:
-                        questions = json.loads(json_str)
-                    except json.JSONDecodeError as e:
-                        # If still fails, try to use ast.literal_eval (for single quotes)
-                        import ast
+                        questions = json.loads(json_str, strict=False)
+                    except json.JSONDecodeError:
                         try:
                             questions = ast.literal_eval(json_str)
-                        except:
-                            # Try to strip any extra text and parse again
+                        except Exception:
                             cleaned = re.sub(r'^[^{[]*', '', json_str)
                             cleaned = re.sub(r'[^{[]*$', '', cleaned)
-                            questions = json.loads(cleaned)
-                    
+                            questions = json.loads(cleaned, strict=False)
+
                     if not isinstance(questions, list):
                         raise ValueError("Response is not a list")
+
                     
-                    # 🔥 STEP 6: Validate and sanitize each question
                     random_patterns = ['pizza', 'burger', 'cake', 'dog', 'cat', 'apple', 'banana', 'sandwich']
                     sensible_alternatives = [
                         "True, but only under certain conditions",
@@ -191,27 +192,26 @@ Return ONLY valid JSON. No extra text.
                         "Not applicable in this context",
                         "Both A and B"
                     ]
-                    
+
                     for q in questions:
                         q_type = q.get('question_type', '')
                         options = q.get('options', [])
                         correct = q.get('correct_answer', '')
-                        
+
                         if q_type in ['MCQ', 'True/False', 'Fill in the Blank']:
                             if len(options) != 4:
                                 raise ValueError(f"Question '{q.get('question_text', '')}' does not have exactly 4 options")
-                            
-                            # True/False specific sanitation
+
                             if q_type == 'True/False':
                                 if len(options) >= 2:
                                     options[0] = "True"
                                     options[1] = "False"
-                                
+
                                 for i in range(2, len(options)):
                                     opt_lower = options[i].lower()
                                     if len(options[i]) < 3 or any(word in opt_lower for word in random_patterns):
-                                        options[i] = sensible_alternatives[i-2] if i-2 < len(sensible_alternatives) else "None of the above"
-                                
+                                        options[i] = sensible_alternatives[i - 2] if i - 2 < len(sensible_alternatives) else "None of the above"
+
                                 if correct not in ["True", "False"]:
                                     if correct in ["A", "True"]:
                                         q['correct_answer'] = "True"
@@ -219,34 +219,28 @@ Return ONLY valid JSON. No extra text.
                                         q['correct_answer'] = "False"
                                     else:
                                         q['correct_answer'] = "True"
-                                
+
                                 q['options'] = options
-                            
-                            # Validate correct answer in options
+
                             correct = q.get('correct_answer', '')
                             if correct not in options:
                                 if correct in ['A', 'B', 'C', 'D']:
-                                    label_map = {'A':0, 'B':1, 'C':2, 'D':3}
+                                    label_map = {'A': 0, 'B': 1, 'C': 2, 'D': 3}
                                     idx = label_map.get(correct, 0)
                                     if idx < len(options):
                                         q['correct_answer'] = options[idx]
                                 else:
                                     q['correct_answer'] = options[0] if options else ""
-                    
+
                     return questions
                 else:
                     last_error = f"{model} failed with status {response.status_code}: {response.text}"
-                    print(f"⚠️ {last_error}, trying next model...")
-                    
+
             except requests.exceptions.RequestException as e:
                 last_error = f"{model} request error: {str(e)}"
-                print(f"⚠️ {last_error}, trying next model...")
             except json.JSONDecodeError as e:
                 last_error = f"{model} JSON decode error: {str(e)}"
-                print(f"⚠️ {last_error}, trying next model...")
             except Exception as e:
                 last_error = f"{model} error: {str(e)}"
-                print(f"⚠️ {last_error}, trying next model...")
-        
-        # If all models fail
+
         raise ValueError(f"All AI models failed. Last error: {last_error}")
