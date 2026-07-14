@@ -240,3 +240,7 @@ You are an expert programming logic question generator. Generate {num_questions}
                 last_error = f"{model} error: {str(e)}"
 
         raise ValueError(f"All AI models failed. Last error: {last_error}")
+    
+    def call_openrouter(self, prompt, num_items):
+        """Public wrapper for OpenRouter API calls."""
+        return self._call_openrouter(prompt, num_items)

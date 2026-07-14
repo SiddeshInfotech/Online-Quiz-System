@@ -12,6 +12,7 @@ from apps.questions.models import Question, QuestionOption
 from apps.questions.serializers import QuestionSerializer
 from django.shortcuts import get_object_or_404
 from apps.questions.serializers import AttemptQuestionSerializer
+from apps.ai_generator.services import AIService
 
 
 from django.utils import timezone
@@ -557,4 +558,134 @@ class AttemptResultView(APIView):
             "time_remaining_seconds": time_remaining_seconds,
             "submitted_at": attempt.submitted_at.isoformat()
         })
+
+from apps.ai_generator.services import AIService  # Add import at top
+
+class AttemptReviewView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, attempt_id):
+        try:
+            attempt = QuizAttempt.objects.get(id=attempt_id, user=request.user)
+        except QuizAttempt.DoesNotExist:
+            return Response({"error": "Attempt not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not attempt.submitted_at:
+            return Response({"error": "Attempt not submitted yet."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get all user answers for this attempt
+        user_answers = UserAnswer.objects.filter(attempt=attempt).select_related('question')
+        questions = attempt.quiz.question_set.all().order_by('question_order')
+
+        # Build question data
+        questions_data = []
+        for question in questions:
+            # Get user's answer for this question
+            user_answer = user_answers.filter(question=question).first()
+            selected_option_id = user_answer.selected_option_id if user_answer else None
+            is_correct = user_answer.is_correct if user_answer else False
+
+            # Get options
+            options = question.questionoption_set.all().order_by('id')
+            correct_option = options.filter(is_correct=True).first()
+            correct_option_id = correct_option.id if correct_option else None
+
+            questions_data.append({
+                "question_id": question.id,
+                "question_text": question.question_text,
+                "question_type": question.question_type,
+                "options": [
+                    {"id": opt.id, "text": opt.option_text}
+                    for opt in options
+                ],
+                "selected_option_id": selected_option_id,
+                "correct_option_id": correct_option_id,
+                "is_correct": is_correct,
+                "ai_explanation": None  # Will be filled later
+            })
+
+        # Generate AI explanations
+        if questions_data:
+            try:
+                ai_explanations = self._generate_ai_explanations(attempt, questions_data)
+                for i, q_data in enumerate(questions_data):
+                    q_data["ai_explanation"] = ai_explanations[i] if i < len(ai_explanations) else None
+            except Exception as e:
+                # Log error but still return questions without explanations
+                print(f"AI explanation generation failed: {e}")
+
+        return Response({
+            "attempt_id": attempt.id,
+            "quiz_title": attempt.quiz.title,
+            "submitted_at": attempt.submitted_at,
+            "questions": questions_data
+        }, status=status.HTTP_200_OK)
+
+    def _generate_ai_explanations(self, attempt, questions_data):
+        """Generate explanations for all questions using OpenRouter."""
+        # Build prompt for all questions
+        prompt = self._build_explanation_prompt(attempt.quiz.title, questions_data)
+        
+        try:
+            ai_service = AIService()
+            response_text = ai_service.call_openrouter(prompt, len(questions_data))
+            
+            # Parse the response - expect JSON array of explanations
+            import json
+            explanations = json.loads(response_text)
+            if isinstance(explanations, list) and len(explanations) == len(questions_data):
+                return explanations
+            else:
+                # Fallback: return empty strings
+                return [""] * len(questions_data)
+        except Exception as e:
+            print(f"Explanation generation error: {e}")
+            return [""] * len(questions_data)
+
+    def _build_explanation_prompt(self, quiz_title, questions_data):
+        """Build prompt for AI explanation generation."""
+        questions_text = ""
+        for i, q in enumerate(questions_data):
+            selected_text = "None"
+            correct_text = "Unknown"
+            
+            # Find selected option text
+            for opt in q['options']:
+                if opt['id'] == q['selected_option_id']:
+                    selected_text = opt['text']
+                if opt['id'] == q['correct_option_id']:
+                    correct_text = opt['text']
+            
+            questions_text += f"""
+Question {i+1}: {q['question_text']}
+Options: {', '.join([opt['text'] for opt in q['options']])}
+Selected Answer: {selected_text}
+Correct Answer: {correct_text}
+User's answer was {'correct' if q['is_correct'] else 'incorrect'}.
+---
+"""
+
+        prompt = f"""
+You are an expert tutor. For the quiz "{quiz_title}", provide brief, educational explanations for each question.
+
+Each explanation should be 3-6 lines and:
+- Explain WHY the correct answer is correct.
+- Explain WHY the selected answer is incorrect (if applicable).
+- Briefly describe the underlying concept.
+
+Here are the questions with the user's answers:
+
+{questions_text}
+
+Return a JSON array of exactly {len(questions_data)} strings, where each string is the explanation for that question.
+
+Example output:
+[
+  "Explanation for question 1...",
+  "Explanation for question 2..."
+]
+
+Return ONLY valid JSON. No extra text.
+"""
+        return prompt
 
