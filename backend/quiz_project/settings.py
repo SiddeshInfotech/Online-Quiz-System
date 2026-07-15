@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'apps.otp',
     'apps.leaderboard',
     'apps.analytics',
+    'apps.feedback',
 ]
 
 MIDDLEWARE = [
