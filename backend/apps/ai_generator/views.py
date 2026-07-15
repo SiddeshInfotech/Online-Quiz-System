@@ -97,10 +97,18 @@ class GenerateAIQuizView(APIView):
             if q_type in ['MCQ', 'True/False', 'Fill in the Blank', 'Coding'] and options:
                 trimmed_options = [opt.strip() for opt in options]
                 trimmed_correct = correct_answer.strip()
+    
+    
                 try:
                     correct_index = trimmed_options.index(trimmed_correct)
                 except ValueError:
-                    correct_index = 0
+                    lower_options = [opt.lower() for opt in trimmed_options]
+                    try:
+                        correct_index = lower_options.index(trimmed_correct.lower())
+                    except ValueError:
+                        correct_index = 0
+                        print(f"⚠️ WARNING: correct_answer '{trimmed_correct}' not found in options {trimmed_options}, defaulting to index 0")
+                
                 for opt_idx, opt_text in enumerate(trimmed_options):
                     QuestionOption.objects.create(
                         question=question,

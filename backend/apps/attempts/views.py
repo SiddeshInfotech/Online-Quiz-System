@@ -182,9 +182,7 @@ class SubmitAttemptView(APIView):
                         option = QuestionOption.objects.get(id=selected_option_id, question=question)
                         is_correct = option.is_correct
                         marks_obtained = question.marks if is_correct else 0
-                        if not is_correct and option.option_text.strip() == question.correct_answer.strip():
-                            is_correct = True
-                            marks_obtained = question.marks
+                        
                     except QuestionOption.DoesNotExist:
                         return Response({"error": f"Invalid option for question {question_id}."}, status=status.HTTP_400_BAD_REQUEST)
                 else:
@@ -199,9 +197,7 @@ class SubmitAttemptView(APIView):
                         option = QuestionOption.objects.get(id=selected_option_id, question=question)
                         is_correct = option.is_correct
                         marks_obtained = question.marks if is_correct else 0
-                        if not is_correct and option.option_text.strip() == question.correct_answer.strip():
-                            is_correct = True
-                            marks_obtained = question.marks
+                        
                     except QuestionOption.DoesNotExist:
                         return Response({"error": f"Invalid option for question {question_id}."}, status=status.HTTP_400_BAD_REQUEST)
                 else:
@@ -217,9 +213,7 @@ class SubmitAttemptView(APIView):
                         option = QuestionOption.objects.get(id=selected_option_id, question=question)
                         is_correct = option.is_correct
                         marks_obtained = question.marks if is_correct else 0
-                        if not is_correct and option.option_text.strip() == question.correct_answer.strip():
-                            is_correct = True
-                            marks_obtained = question.marks
+                        
                     except QuestionOption.DoesNotExist:
                         is_correct = False
                         marks_obtained = 0
