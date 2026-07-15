@@ -527,16 +527,26 @@ class AttemptResultView(APIView):
 
     def get(self, request, attempt_id):
         try:
-            attempt = QuizAttempt.objects.get(id=attempt_id, user=request.user)
+            if request.user.is_superuser:
+                attempt = QuizAttempt.objects.get(id=attempt_id)
+            else:
+                attempt = QuizAttempt.objects.get(id=attempt_id, user=request.user)
         except QuizAttempt.DoesNotExist:
             return Response({"error": "Attempt not found."}, status=status.HTTP_404_NOT_FOUND)
 
         if not attempt.submitted_at:
             return Response({"error": "Attempt not submitted yet."}, status=status.HTTP_400_BAD_REQUEST)
 
-        result = getattr(attempt, 'result', None)
-        if not result:
-            return Response({"error": "Result not found for this attempt."}, status=status.HTTP_404_NOT_FOUND)
+        # 🔥 Recalculate correctness from UserAnswer records
+        user_answers = UserAnswer.objects.filter(attempt=attempt)
+        total_questions = attempt.quiz.question_set.count()
+        correct_count = user_answers.filter(is_correct=True).count()
+        wrong_count = user_answers.filter(is_correct=False, selected_option_id__isnull=False).count()
+        unanswered_count = total_questions - user_answers.count()
+
+        # Calculate score and percentage
+        total_score = sum(ua.marks_obtained or (1 if ua.is_correct else 0) for ua in user_answers)
+        percentage = (total_score / total_questions * 100) if total_questions > 0 else 0
 
         quiz = attempt.quiz
         time_diff = attempt.submitted_at - attempt.started_at
@@ -545,26 +555,26 @@ class AttemptResultView(APIView):
 
         return Response({
             "attempt_id": attempt.id,
-            "result_id": result.id,
+            "result_id": getattr(attempt, 'result', None).id if hasattr(attempt, 'result') else None,
             "quiz": {
                 "id": quiz.id,
                 "title": quiz.title,
                 "category": quiz.category.category_name if quiz.category else "Uncategorized",
                 "difficulty": quiz.difficulty,
-                "total_questions": quiz.question_set.count(),
+                "total_questions": total_questions,
                 "time_limit_minutes": quiz.duration_minutes,
-                "passing_marks": int(0.4 * quiz.question_set.count()),
+                "passing_marks": int(0.4 * total_questions),
                 "marks_per_question": 1
             },
-            "score": result.total_score,
-            "total_questions": quiz.question_set.count(),
-            "correct_answers": result.correct_answers,
-            "incorrect_answers": result.wrong_answers,
-            "unanswered": result.unanswered_questions,
-            "percentage": result.percentage,
-            "accuracy": result.percentage,
-            "passed": result.pass_status,
-            "points_earned": result.total_score,
+            "score": total_score,
+            "total_questions": total_questions,
+            "correct_answers": correct_count,
+            "incorrect_answers": wrong_count,
+            "unanswered": unanswered_count,
+            "percentage": round(percentage, 2),
+            "accuracy": round(percentage, 2),
+            "passed": percentage >= 40,
+            "points_earned": total_score,
             "time_spent_seconds": time_taken_seconds,
             "time_remaining_seconds": time_remaining_seconds,
             "submitted_at": attempt.submitted_at.isoformat()
