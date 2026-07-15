@@ -131,18 +131,6 @@ class StartAttemptView(APIView):
             status=status.HTTP_201_CREATED
         )
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
-from django.utils import timezone
-from django.shortcuts import get_object_or_404
-from .models import QuizAttempt, UserAnswer, Result
-from .serializers import SubmitAnswerSerializer
-from apps.quizzes.models import Quiz
-from apps.questions.models import Question, QuestionOption
-
-
 class SubmitAttemptView(APIView):
     permission_classes = [IsAuthenticated]
 
