@@ -81,9 +81,9 @@ class GenerateAIQuizView(APIView):
 
         for idx, q_data in enumerate(questions_data):
             q_type = q_data.get('question_type', 'MCQ')
-            question_text = q_data.get('question_text', '')
+            question_text = q_data.get('question_text', '').strip()
             options = q_data.get('options', [])
-            correct_answer = q_data.get('correct_answer', '')
+            correct_answer = q_data.get('correct_answer', '').strip()
 
             question = Question.objects.create(
                 quiz=quiz,
@@ -95,11 +95,13 @@ class GenerateAIQuizView(APIView):
             )
 
             if q_type in ['MCQ', 'True/False', 'Fill in the Blank', 'Coding'] and options:
+                trimmed_options = [opt.strip() for opt in options]
+                trimmed_correct = correct_answer.strip()
                 try:
-                    correct_index = options.index(correct_answer)
+                    correct_index = trimmed_options.index(trimmed_correct)
                 except ValueError:
                     correct_index = 0
-                for opt_idx, opt_text in enumerate(options):
+                for opt_idx, opt_text in enumerate(trimmed_options):
                     QuestionOption.objects.create(
                         question=question,
                         option_text=opt_text,
