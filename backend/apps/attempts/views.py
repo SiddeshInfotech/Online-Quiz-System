@@ -14,17 +14,6 @@ from django.shortcuts import get_object_or_404
 from apps.questions.serializers import AttemptQuestionSerializer
 from apps.ai_generator.services import AIService
 
-
-from django.utils import timezone
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status, permissions
-
-from .models import QuizAttempt, Result
-from .serializers import StartAttemptSerializer
-from apps.quizzes.models import Quiz
-
-
 class StartAttemptView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -144,6 +133,7 @@ class SubmitAttemptView(APIView):
         duration = quiz.duration_minutes
         elapsed = (timezone.now() - attempt.started_at).total_seconds() / 60
         is_auto_submitted = elapsed > duration
+        UserAnswer.objects.filter(attempt=attempt).delete()
 
         # Get answers data (supports both array and object formats)
         answers_data = request.data.get('answers', [])
@@ -482,15 +472,25 @@ class AttemptResultView(APIView):
         if not attempt.submitted_at:
             return Response({"error": "Attempt not submitted yet."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 🔥 Recalculate correctness from UserAnswer records
+        # Get UserAnswer records for this attempt (should be unique now after submit fix)
         user_answers = UserAnswer.objects.filter(attempt=attempt)
         total_questions = attempt.quiz.question_set.count()
-        correct_count = user_answers.filter(is_correct=True).count()
-        wrong_count = user_answers.filter(is_correct=False, selected_option_id__isnull=False).count()
-        unanswered_count = total_questions - user_answers.count()
 
-        # Calculate score and percentage
-        total_score = sum(ua.marks_obtained or (1 if ua.is_correct else 0) for ua in user_answers)
+        # Calculate correct and incorrect counts
+        correct_count = user_answers.filter(is_correct=True).count()
+        # Incorrect: answered but wrong (is_correct=False AND selected_option_id is not null)
+        incorrect_count = user_answers.filter(is_correct=False, selected_option_id__isnull=False).count()
+
+        # Unanswered: questions that were never answered (no UserAnswer or selected_option_id null)
+        # We can compute as total_questions - (correct_count + incorrect_count)
+        # But also include answers with selected_option_id null as unanswered
+        unanswered_count = total_questions - (correct_count + incorrect_count)
+        # Safety: ensure never negative
+        unanswered_count = max(0, unanswered_count)
+
+        # Score: assume 1 mark per correct answer (or use marks_obtained sum if needed)
+        # Since we cleared duplicates, we can just use correct_count
+        total_score = correct_count
         percentage = (total_score / total_questions * 100) if total_questions > 0 else 0
 
         quiz = attempt.quiz
@@ -500,7 +500,7 @@ class AttemptResultView(APIView):
 
         return Response({
             "attempt_id": attempt.id,
-            "result_id": getattr(attempt, 'result', None).id if hasattr(attempt, 'result') else None,
+            "result_id": getattr(attempt, 'result', None).id if hasattr(attempt, 'result') and attempt.result else None,
             "quiz": {
                 "id": quiz.id,
                 "title": quiz.title,
@@ -514,7 +514,7 @@ class AttemptResultView(APIView):
             "score": total_score,
             "total_questions": total_questions,
             "correct_answers": correct_count,
-            "incorrect_answers": wrong_count,
+            "incorrect_answers": incorrect_count,
             "unanswered": unanswered_count,
             "percentage": round(percentage, 2),
             "accuracy": round(percentage, 2),
@@ -524,7 +524,7 @@ class AttemptResultView(APIView):
             "time_remaining_seconds": time_remaining_seconds,
             "submitted_at": attempt.submitted_at.isoformat()
         })
-
+        
 class AttemptReviewView(APIView):
     permission_classes = [IsAuthenticated]
 
