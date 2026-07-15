@@ -131,8 +131,20 @@ class StartAttemptView(APIView):
             status=status.HTTP_201_CREATED
         )
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from django.utils import timezone
+from django.shortcuts import get_object_or_404
+from .models import QuizAttempt, UserAnswer, Result
+from .serializers import SubmitAnswerSerializer
+from apps.quizzes.models import Quiz
+from apps.questions.models import Question, QuestionOption
+
+
 class SubmitAttemptView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, attempt_id):
         try:
@@ -143,20 +155,15 @@ class SubmitAttemptView(APIView):
         quiz = attempt.quiz
         duration = quiz.duration_minutes
         elapsed = (timezone.now() - attempt.started_at).total_seconds() / 60
-
         is_auto_submitted = elapsed > duration
 
-        # 🔥 Get answers data — support both array and object formats
+        # Get answers data (supports both array and object formats)
         answers_data = request.data.get('answers', [])
-
-        # If answers_data is a dict (like {"100": 347}), convert to list of objects
         if isinstance(answers_data, dict):
             answers_data = [
                 {"question_id": int(q_id), "selected_option_id": opt_id}
                 for q_id, opt_id in answers_data.items()
             ]
-
-        # If empty, treat as empty array
         if not answers_data:
             answers_data = []
 
@@ -169,8 +176,8 @@ class SubmitAttemptView(APIView):
         all_questions = Question.objects.filter(quiz=quiz)
         answered_question_ids = []
 
-        # Process each answer
         for answer_data in answers_data:
+            # Validate with serializer
             serializer = SubmitAnswerSerializer(data=answer_data, context={'attempt': attempt})
             if not serializer.is_valid():
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -185,11 +192,13 @@ class SubmitAttemptView(APIView):
                 return Response({"error": f"Question {question_id} does not belong to this quiz."}, status=status.HTTP_400_BAD_REQUEST)
 
             answered_question_ids.append(question_id)
-
             is_correct = False
             marks_obtained = 0
 
-            if question.question_type == 'MCQ' or question.question_type == 'True/False':
+            q_type = question.question_type
+
+            # ---------- MCQ ----------
+            if q_type == 'MCQ':
                 if selected_option_id:
                     try:
                         option = QuestionOption.objects.get(id=selected_option_id, question=question)
@@ -201,11 +210,41 @@ class SubmitAttemptView(APIView):
                     is_correct = False
                     marks_obtained = 0
 
-            elif question.question_type == 'Fill in the Blank':
-                if answer_text:
+            # ---------- True/False ----------
+            elif q_type == 'True/False':
+                # True/False questions also have options (like MCQ)
+                if selected_option_id:
+                    try:
+                        option = QuestionOption.objects.get(id=selected_option_id, question=question)
+                        is_correct = option.is_correct
+                        marks_obtained = question.marks if is_correct else 0
+                    except QuestionOption.DoesNotExist:
+                        return Response({"error": f"Invalid option for question {question_id}."}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    is_correct = False
+                    marks_obtained = 0
+
+            # ---------- Fill in the Blank ----------
+            elif q_type == 'Fill in the Blank':
+                # Check if the question has options (like our AI-generated ones)
+                has_options = question.questionoption_set.exists()
+                if has_options and selected_option_id:
+                    try:
+                        option = QuestionOption.objects.get(id=selected_option_id, question=question)
+                        is_correct = option.is_correct
+                        marks_obtained = question.marks if is_correct else 0
+                    except QuestionOption.DoesNotExist:
+                        is_correct = False
+                        marks_obtained = 0
+                elif answer_text:
+                    # Free-text fill-in-the-blank (if not using options)
                     is_correct = answer_text.strip().lower() == question.correct_answer.strip().lower()
                     marks_obtained = question.marks if is_correct else 0
+                else:
+                    is_correct = False
+                    marks_obtained = 0
 
+            # ---------- Save UserAnswer ----------
             UserAnswer.objects.create(
                 attempt=attempt,
                 question=question,
@@ -223,9 +262,8 @@ class SubmitAttemptView(APIView):
             else:
                 wrong_count += 1
 
+        # Mark unanswered questions
         unanswered_count = all_questions.count() - len(answered_question_ids)
-
-        # Save unanswered as wrong
         for q in all_questions:
             if q.id not in answered_question_ids:
                 UserAnswer.objects.create(
@@ -235,6 +273,7 @@ class SubmitAttemptView(APIView):
                     marks_obtained=0
                 )
 
+        # Update attempt
         attempt.submitted_at = timezone.now()
         attempt.score = total_score
         attempt.percentage = (total_score / total_marks * 100) if total_marks > 0 else 0
@@ -298,88 +337,6 @@ class SubmitAttemptView(APIView):
             return "D"
         else:
             return "F"
-
-class UserResultsView(generics.ListAPIView):
-    serializer_class = ResultSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Result.objects.filter(attempt__user=self.request.user).order_by('-generated_at')
-
-
-class ResultDetailView(generics.RetrieveAPIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Result.objects.filter(attempt__user=self.request.user)
-
-    def retrieve(self, request, *args, **kwargs):
-        result = self.get_object()
-        attempt = result.attempt
-        quiz = attempt.quiz
-
-        time_diff = attempt.submitted_at - attempt.started_at
-        time_taken_seconds = int(time_diff.total_seconds()) if attempt.submitted_at else 0
-        time_remaining_seconds = max(0, (quiz.duration_minutes * 60) - time_taken_seconds)
-
-        return Response({
-            "attempt_id": attempt.id,
-            "quiz": {
-                "id": quiz.id,
-                "title": quiz.title,
-                "category": quiz.category.category_name if quiz.category else "Uncategorized",
-                "difficulty": quiz.difficulty,
-                "total_questions": quiz.question_set.count(),
-                "time_limit_minutes": quiz.duration_minutes,
-                "passing_marks": int(0.4 * quiz.question_set.count()),
-                "marks_per_question": 1
-            },
-            "score": result.total_score,
-            "percentage": result.percentage,
-            "passed": result.pass_status,
-            "correct_answers": result.correct_answers,
-            "incorrect_answers": result.wrong_answers,
-            "unanswered": result.unanswered_questions,
-            "accuracy": result.percentage,
-            "points_earned": result.total_score,
-            "time_taken_seconds": time_taken_seconds,
-            "time_remaining_seconds": time_remaining_seconds,
-            "submitted_at": attempt.submitted_at.isoformat() if attempt.submitted_at else None
-        })
-
-
-class AttemptResultDetailView(generics.RetrieveAPIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request, attempt_id):
-        try:
-            attempt = QuizAttempt.objects.get(id=attempt_id, user=request.user)
-        except QuizAttempt.DoesNotExist:
-            return Response({"error": "Attempt not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        answers = UserAnswer.objects.filter(attempt=attempt)
-        answers_data = []
-        for ans in answers:
-            answers_data.append({
-                "question_id": ans.question.id,
-                "question_text": ans.question.question_text,
-                "selected_option_id": ans.selected_option_id if ans.selected_option_id else None,
-                "selected_option_text": ans.selected_option.option_text if ans.selected_option else None,
-                "answer_text": ans.answer_text,
-                "is_correct": ans.is_correct,
-                "marks_obtained": ans.marks_obtained,
-                "correct_answer": ans.question.correct_answer
-            })
-
-        return Response({
-            "attempt_id": attempt.id,
-            "quiz_title": attempt.quiz.title,
-            "started_at": attempt.started_at,
-            "submitted_at": attempt.submitted_at,
-            "score": attempt.score,
-            "percentage": attempt.percentage,
-            "answers": answers_data
-        }, status=status.HTTP_200_OK)
 
 class UserAttemptsHistoryView(APIView):
     permission_classes = [IsAuthenticated]
