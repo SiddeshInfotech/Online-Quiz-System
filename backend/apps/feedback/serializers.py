@@ -3,7 +3,6 @@ from .models import Feedback
 from apps.users.models import User
 
 class FeedbackUserSerializer(serializers.ModelSerializer):
-    full_name = serializers.CharField(source='full_name', default='')
     profile_picture = serializers.SerializerMethodField()
 
     class Meta:
