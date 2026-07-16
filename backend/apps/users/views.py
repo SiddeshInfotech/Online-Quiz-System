@@ -11,7 +11,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, GoogleAuthSerializer
-from .models import User
+from .models import User, UserBadge
 from apps.otp.models import OTPVerification
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Content
@@ -484,5 +484,24 @@ class AccountDestructionView(APIView):
         return Response({
             "message": "Your account has been deactivated. It will be permanently deleted after 30 days. You can contact support to reactivate."
         }, status=status.HTTP_200_OK)
+    
+class UserBadgesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_badges = UserBadge.objects.filter(user=request.user).select_related('badge')
+        badges_data = [
+            {
+                "badge_id": ub.badge.badge_id,
+                "name": ub.badge.name,
+                "description": ub.badge.description,
+                "image_url": ub.badge.image_url,
+                "category": ub.badge.category,
+                "rarity": ub.badge.rarity,
+                "awarded_at": ub.awarded_at
+            }
+            for ub in user_badges
+        ]
+        return Response({"badges": badges_data})
 
 

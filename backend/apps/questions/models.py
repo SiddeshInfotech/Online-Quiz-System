@@ -2,10 +2,16 @@ from django.db import models
 from apps.quizzes.models import Quiz
 
 class Question(models.Model):
-    TYPE = (('MCQ','MCQ'),('True/False','True/False'),('Fill in the Blank','Fill in the Blank'))
+    TYPE_CHOICES = (
+        ('MCQ', 'MCQ'),
+        ('True/False', 'True/False'),
+        ('Fill in the Blank', 'Fill in the Blank'),
+        ('Coding', 'Coding'),
+    )
+    
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
     question_text = models.TextField()
-    question_type = models.CharField(max_length=50, choices=TYPE)
+    question_type = models.CharField(max_length=50, choices=TYPE_CHOICES)
     correct_answer = models.TextField()
     marks = models.IntegerField(default=1)
     question_order = models.IntegerField()
