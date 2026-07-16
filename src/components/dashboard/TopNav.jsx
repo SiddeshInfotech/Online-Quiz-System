@@ -43,11 +43,18 @@ const TopNav = ({ user, onMenuToggle }) => {
         <div className="w-full max-w-md hidden sm:block">
           <div className="relative flex items-center">
             <Search className="absolute left-4 text-slate-400" size={18} />
-            <input
-              type="text"
-              placeholder="Search for quizzes, subjects, topics..."
-              className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm text-slate-800 outline-none transition-all focus:border-violet-300 focus:bg-white focus:ring-4 focus:ring-violet-100"
-            />
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const query = e.target.search.value.trim();
+              if (query) navigate(`/library?search=${encodeURIComponent(query)}`);
+            }} className="w-full">
+              <input
+                type="text"
+                name="search"
+                placeholder="Search for quizzes, subjects, topics..."
+                className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm text-slate-800 outline-none transition-all focus:border-violet-300 focus:bg-white focus:ring-4 focus:ring-violet-100"
+              />
+            </form>
           </div>
         </div>
         
@@ -59,13 +66,13 @@ const TopNav = ({ user, onMenuToggle }) => {
 
       {/* Right Actions */}
       <div className="flex items-center gap-2 md:gap-6">
-        <Link to={isAdmin ? "/quiz-management" : "/generate-quiz"} className="hidden md:block">
+        <Link to={isAdmin ? "/quiz-management" : "/generate"} className="hidden md:block">
           <Button variant="primary" size="md" className="gap-2 transition-transform active:scale-95">
             {isAdmin ? <Plus size={18} /> : <Sparkles size={18} />}
             {isAdmin ? "Create Quiz" : "Generate Quiz"}
           </Button>
         </Link>
-        <Link to={isAdmin ? "/quiz-management" : "/generate-quiz"} className="md:hidden">
+        <Link to={isAdmin ? "/quiz-management" : "/generate"} className="md:hidden">
           <Button variant="primary" size="sm" className="p-2 transition-transform active:scale-95 rounded-xl">
             {isAdmin ? <Plus size={18} /> : <Sparkles size={18} />}
           </Button>

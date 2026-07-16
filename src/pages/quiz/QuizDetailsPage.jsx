@@ -207,6 +207,12 @@ const QuizDetailsPage = () => {
 
   useEffect(() => {
     const fetchQuizDetails = async () => {
+      if (!id || id === "undefined" || id === "null") {
+        console.error("quizId is undefined");
+        setError("Invalid quiz ID.");
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
         const data = await libraryService.getQuizById(id);

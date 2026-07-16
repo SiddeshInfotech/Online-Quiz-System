@@ -8,7 +8,7 @@ import AuthDivider from "./AuthDivider";
 import AuthFooter from "./AuthFooter";
 import PasswordInput from "./PasswordInput";
 import SocialButton from "./SocialButton";
-import ThemeToggle from "./ThemeToggle";
+
 import Input from "../../components/ui/Input";
 import authService from "../../services/authService";
 import { useAuth } from "../../hooks/useAuth";
@@ -149,7 +149,7 @@ const SignupForm = ({ onSuccess }) => {
         >
             {/* Theme Toggle */}
             <div className="absolute right-5 top-5">
-                <ThemeToggle />
+
             </div>
 
             {/* Header */}
@@ -160,7 +160,7 @@ const SignupForm = ({ onSuccess }) => {
 
             {/* Error Display */}
             {error && (
-                <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
                     {error}
                 </div>
             )}
@@ -226,7 +226,7 @@ const SignupForm = ({ onSuccess }) => {
                 />
 
                 {/* Checkbox */}
-                <label className="flex cursor-pointer items-start gap-3 text-sm text-slate-600 dark:text-slate-300">
+                <label className="flex cursor-pointer items-start gap-3 text-sm text-slate-600">
                     <input
                         type="checkbox"
                         className="mt-1 h-4 w-4 rounded accent-violet-600"

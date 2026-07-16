@@ -9,7 +9,7 @@ import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 
 import AuthHeader from "../../components/auth/AuthHeader";
-import ThemeToggle from "../../components/auth/ThemeToggle";
+
 import OTPInput from "../../components/auth/OTPInput";
 import authService from "../../services/authService";
 
@@ -94,7 +94,7 @@ const VerifyOTP = () => {
     >
       <Card className="relative rounded-3xl border border-slate-200 bg-white p-8 shadow-xl lg:p-10">
         <div className="absolute right-6 top-6">
-          <ThemeToggle />
+
         </div>
 
         <Logo className="mb-8" />
@@ -104,7 +104,7 @@ const VerifyOTP = () => {
           subtitle={
             <>
               We've sent a 6-digit code to <br />
-              <div className="mt-3 inline-flex items-center justify-center rounded-full bg-slate-100 px-4 py-1.5 text-sm font-medium text-slate-900 dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 shadow-sm">
+              <div className="mt-3 inline-flex items-center justify-center rounded-full bg-slate-100 px-4 py-1.5 text-sm font-medium text-slate-900 border border-slate-200 shadow-sm">
                 {email}
               </div>
             </>
@@ -140,15 +140,15 @@ const VerifyOTP = () => {
         </form>
 
         <div className="mt-8 text-center text-sm">
-          <p className="text-slate-500 mb-2 dark:text-slate-400">Didn't receive the code?</p>
+          <p className="text-slate-500 mb-2">Didn't receive the code?</p>
           <button
             type="button"
             onClick={handleResend}
             disabled={countdown > 0 || isResending}
             className={`font-semibold transition-colors ${
               countdown > 0 || isResending
-                ? "text-slate-400 cursor-not-allowed dark:text-slate-500"
-                : "text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300"
+                ? "text-slate-400 cursor-not-allowed"
+                : "text-violet-600 hover:text-violet-700"
             }`}
           >
             {isResending ? (

@@ -12,7 +12,7 @@ import Input from "../../components/ui/Input";
 import PasswordInput from "../../components/auth/PasswordInput";
 import AuthHeader from "../../components/auth/AuthHeader";
 import AuthDivider from "../../components/auth/AuthDivider";
-import ThemeToggle from "../../components/auth/ThemeToggle";
+
 
 const getErrorMessage = (err) => {
   const data = err.response?.data;
@@ -139,7 +139,7 @@ const ResetPassword = () => {
     >
       <Card className="relative rounded-3xl border border-slate-200 bg-white p-8 shadow-xl lg:p-10">
         <div className="absolute right-6 top-6">
-          <ThemeToggle />
+
         </div>
 
         <Logo className="mb-8" />

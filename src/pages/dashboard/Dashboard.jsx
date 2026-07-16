@@ -1,7 +1,7 @@
 import { useDashboardContext } from "../../context/DashboardContext";
 import WelcomeBanner from "../../components/dashboard/WelcomeBanner";
 import StatsOverview from "../../components/dashboard/StatsOverview";
-import QuickActionsGrid from "../../components/dashboard/QuickActionsGrid";
+import QuizActivityCards from "../../components/dashboard/QuizActivityCards";
 import RecentAttempts from "../../components/dashboard/RecentAttempts";
 import PerformanceChart from "../../components/dashboard/PerformanceChart";
 import RightSidebar from "../../components/dashboard/RightSidebar";
@@ -45,9 +45,9 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Row 2: Quick Actions */}
+        {/* Row 2: Quiz Activity Cards */}
         <div>
-          <QuickActionsGrid
+          <QuizActivityCards
             lastQuiz={lastQuiz}
             availableQuizzesCount={availableQuizzesCount}
           />

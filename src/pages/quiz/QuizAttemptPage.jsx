@@ -57,10 +57,21 @@ const QuizAttemptPage = () => {
   }, [attemptId]);
 
   const fetchAttempt = async () => {
+    if (!attemptId || attemptId === "undefined" || attemptId === "null") {
+      console.error("attemptId is undefined");
+      setIsLoading(false);
+      return;
+    }
     try {
       setIsLoading(true);
       const data = await attemptsService.getAttempt(attemptId);
       
+      // Redirect if attempt is already submitted/completed
+      if (data.status === 'completed' || data.status === 'expired' || data.is_completed) {
+        navigate(`/results/${attemptId}`, { replace: true, state: { message: "This attempt has already been submitted or expired." } });
+        return;
+      }
+
       setAttempt(data);
       // Assuming questions are in data.questions
       const qs = data.questions || [];

@@ -5,7 +5,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 
 import Button from "../../components/ui/Button";
 import AuthHeader from "./AuthHeader";
-import ThemeToggle from "./ThemeToggle";
+
 import OTPInput from "./OTPInput";
 import authService from "../../services/authService";
 import { useAuth } from "../../hooks/useAuth";
@@ -96,7 +96,7 @@ const OtpVerification = ({ email, onBack }) => {
       className="relative w-full rounded-3xl border border-slate-200 bg-white p-8 shadow-xl lg:p-10"
     >
       <div className="absolute right-5 top-5">
-        <ThemeToggle />
+
       </div>
 
       <AuthHeader
@@ -104,7 +104,7 @@ const OtpVerification = ({ email, onBack }) => {
         subtitle={
           <>
             We've sent a 6-digit code to <br />
-            <div className="mt-3 inline-flex items-center justify-center rounded-full bg-slate-100 px-4 py-1.5 text-sm font-medium text-slate-900 dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div className="mt-3 inline-flex items-center justify-center rounded-full bg-slate-100 px-4 py-1.5 text-sm font-medium text-slate-900 border border-slate-200 shadow-sm">
               {email}
             </div>
           </>
@@ -113,7 +113,7 @@ const OtpVerification = ({ email, onBack }) => {
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-6">
         {apiError && (
-          <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+          <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
             {apiError}
           </div>
         )}
@@ -140,15 +140,15 @@ const OtpVerification = ({ email, onBack }) => {
       </form>
 
       <div className="mt-8 text-center text-sm">
-        <p className="text-slate-500 mb-2 dark:text-slate-400">Didn't receive the code?</p>
+        <p className="text-slate-500 mb-2">Didn't receive the code?</p>
         <button
           type="button"
           onClick={handleResend}
           disabled={countdown > 0 || isResending}
           className={`font-semibold transition-colors ${
             countdown > 0 || isResending
-              ? "text-slate-400 cursor-not-allowed dark:text-slate-500"
-              : "text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300"
+              ? "text-slate-400 cursor-not-allowed"
+              : "text-violet-600 hover:text-violet-700"
           }`}
         >
           {isResending ? (
@@ -166,7 +166,7 @@ const OtpVerification = ({ email, onBack }) => {
       <button
         onClick={onBack}
         type="button"
-        className="mt-6 flex w-full items-center justify-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 transition-colors"
+        className="mt-6 flex w-full items-center justify-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors"
       >
         <ArrowLeft size={16} />
         Back to signup

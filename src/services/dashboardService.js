@@ -51,13 +51,19 @@ const formatDate = (raw) => {
   }
 };
 
-/** Format total minutes → "Xh Ym" string. */
+/** Format total seconds → "Xh Ym" or "Ym" string. */
 const formatTimeSpent = (raw) => {
   if (raw == null) return "0h 0m";
   if (typeof raw === "string") return raw; // already formatted
-  const mins = Number(raw);
-  if (isNaN(mins)) return "0h 0m";
-  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+  const secs = Number(raw);
+  if (isNaN(secs)) return "0h 0m";
+  const totalMins = Math.floor(secs / 60);
+  const hours = Math.floor(totalMins / 60);
+  const mins = totalMins % 60;
+  if (hours > 0) {
+    return `${hours}h ${mins}m`;
+  }
+  return `${mins}m`;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -102,16 +108,17 @@ const adaptResponse = (raw = {}) => {
       `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=6D5EF9&color=fff`,
     email: pick(rawUser?.email, raw?.email) ?? "",
     role: pick(rawUser?.role, raw?.role) ?? "student",
-    streak: Number(pick(raw?.streak, rawUser?.streak, raw?.current_streak) ?? 0),
+    streak: Number(pick(raw?.streak?.current_streak, raw?.streak, rawUser?.streak, raw?.current_streak) ?? 0),
     maxStreak: Number(pick(raw?.max_streak, rawUser?.max_streak, raw?.best_streak) ?? 0),
     progress: Number(
-      pick(raw?.progress, rawUser?.progress, raw?.completion_percentage) ?? 0
+      pick(raw?.overall_progress?.percentage, raw?.progress, rawUser?.progress, raw?.completion_percentage) ?? 0
     ),
     totalQuizzes: Number(
-      pick(raw?.total_quizzes, rawUser?.total_quizzes, raw?.quiz_count) ?? 0
+      pick(raw?.overall_progress?.total, raw?.total_quizzes, rawUser?.total_quizzes, raw?.quiz_count) ?? 0
     ),
     completedQuizzes: Number(
       pick(
+        raw?.overall_progress?.completed,
         raw?.completed_quizzes,
         rawUser?.completed_quizzes,
         raw?.quizzes_completed
@@ -122,12 +129,12 @@ const adaptResponse = (raw = {}) => {
   // ── Daily Goal ────────────────────────────────────────────────────────────
   const rawGoal = raw?.daily_goal ?? raw?.dailyGoal ?? {};
   const dailyGoal = {
-    completed: Number(pick(rawGoal?.completed, raw?.daily_goal_completed) ?? 0),
-    total: Number(pick(rawGoal?.total, raw?.daily_goal_total) ?? 3),
+    completed: Number(pick(raw?.todays_goal?.completed, rawGoal?.completed, raw?.daily_goal_completed) ?? 0),
+    total: Number(pick(raw?.todays_goal?.target, rawGoal?.total, raw?.daily_goal_total) ?? 3),
   };
 
   // ── Last Quiz ─────────────────────────────────────────────────────────────
-  const rawLast = raw?.last_quiz ?? raw?.lastQuiz ?? null;
+  const rawLast = raw?.continue_quiz ?? raw?.last_quiz ?? raw?.lastQuiz ?? null;
   const lastQuiz = rawLast
     ? {
         title: pick(rawLast.title, rawLast.quiz_title) ?? "Untitled Quiz",
@@ -136,12 +143,15 @@ const adaptResponse = (raw = {}) => {
         progress: Number(
           pick(rawLast.progress, rawLast.completion_percentage) ?? 0
         ),
+        attempt_id: pick(rawLast.attempt_id, rawLast.id),
+        quiz_id: pick(rawLast.quiz_id, rawLast.quiz),
       }
     : null;
 
   // ── Available Quizzes ─────────────────────────────────────────────────────
   const availableQuizzesCount = Number(
     pick(
+      raw?.quizzes_available,
       raw?.available_quizzes_count,
       raw?.availableQuizzesCount,
       raw?.available_quizzes,
@@ -167,7 +177,7 @@ const adaptResponse = (raw = {}) => {
   // ── Performance Stats ─────────────────────────────────────────────────────
   // Backend may put stats inside a nested object or at root.
   const rawStats =
-    raw?.performance_stats ?? raw?.performanceStats ?? raw?.stats ?? {};
+    raw?.performance ?? raw?.performance_stats ?? raw?.performanceStats ?? raw?.stats ?? {};
 
   const performanceStats = {
     quizzesAttempted: Number(
@@ -190,13 +200,13 @@ const adaptResponse = (raw = {}) => {
       pick(rawStats?.accuracy, raw?.accuracy, raw?.avg_accuracy) ?? 0
     ),
     timeSpent: formatTimeSpent(
-      pick(rawStats?.time_spent, rawStats?.timeSpent, raw?.time_spent, raw?.total_time)
+      pick(rawStats?.total_time_spent_seconds, rawStats?.time_spent, rawStats?.timeSpent, raw?.time_spent, raw?.total_time)
     ),
   };
 
   // ── Chart Data ────────────────────────────────────────────────────────────
   const rawChart =
-    raw?.chart_data ?? raw?.chartData ?? raw?.weekly_scores ?? raw?.performance_chart ?? [];
+    raw?.performance?.weekly_data ?? raw?.chart_data ?? raw?.chartData ?? raw?.weekly_scores ?? raw?.performance_chart ?? [];
   const chartData = Array.isArray(rawChart)
     ? rawChart.map((d) => ({
         day: pick(d.day, d.label, d.date, d.period) ?? "",

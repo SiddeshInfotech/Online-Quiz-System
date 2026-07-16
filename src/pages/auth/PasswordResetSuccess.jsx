@@ -5,7 +5,7 @@ import { CheckCircle } from "lucide-react";
 import Logo from "../../components/ui/Logo";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
-import ThemeToggle from "../../components/auth/ThemeToggle";
+
 
 const PasswordResetSuccess = () => {
   return (
@@ -17,7 +17,7 @@ const PasswordResetSuccess = () => {
     >
       <Card className="relative rounded-3xl border border-slate-200 bg-white p-8 shadow-xl lg:p-10">
         <div className="absolute right-6 top-6">
-          <ThemeToggle />
+
         </div>
 
         <Logo className="mb-8" />

@@ -15,7 +15,7 @@ import AuthHeader from "../../components/auth/AuthHeader";
 import PasswordInput from "../../components/auth/PasswordInput";
 import SocialButton from "../../components/auth/SocialButton";
 import AuthDivider from "../../components/auth/AuthDivider";
-import ThemeToggle from "../../components/auth/ThemeToggle";
+
 
 const getErrorMessage = (err) => {
   const status = err.response?.status;
@@ -160,7 +160,7 @@ const Login = () => {
         {/* Theme Toggle */}
 
         <div className="absolute right-6 top-6">
-          <ThemeToggle />
+
         </div>
 
         {/* Logo */}

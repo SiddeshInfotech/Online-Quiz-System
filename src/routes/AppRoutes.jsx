@@ -15,6 +15,7 @@ import Dashboard from "../pages/dashboard/Dashboard";
 import LibraryPage from "../pages/library/LibraryPage";
 import ProfilePage from "../pages/profile/ProfilePage";
 import SettingsPage from "../pages/settings/SettingsPage";
+import FeedbackPage from "../pages/feedback/FeedbackPage";
 
 import QuizManagement from "../pages/dashboard/QuizManagement";
 import MyAttempts from "../pages/dashboard/MyAttempts";
@@ -54,6 +55,7 @@ const AppRoutes = () => {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/leaderboard" element={<LeaderboardPage />} />
+          <Route path="/feedback" element={<FeedbackPage />} />
         </Route>
         
         {/* Full-screen protected routes (no sidebar) */}

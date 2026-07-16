@@ -1,4 +1,5 @@
 import { useState, useContext, useEffect } from "react";
+
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -10,9 +11,7 @@ import {
   Trash2,
   X,
   AlertTriangle,
-  ChevronRight,
-  Moon,
-  Sun
+  ChevronRight
 } from "lucide-react";
 import Card from "../../components/ui/Card/Card";
 import Button from "../../components/ui/Button/Button";
@@ -154,7 +153,6 @@ const Toggle = ({ checked, onChange }) => (
     />
   </button>
 );
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Settings Page
 // ─────────────────────────────────────────────────────────────────────────────
@@ -164,10 +162,9 @@ const SettingsPage = () => {
   const navigate = useNavigate();
   const { data, refetch } = useDashboardContext();
 
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  
-  // Dummy states for UI
-  const [theme, setTheme] = useState('light');
+
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [pushNotifs, setPushNotifs] = useState(false);
   
@@ -228,39 +225,7 @@ const SettingsPage = () => {
         </motion.div>
 
         <div className="flex flex-col gap-6">
-          {/* Appearance Section */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.05 }}>
-            <Card className="p-0 overflow-hidden hover:shadow-xl transition-shadow duration-300">
-              <div className="p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-                  <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                    <Palette className="text-blue-600" size={20} />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold font-space-grotesk text-slate-900">Appearance</h3>
-                    <p className="text-sm text-slate-500">Choose how QuizGen AI looks to you.</p>
-                  </div>
-                </div>
 
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <button 
-                    onClick={() => setTheme('light')}
-                    className={`flex-1 flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all ${theme === 'light' ? 'border-violet-600 bg-violet-50/50' : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'}`}
-                  >
-                    <Sun size={24} className={theme === 'light' ? 'text-violet-600' : 'text-slate-400'} />
-                    <span className={`font-semibold ${theme === 'light' ? 'text-violet-700' : 'text-slate-600'}`}>Light Mode</span>
-                  </button>
-                  <button 
-                    onClick={() => setTheme('dark')}
-                    className={`flex-1 flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all ${theme === 'dark' ? 'border-violet-600 bg-violet-50/50' : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'}`}
-                  >
-                    <Moon size={24} className={theme === 'dark' ? 'text-violet-600' : 'text-slate-400'} />
-                    <span className={`font-semibold ${theme === 'dark' ? 'text-violet-700' : 'text-slate-600'}`}>Dark Mode</span>
-                  </button>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
 
           {/* Notifications Section */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.1 }}>
