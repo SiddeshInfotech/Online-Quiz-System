@@ -30,22 +30,12 @@ class BadgeService:
                 UserBadge.objects.create(user=self.user, badge=badge)
                 self.earned_badges.append(badge.name)
 
-           
-                xp_map = {'COMMON': 25, 'RARE': 50, 'EPIC': 100, 'LEGENDARY': 200}
-                xp_reward = xp_map.get(badge.rarity, 25)
-
-                # 3. Update user XP and Level
-                self.user.xp += xp_reward
-                # Level up logic: 100 XP per level
-                while self.user.xp >= self.user.level * 100:
-                    self.user.level += 1
-                self.user.save()
 
             # 4. Send notification
                 Notification.objects.create(
                     user=self.user,
                     title=f"🏆 New Badge Unlocked: {badge.name}",
-                    message=f"You earned the '{badge.name}' badge! (+{xp_reward} XP)",
+                    message=f"You earned the '{badge.name}' badge! ",
                 )
                 return True
         except Badge.DoesNotExist:
