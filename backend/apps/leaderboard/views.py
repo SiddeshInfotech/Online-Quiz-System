@@ -1,16 +1,14 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.db.models import Avg, Count, Max, Min, F
-from django.db.models import Window
-from django.db.models.functions import Rank
+from django.db.models import Avg, Count, Max, Min, F, Q
+from django.db.models.functions import Rank, Window
 from django.db import connection
 from apps.attempts.models import QuizAttempt, Result
 from apps.quizzes.models import Quiz
+from apps.users.models import User, UserBadge  # ✅ FIXED
 from .serializers import LeaderboardEntrySerializer, QuizLeaderboardSerializer
 from rest_framework.permissions import IsAuthenticated
-from apps.users.models import User
-from .models import User, UserBadge
 
 
 class QuizLeaderboardView(APIView):
@@ -50,6 +48,10 @@ class QuizLeaderboardView(APIView):
             seconds = int(time_diff.total_seconds() % 60)
             time_taken = f"{minutes}m {seconds}s"
 
+            profile_pic = None
+            if attempt.user.profile_picture:
+                profile_pic = attempt.user.profile_picture.url
+
             top_performers.append({
                 "rank": rank,
                 "user": {
@@ -57,7 +59,7 @@ class QuizLeaderboardView(APIView):
                     "username": attempt.user.username,
                     "full_name": attempt.user.full_name,
                     "email": attempt.user.email,
-                    "profile_picture": attempt.user.profile_picture.url if attempt.user.profile_picture else None,  # ✅ Added
+                    "profile_picture": profile_pic,  # ✅ Added
                 },
                 "score": attempt.score,
                 "percentage": attempt.percentage,
@@ -96,7 +98,6 @@ class GlobalLeaderboardView(APIView):
             if user.profile_picture:
                 profile_picture_url = user.profile_picture.url
 
-            
             badge_count = UserBadge.objects.filter(
                 user=user, 
                 status='CLAIMED'
@@ -110,7 +111,7 @@ class GlobalLeaderboardView(APIView):
                 "quizzes_count": user.quizzes_completed,
                 "profile_picture": profile_picture_url,
                 "user_id": user.id,
-                "badge_count": badge_count,  # ✅ NEW
+                "badge_count": badge_count,  # ✅ Added
             })
 
         top_3 = all_rankings[:3] if len(all_rankings) >= 3 else all_rankings
@@ -124,7 +125,6 @@ class GlobalLeaderboardView(APIView):
         if request.user.profile_picture:
             current_user_profile_pic = request.user.profile_picture.url
 
-        # ✅ Get current user's badge count
         current_user_badge_count = UserBadge.objects.filter(
             user=request.user, 
             status='CLAIMED'
@@ -138,7 +138,7 @@ class GlobalLeaderboardView(APIView):
                 "profile_picture": current_user_profile_pic,
                 "full_name": request.user.full_name or request.user.username,
                 "is_in_top_3": current_user["rank"] <= 3 if current_user else False,
-                "badge_count": current_user_badge_count,  # ✅ NEW
+                "badge_count": current_user_badge_count,  # ✅ Added
             },
             "top_3_podium": top_3,
             "all_rankings_list": all_rankings
