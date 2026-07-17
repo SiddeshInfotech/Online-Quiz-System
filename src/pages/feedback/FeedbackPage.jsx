@@ -34,7 +34,7 @@ const FeedbackPage = () => {
       ]);
 
       setSummary(summaryRes);
-      setFeedbacks(Array.isArray(feedbackRes) ? feedbackRes : feedbackRes.results || []);
+      setFeedbacks(Array.isArray(feedbackRes) ? feedbackRes : feedbackRes.results || []); 6
 
       if (myFeedbackRes) {
         setRating(myFeedbackRes.rating || 0);

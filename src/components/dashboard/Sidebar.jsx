@@ -11,6 +11,7 @@ import {
   ChevronDown,
   X,
   MessageSquare,
+  Trophy,
 } from "lucide-react";
 import Button from "../ui/Button/Button";
 import Logo from "../ui/Logo";
@@ -22,6 +23,7 @@ const Sidebar = ({ user, dailyGoal, onMenuClose }) => {
     { name: "Generate Quiz", path: "/generate", icon: Sparkles },
     { name: "My Attempts", path: "/attempts", icon: FileCheck2 },
     { name: "Leaderboard", path: "/leaderboard", icon: Award },
+    { name: "Achievements", path: "/achievements", icon: Trophy },
     { name: "Feedback", path: "/feedback", icon: MessageSquare },
   ];
 

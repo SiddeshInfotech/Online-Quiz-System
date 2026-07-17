@@ -26,7 +26,7 @@ export const resolveMediaUrl = (url) => {
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "https://online-quiz-system-dd78.onrender.com/api/",
-  timeout: 60000,
+  timeout: 120000, // 120 seconds
   headers: {
     "Content-Type": "application/json",
   },

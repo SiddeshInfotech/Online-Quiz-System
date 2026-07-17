@@ -27,6 +27,10 @@ import QuizResultsPage from "../pages/quiz/QuizResultsPage";
 import QuizReviewPage from "../pages/quiz/QuizReviewPage";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 
+import AchievementPage from "../pages/Achievements/AchievementPage";
+import BadgeDetailsPage from "../pages/Achievements/BadgeDetailsPage";
+import UserBadgesPage from "../pages/Achievements/UserBadgesPage";
+
 const AppRoutes = () => {
   return (
     <Routes>
@@ -55,6 +59,9 @@ const AppRoutes = () => {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/leaderboard" element={<LeaderboardPage />} />
+          <Route path="/achievements" element={<AchievementPage />} />
+          <Route path="/badges/:id" element={<BadgeDetailsPage />} />
+          <Route path="/profile/badges" element={<UserBadgesPage />} />
           <Route path="/feedback" element={<FeedbackPage />} />
         </Route>
         

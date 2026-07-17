@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
@@ -17,8 +17,13 @@ import {
   GraduationCap,
   Book,
   Camera,
-  Target
+  Target,
+  Trophy,
+  Award
 } from "lucide-react";
+
+import achievementService from "../../services/achievementService";
+import { resolveMediaUrl } from "../../services/api";
 
 import Card from "../../components/ui/Card/Card";
 import Button from "../../components/ui/Button/Button";
@@ -651,6 +656,8 @@ const ProfilePage = () => {
   const [showModal, setShowModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [toast, setToast] = useState(null);
+  const [recentBadges, setRecentBadges] = useState([]);
+  const [totalEarnedBadges, setTotalEarnedBadges] = useState(0);
 
   const showToast = (message, type = "success") =>
     setToast({ message, type });
@@ -663,6 +670,18 @@ const ProfilePage = () => {
     const load = async () => {
       try {
         await fetchProfile();
+        // Fetch badges for preview
+        const badgesData = await achievementService.getAllBadges();
+        const earned = badgesData.filter(b => b.status === "earned").map(b => ({
+          ...b,
+          image_url: resolveMediaUrl(b.image_url)
+        }));
+        // Sort by newest if earned_date exists
+        earned.sort((a, b) => new Date(b.earned_date || 0) - new Date(a.earned_date || 0));
+        setTotalEarnedBadges(earned.length);
+        setRecentBadges(earned.slice(0, 5));
+      } catch (err) {
+        console.error("Failed to load profile or badges", err);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -1006,6 +1025,66 @@ const ProfilePage = () => {
                       </div>
                     </div>
                   </div>
+                </div>
+              </Card>
+            </motion.div>
+
+            {/* Achievements Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.22 }}
+            >
+              <Card className="p-8 hover:shadow-xl transition-shadow duration-300">
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
+                      <Trophy className="text-violet-600" size={20} />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold font-space-grotesk text-slate-900">
+                        Achievements
+                      </h3>
+                      <p className="text-sm text-slate-500">
+                        Recent badges you've earned
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-4 items-center">
+                  {recentBadges.length > 0 ? (
+                    <>
+                      {recentBadges.map((badge) => (
+                        <div key={badge.id} className="relative group cursor-pointer" title={badge.name}>
+                          <div className="w-14 h-14 bg-slate-50 border border-slate-100 rounded-full flex items-center justify-center overflow-hidden shadow-sm group-hover:ring-2 ring-violet-200 transition-all">
+                            {badge.image_url ? (
+                              <img src={badge.image_url} alt={badge.name} className="w-10 h-10 object-contain" />
+                            ) : (
+                              <Award className="text-violet-400" size={24} />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      {totalEarnedBadges > 5 && (
+                        <Link to="/profile/badges" className="w-14 h-14 bg-slate-50 hover:bg-violet-50 text-slate-500 hover:text-violet-600 border border-slate-100 rounded-full flex items-center justify-center font-bold text-sm shadow-sm transition-colors">
+                          +{totalEarnedBadges - 5}
+                        </Link>
+                      )}
+                      <div className="w-full mt-2">
+                        <Link to="/profile/badges" className="text-sm font-medium text-violet-600 hover:text-violet-700">
+                          View all badges →
+                        </Link>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-full text-center py-4 bg-slate-50 rounded-xl border border-slate-100 border-dashed">
+                      <p className="text-sm text-slate-500 mb-2">No badges earned yet.</p>
+                      <Link to="/achievements" className="text-sm font-medium text-violet-600 hover:text-violet-700">
+                        Explore challenges →
+                      </Link>
+                    </div>
+                  )}
                 </div>
               </Card>
             </motion.div>

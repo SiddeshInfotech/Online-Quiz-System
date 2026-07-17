@@ -326,6 +326,34 @@ const TableRow = ({ id, entry, isCurrentUser, index }) => (
       </div>
     </td>
 
+    {/* Badges */}
+    <td className="py-3.5 pr-4">
+      <div className="flex items-center gap-2">
+        {entry.badges && entry.badges.length > 0 ? (
+          <>
+            <div className="flex -space-x-2">
+              {entry.badges.slice(0, 4).map((badge, i) => (
+                <div key={badge.id || i} className="w-7 h-7 rounded-full bg-slate-50 border border-slate-200 shadow-sm flex items-center justify-center overflow-hidden z-10" style={{ zIndex: 10 - i }}>
+                  {badge.image_url ? (
+                    <img src={badge.image_url} alt={badge.name} className="w-5 h-5 object-contain" />
+                  ) : (
+                    <Trophy size={12} className="text-violet-400" />
+                  )}
+                </div>
+              ))}
+            </div>
+            {entry.badges.length > 4 && (
+              <span className="text-xs font-semibold text-slate-500 bg-slate-100 rounded-full px-2 py-0.5 cursor-pointer hover:bg-violet-100 hover:text-violet-600 transition-colors">
+                +{entry.badges.length - 4}
+              </span>
+            )}
+          </>
+        ) : (
+          <span className="text-xs text-slate-400 font-medium italic">No badges yet</span>
+        )}
+      </div>
+    </td>
+
     {/* Points – right-aligned */}
     <td className="py-3.5 pr-4 text-right">
       <div className="flex items-center justify-end gap-1.5">
@@ -646,6 +674,9 @@ const LeaderboardPage = () => {
                         </th>
                         <th className="py-3 pr-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                           Player
+                        </th>
+                        <th className="py-3 pr-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                          Badges
                         </th>
                         <th className="py-3 pr-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400 text-right">
                           Points
