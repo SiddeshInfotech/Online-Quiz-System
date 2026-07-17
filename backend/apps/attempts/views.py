@@ -546,6 +546,7 @@ class AttemptReviewView(APIView):
 
         # Get all user answers
         user_answers = UserAnswer.objects.filter(attempt=attempt).select_related('question')
+        user_answers.update(reviewed=True)
         questions = attempt.quiz.question_set.all().order_by('question_order')
 
         # Build question data

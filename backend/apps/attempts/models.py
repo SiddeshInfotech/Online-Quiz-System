@@ -21,7 +21,7 @@ class UserAnswer(models.Model):
     is_correct = models.BooleanField(null=True, blank=True)
     marks_obtained = models.IntegerField(default=0)
     marked_for_review = models.BooleanField(default=False)
-    
+    reviewed = models.BooleanField(default=False)
 
 class Result(models.Model):
     attempt = models.OneToOneField(QuizAttempt, on_delete=models.CASCADE)
