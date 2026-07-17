@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from cloudinary.models import CloudinaryField
+from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator, MinLengthValidator, MaxLengthValidator
 
 class User(AbstractUser):
@@ -34,6 +35,9 @@ class User(AbstractUser):
         return self.username
 
 
+
+
+
 class Badge(models.Model):
     RARITY_CHOICES = [
         ('COMMON', 'Common'),
@@ -41,7 +45,7 @@ class Badge(models.Model):
         ('EPIC', 'Epic'),
         ('LEGENDARY', 'Legendary'),
     ]
-    
+
     badge_id = models.IntegerField(unique=True)
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField()
@@ -50,6 +54,7 @@ class Badge(models.Model):
     requirement = models.TextField()
     category = models.CharField(max_length=50, default='General')
     rarity = models.CharField(max_length=20, choices=RARITY_CHOICES, default='COMMON')
+    xp_reward = models.IntegerField(default=10)  # NEW: awarded to user.total_points on claim
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -57,12 +62,19 @@ class Badge(models.Model):
 
 
 class UserBadge(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='earned_badges')
+    STATUS_CHOICES = [
+        ('CLAIMABLE', 'Claimable'),
+        ('CLAIMED', 'Claimed'),
+    ]
+    
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='earned_badges')
     badge = models.ForeignKey(Badge, on_delete=models.CASCADE)
-    awarded_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='CLAIMABLE')  # ADD THIS
+    earned_at = models.DateTimeField(auto_now_add=True)
+    claimed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ('user', 'badge')
 
     def __str__(self):
-        return f"{self.user.username} - {self.badge.name}"
+        return f"{self.user.username} - {self.badge.name} ({self.status})"
