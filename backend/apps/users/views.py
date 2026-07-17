@@ -559,5 +559,18 @@ class AllBadgesView(APIView):
             "earned": UserBadge.objects.filter(user=request.user).count(),
             "badges": serializer.data
         })
+    
+class XPProgressView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        next_level_xp = user.level * 100
+        return Response({
+            "level": user.level,
+            "current_xp": user.xp,
+            "next_level_xp": next_level_xp,
+            "progress_percentage": round((user.xp / next_level_xp) * 100, 2) if next_level_xp > 0 else 0
+        })
 
 
