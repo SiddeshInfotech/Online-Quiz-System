@@ -218,7 +218,7 @@ class BadgeProgressHelper:
             60: total_correct,
             61: 1 if speed_run else 0,
             62: 0,  # Legend in Progress (handled externally)
-            64: 1,  # Feedback Hero (simplified)
+            64: BadgeProgressHelper._get_feedback_count(user),
         }
         
         return progress_map
@@ -246,7 +246,8 @@ class BadgeProgressHelper:
             17: 90, 18: 100, 19: 5, 20: 80, 21: 3, 22: 1,
             27: 5, 28: 5, 29: 5, 30: 5, 32: 5, 33: 10,
             34: 7, 35: 60, 37: 1, 38: 1, 39: 7,
-            40: 5, 45: 1, 50: 70, 51: 20, 52: 20, 53: 10, 54: 100, 58: 10, 59: 95, 60: 100, 61: 1, 62: 1, 64: 1,
+            40: 5, 45: 1, 50: 70, 51: 20, 52: 20, 53: 10, 54: 100, 58: 10, 59: 95, 60: 100, 61: 1, 62: 1, 
+            64: 1,  # ✅ Feedback Hero target
         }
         return target_map.get(badge.badge_id, 1)
     
@@ -256,16 +257,24 @@ class BadgeProgressHelper:
         requirement = badge.requirement.lower()
         badge_id = badge.badge_id
         
-        # Use existing progress map to get current value
+        # ✅ Special case for Feedback Hero (badge_id 64)
+        if badge_id == 64:
+            from apps.feedback.models import Feedback
+            feedback_count = Feedback.objects.filter(user=user).count()
+            import re
+            numbers = re.findall(r'\d+', requirement)
+            target = int(numbers[0]) if numbers else 1
+            return feedback_count >= target
+        
+        # Use existing progress map for other badges
         progress_map = BadgeProgressHelper.get_all_progress(user, [badge])
         current = progress_map.get(badge_id, 0)
         target = BadgeProgressHelper.get_target(badge)
         
-        # Special cases that need extra logic
-        if badge_id == 8:  # Comeback King – need to check if streak was broken
-            # User had streak >= 7 then lost it and regained 3+
-            # Simplified: check if current streak >= 3 and has previous streak > 7
-            # You'll need custom logic here
-            pass
-        
         return current >= target
+    
+    @staticmethod
+    def _get_feedback_count(user):
+        """Check if user has submitted feedback"""
+        from apps.feedback.models import Feedback
+        return Feedback.objects.filter(user=user).count()
