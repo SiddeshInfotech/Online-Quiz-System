@@ -39,7 +39,6 @@ class BadgeService:
         for b_id, req in badge_map.items():
             if streak >= req:
                 self._award_badge(b_id)
-        # Comeback King (8) - not yet implemented; needs streak-loss history tracking
 
     # ===== Quiz Count Badges =====
     def _check_quiz_count_badges(self):
@@ -51,7 +50,6 @@ class BadgeService:
             if total >= req:
                 self._award_badge(b_id)
 
-        # Century Club (14): 100 questions in one day
         today = timezone.localtime(timezone.now()).date()
         today_qs = UserAnswer.objects.filter(
             attempt__user=self.user, attempt__submitted_at__date=today
@@ -59,12 +57,10 @@ class BadgeService:
         if today_qs >= 100:
             self._award_badge(14)
 
-        # Marathoner (15): 5 quizzes in one day
         today_qz = attempts.filter(submitted_at__date=today).count()
         if today_qz >= 5:
             self._award_badge(15)
 
-        # Quiz Champion (54): win 100 quizzes (score >=80%)
         high_score = attempts.filter(percentage__gte=80).count()
         if high_score >= 100:
             self._award_badge(54)
@@ -75,7 +71,6 @@ class BadgeService:
             user=self.user, submitted_at__isnull=False
         ).select_related('quiz').order_by('-submitted_at')
 
-        # Pre-compute question counts once to avoid repeated queries per attempt
         question_counts = {}
         for att in attempts:
             if att.quiz_id not in question_counts:
@@ -88,19 +83,17 @@ class BadgeService:
                 break
 
         # Perfectionist (18): 100% on any quiz (min 5 Qs)
-        # NOTE: quiz__question_set__gte is not a valid Django lookup on a
-        # reverse-FK manager and will raise FieldError - use a Python loop instead.
         for att in attempts:
             if att.percentage == 100 and question_counts[att.quiz_id] >= 5:
                 self._award_badge(18)
                 break
 
-        # Flawless Five (19): 10 consecutive 100% scores
+        # 🔥 Flawless Five (19): 5 consecutive 100% scores (changed from 10)
         perfect_count = 0
         for att in attempts:
             if att.percentage == 100:
                 perfect_count += 1
-                if perfect_count >= 10:
+                if perfect_count >= 5:
                     self._award_badge(19)
                     break
             else:
@@ -161,7 +154,6 @@ class BadgeService:
             user=self.user, submitted_at__isnull=False
         ).select_related('quiz')
 
-        # Group by subject: track distinct quizzes (not attempts) with score >=80%
         subject_data = {}
         for att in attempts:
             subj = att.quiz.subject
@@ -204,7 +196,7 @@ class BadgeService:
         if len(subj_80) >= 5:
             self._award_badge(32)
 
-        # Subject Master (33): 10 subjects mastered (>=80% avg)
+        # Subject Master (33): 10 subjects mastered
         if len(subj_80) >= 10:
             self._award_badge(33)
 
@@ -213,7 +205,7 @@ class BadgeService:
         attempts = QuizAttempt.objects.filter(user=self.user, submitted_at__isnull=False)
         today = timezone.localtime(timezone.now()).date()
 
-        # Daily Dedication (34): 7 consecutive days with at least one quiz
+        # Daily Dedication (34): 7 consecutive days
         days_with_quiz = 0
         for i in range(7):
             day = today - timedelta(days=i)
@@ -234,9 +226,6 @@ class BadgeService:
                 break
 
         # Early Bird (37): quiz before 9 AM local time
-        # NOTE: submitted_at is stored in UTC when USE_TZ=True. Comparing
-        # .hour directly against it checks UTC hour, not the user's local
-        # hour, so we convert with timezone.localtime() first.
         for att in attempts:
             local_time = timezone.localtime(att.submitted_at)
             if local_time.hour < 9:
@@ -288,24 +277,29 @@ class BadgeService:
         if week_count >= 20:
             self._award_badge(51)
 
-        # Analyst (52): review answers of 20 questions
-        # Not yet implemented - needs a review-action log model to track views
+        # 🔥 Analyst (52): review answers of 20 questions
+        reviewed_count = UserAnswer.objects.filter(
+            attempt__user=self.user,
+            reviewed=True
+        ).count()
+        if reviewed_count >= 20:
+            self._award_badge(52)
 
         # Feedback Hero (64): submitted feedback
         from apps.feedback.models import Feedback
         if Feedback.objects.filter(user=self.user).exists():
             self._award_badge(64)
 
-        # Hidden Gem (45): complete a quiz with 2 or fewer total attempts (by all users)
+        # Hidden Gem (45): complete a quiz with 2 or fewer total attempts
         for att in attempts.select_related('quiz'):
             total_attempts = QuizAttempt.objects.filter(quiz=att.quiz, submitted_at__isnull=False).count()
             if total_attempts <= 2:
                 self._award_badge(45)
                 break
 
-    # ===== Leaderboard Badges (called externally from the leaderboard view) =====
+    # ===== Leaderboard Badges (called externally) =====
     def award_leaderboard_badge(self, rank):
         if rank <= 10:
-            self._award_badge(53)  # Top Performer
+            self._award_badge(53)
         if rank == 1:
-            self._award_badge(62)  # Legend in Progress
+            self._award_badge(62)
