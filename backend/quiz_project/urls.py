@@ -27,6 +27,7 @@ urlpatterns = [
     path('api/health/', health_check, name='health-check'),
     path('admin/', admin.site.urls),
     path('api/auth/', include('apps.users.urls')),
+    path('api/achievements/', include('apps.users.achievement_urls')),
     path('api/quizzes/', include('apps.quizzes.urls')),
     path('api/questions/', include('apps.questions.urls')),
     path('api/attempts/', include('apps.attempts.urls')),

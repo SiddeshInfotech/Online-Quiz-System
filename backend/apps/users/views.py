@@ -504,4 +504,44 @@ class UserBadgesView(APIView):
         ]
         return Response({"badges": badges_data})
 
+class AchievementStatsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_badges = UserBadge.objects.filter(user=request.user).select_related('badge')
+        total_badges = user_badges.count()
+        rarity_counts = {}
+        category_counts = {}
+
+        for ub in user_badges:
+            rarity = ub.badge.rarity
+            category = ub.badge.category
+            rarity_counts[rarity] = rarity_counts.get(rarity, 0) + 1
+            category_counts[category] = category_counts.get(category, 0) + 1
+
+        return Response({
+            "total_badges": total_badges,
+            "rarity_distribution": rarity_counts,
+            "category_distribution": category_counts,
+        })
+
+class AchievementCategoriesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from apps.users.models import Badge
+        categories = Badge.objects.values_list('category', flat=True).distinct().order_by('category')
+        category_data = []
+        for cat in categories:
+            count = Badge.objects.filter(category=cat).count()
+            earned = UserBadge.objects.filter(
+                user=request.user, badge__category=cat
+            ).count()
+            category_data.append({
+                "name": cat,
+                "total": count,
+                "earned": earned,
+            })
+        return Response(category_data)
+
 
