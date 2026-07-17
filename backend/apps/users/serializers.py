@@ -169,28 +169,19 @@ class AllBadgeSerializer(serializers.ModelSerializer):
         ]
 
     def get_status(self, obj):
-        user = self.context.get('user')
-        if user and UserBadge.objects.filter(user=user, badge=obj).exists():
-            return "EARNED"
-        return "LOCKED"
+        earned_ids = self.context.get('earned_ids', set())
+        return "EARNED" if obj.badge_id in earned_ids else "LOCKED"
 
     def get_awarded_at(self, obj):
-        user = self.context.get('user')
-        if user:
-            ub = UserBadge.objects.filter(user=user, badge=obj).first()
-            if ub:
-                return ub.awarded_at
-        return None
+        awarded_at_map = self.context.get('awarded_at_map', {})
+        return awarded_at_map.get(obj.badge_id, None)
 
     def get_progress(self, obj):
-        user = self.context.get('user')
-        if not user:
-            return 0
-        # Use cached progress from context (set in view)
         progress_map = self.context.get('progress_map', {})
         return progress_map.get(obj.badge_id, 0)
 
     def get_target(self, obj):
+        from .services.badge_progress import BadgeProgressHelper
         return BadgeProgressHelper.get_target(obj)
 
     def get_xp_reward(self, obj):

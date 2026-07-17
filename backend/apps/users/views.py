@@ -565,30 +565,38 @@ class AllBadgesView(APIView):
         
         print(f"⏳ Cache miss for user {user.id}, computing...")
         
-        # Time the badge fetching
+        # Precompute earned badges and awarded_at
+        user_badges = UserBadge.objects.filter(user=user).select_related('badge')
+        earned_ids = set()
+        awarded_at_map = {}
+        for ub in user_badges:
+            earned_ids.add(ub.badge.badge_id)
+            awarded_at_map[ub.badge.badge_id] = ub.awarded_at
+        
         t1 = time.time()
         badges = Badge.objects.all().order_by('badge_id')
         print(f"  📊 Badges fetched: {time.time() - t1:.2f}s")
         
-        # Time the progress computation
         t2 = time.time()
         progress_map = BadgeProgressHelper.get_all_progress(user, badges)
         print(f"  📈 Progress computed: {time.time() - t2:.2f}s")
         
-        # Time the serialization
         t3 = time.time()
-        context = {'user': user, 'progress_map': progress_map}
+        context = {
+            'user': user,
+            'progress_map': progress_map,
+            'earned_ids': earned_ids,
+            'awarded_at_map': awarded_at_map
+        }
         serializer = AllBadgeSerializer(badges, many=True, context=context)
         data = {
             "total": badges.count(),
-            "earned": UserBadge.objects.filter(user=user).count(),
+            "earned": len(earned_ids),
             "badges": serializer.data
         }
         print(f"  📦 Serialized: {time.time() - t3:.2f}s")
         
-        # Cache for 10 minutes
         cache.set(cache_key, data, 600)
-        
         print(f"✅ Total time: {time.time() - start_total:.2f}s")
         return Response(data)
     
