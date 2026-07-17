@@ -26,6 +26,8 @@ class User(AbstractUser):
     push_notifications = models.BooleanField(default=False)
     daily_quiz_goal = models.IntegerField(default=3)
     deactivated_at = models.DateTimeField(null=True, blank=True)
+    xp = models.IntegerField(default=0)
+    level = models.IntegerField(default=1)
     
 
     def __str__(self):
