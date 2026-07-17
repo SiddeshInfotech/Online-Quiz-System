@@ -2,17 +2,21 @@ from django.utils import timezone
 from datetime import timedelta
 from django.db.models import Count, Avg, Sum, Q
 from apps.attempts.models import QuizAttempt, UserAnswer
+from apps.quizzes.models import Question  # Add this import
 
 class BadgeProgressHelper:
     @staticmethod
     def get_all_progress(user, badges):
-        """
-        Compute progress for all badges in one efficient pass.
-        Returns a dict mapping badge_id -> progress value.
-        """
+        """Compute progress for all badges in one efficient pass."""
         # Fetch user data once
         attempts = QuizAttempt.objects.filter(user=user, submitted_at__isnull=False).select_related('quiz')
         answers = UserAnswer.objects.filter(attempt__user=user)
+        
+        # Precompute question counts for all quizzes in attempts
+        quiz_ids = set(attempts.values_list('quiz_id', flat=True))
+        question_counts = {}
+        for qid in quiz_ids:
+            question_counts[qid] = Question.objects.filter(quiz_id=qid).count()
         
         # Pre-aggregate data
         total_attempts = attempts.count()
@@ -26,7 +30,6 @@ class BadgeProgressHelper:
         
         # Subject counts
         subject_counts = {}
-        subject_avg = {}
         for att in attempts:
             subj = att.quiz.subject
             if subj not in subject_counts:
@@ -48,19 +51,32 @@ class BadgeProgressHelper:
         hard_high_score = False
         speed_run = False
         hidden_gem_done = False
+        sharp_shooter_done = False
+        peak_performer_done = False
         
         for att in attempts:
+            qid = att.quiz_id
+            q_count = question_counts.get(qid, 0)
+            
+            # Sharp Shooter (17): 90%+ on 10+ Qs
+            if not sharp_shooter_done and q_count >= 10 and att.percentage >= 90:
+                sharp_shooter_done = True
+            
+            # Peak Performer (59): 95%+ on 10+ Qs
+            if not peak_performer_done and q_count >= 10 and att.percentage >= 95:
+                peak_performer_done = True
+            
             # Coding
             if att.quiz.question_type == 'Coding' and att.percentage >= 80:
-                coding_quiz_ids.add(att.quiz_id)
+                coding_quiz_ids.add(qid)
             # Python, Java, C++ (case-insensitive)
             subj_lower = att.quiz.subject.lower()
             if 'python' in subj_lower and att.percentage >= 80:
-                python_quiz_ids.add(att.quiz_id)
+                python_quiz_ids.add(qid)
             if 'java' in subj_lower and att.percentage >= 80:
-                java_quiz_ids.add(att.quiz_id)
+                java_quiz_ids.add(qid)
             if 'c++' in subj_lower and att.percentage >= 80:
-                cpp_quiz_ids.add(att.quiz_id)
+                cpp_quiz_ids.add(qid)
             # Hard quiz with 70%+
             if att.quiz.difficulty == 'Hard' and att.percentage >= 70:
                 hard_high_score = True
@@ -122,8 +138,6 @@ class BadgeProgressHelper:
         # Quiz Champion: 100 quizzes with >=80%
         champion_count = attempts.filter(percentage__gte=80).count()
 
-        # Top Performer and Legend in Progress: handled externally
-
         # Build progress map
         progress_map = {
             # Streak (1-8)
@@ -134,13 +148,13 @@ class BadgeProgressHelper:
             14: today_questions,
             15: today_quiz_count,
             # Accuracy (17-22, 59, 60, 61)
-            17: 1 if attempts.filter(quiz__question_set__gte=10, percentage__gte=90).exists() else 0,
+            17: 1 if sharp_shooter_done else 0,
             18: perfect_count,
-            19: BadgeProgressHelper._consecutive_perfect_count(attempts),  # needs custom
+            19: BadgeProgressHelper._consecutive_perfect_count(attempts),
             20: BadgeProgressHelper._average_last_20(attempts),
             21: BadgeProgressHelper._no_mistake_streak(attempts),
             22: BadgeProgressHelper._redemption(attempts),
-            59: 1 if attempts.filter(quiz__question_set__gte=10, percentage__gte=95).exists() else 0,
+            59: 1 if peak_performer_done else 0,
             60: total_correct,
             61: 1 if speed_run else 0,
             # Subject (27-33)
@@ -148,8 +162,8 @@ class BadgeProgressHelper:
             28: len(python_quiz_ids),
             29: len(java_quiz_ids),
             30: len(cpp_quiz_ids),
-            32: BadgeProgressHelper._subjects_above_80(subject_avg, threshold=5),
-            33: BadgeProgressHelper._subjects_above_80(subject_avg, threshold=10),
+            32: BadgeProgressHelper._subjects_above_80(subject_counts, threshold=5),
+            33: BadgeProgressHelper._subjects_above_80(subject_counts, threshold=10),
             # Time (34-39)
             34: consecutive_days,
             35: max_day_minutes,
@@ -157,8 +171,8 @@ class BadgeProgressHelper:
             38: 1 if night_owl else 0,
             39: goal_days,
             # Miscellaneous (40,45,50,51,52,58,64)
-            40: len(subject_avg),
-            58: len(subject_avg),
+            40: len(subject_counts),
+            58: len(subject_counts),
             45: 1 if hidden_gem_done else 0,
             50: 1 if hard_high_score else 0,
             51: attempts.filter(submitted_at__gte=timezone.now() - timedelta(days=7)).count(),
@@ -167,7 +181,7 @@ class BadgeProgressHelper:
         }
 
         # Override for badge 8 (Comeback King) - not implemented yet
-        progress_map[8] = 0  # Placeholder
+        progress_map[8] = 0
 
         # Override for badge 53 (Top Performer) and 62 (Legend in Progress) – handled elsewhere
         progress_map[53] = 0
@@ -178,6 +192,7 @@ class BadgeProgressHelper:
 
         return progress_map
 
+    # ... (rest of helper methods remain the same)
     @staticmethod
     def _consecutive_perfect_count(attempts):
         count = 0
@@ -219,10 +234,10 @@ class BadgeProgressHelper:
         return 0
 
     @staticmethod
-    def _subjects_above_80(subject_avg, threshold):
+    def _subjects_above_80(subject_counts, threshold):
         count = 0
-        for subj, data in subject_avg.items():
-            if sum(data['scores']) / len(data['scores']) >= 80:
+        for subj, data in subject_counts.items():
+            if len(data['scores']) >= 5 and sum(data['scores']) / len(data['scores']) >= 80:
                 count += 1
         return count
 
