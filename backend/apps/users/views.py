@@ -15,6 +15,9 @@ from .models import User, UserBadge
 from apps.otp.models import OTPVerification
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Content
+from .serializers import AllBadgeSerializer
+from .services.badge_progress import BadgeProgressHelper
+from .models import Badge
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -543,5 +546,18 @@ class AchievementCategoriesView(APIView):
                 "earned": earned,
             })
         return Response(category_data)
+
+class AllBadgesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        badges = Badge.objects.all().order_by('badge_id')
+        serializer = AllBadgeSerializer(badges, many=True, context={'user': request.user})
+        return Response({
+            "total": badges.count(),
+            "earned": UserBadge.objects.filter(user=request.user).count(),
+            "badges": serializer.data
+        })
 
 

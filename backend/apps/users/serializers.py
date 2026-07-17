@@ -4,7 +4,9 @@ from django.conf import settings
 from rest_framework import serializers
 from .models import User
 from django.contrib.auth import get_user_model
-import uuid
+from rest_framework import serializers
+from .models import Badge, UserBadge 
+from .services.badge_progress import BadgeProgressHelper  
 
 User = get_user_model()
 
@@ -150,3 +152,51 @@ class GoogleAuthSerializer(serializers.Serializer):
 
         except ValueError as e:
             raise serializers.ValidationError(f"Invalid Google token: {str(e)}")
+
+class AllBadgeSerializer(serializers.ModelSerializer):
+    status = serializers.SerializerMethodField()
+    progress = serializers.SerializerMethodField()
+    target = serializers.SerializerMethodField()
+    xp_reward = serializers.SerializerMethodField()
+    awarded_at = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Badge
+        fields = [
+            'badge_id', 'name', 'description', 'image_url',
+            'category', 'rarity', 'requirement',
+            'status', 'progress', 'target', 'xp_reward', 'awarded_at'
+        ]
+
+    def get_status(self, obj):
+        user = self.context.get('user')
+        if user and UserBadge.objects.filter(user=user, badge=obj).exists():
+            return "EARNED"
+        return "LOCKED"
+
+    def get_awarded_at(self, obj):
+        user = self.context.get('user')
+        if user:
+            ub = UserBadge.objects.filter(user=user, badge=obj).first()
+            if ub:
+                return ub.awarded_at
+        return None
+
+    def get_progress(self, obj):
+        user = self.context.get('user')
+        if not user:
+            return 0
+        return BadgeProgressHelper.get_progress(user, obj)
+
+    def get_target(self, obj):
+        return BadgeProgressHelper.get_target(obj)
+
+    def get_xp_reward(self, obj):
+        # XP rewards can be configured per badge or based on rarity
+        xp_map = {
+            'COMMON': 25,
+            'RARE': 50,
+            'EPIC': 100,
+            'LEGENDARY': 200,
+        }
+        return xp_map.get(obj.rarity, 25)
