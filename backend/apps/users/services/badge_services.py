@@ -4,6 +4,7 @@ from django.db.models import Count, Avg, Q, Sum
 from apps.attempts.models import QuizAttempt, UserAnswer
 from apps.users.models import Badge, UserBadge
 from apps.quizzes.models import Quiz
+from apps.notifications.models import Notification
 
 
 class BadgeService:
@@ -25,8 +26,16 @@ class BadgeService:
         try:
             badge = Badge.objects.get(badge_id=badge_id)
             if not UserBadge.objects.filter(user=self.user, badge=badge).exists():
+                
                 UserBadge.objects.create(user=self.user, badge=badge)
                 self.earned_badges.append(badge.name)
+
+                Notification.objects.create(
+                    user=self.user,
+                    title=f"🏆 New Badge Unlocked: {badge.name}",
+                    message=f"You earned the '{badge.name}' badge! {badge.description}",
+                )
+                
                 return True
         except Badge.DoesNotExist:
             pass
