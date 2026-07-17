@@ -8,6 +8,7 @@ from rest_framework import serializers
 from .models import Badge, UserBadge 
 from .services.badge_progress import BadgeProgressHelper  
 from rest_framework.validators import UniqueValidator
+from apps.otp.models import OTPVerification
 
 User = get_user_model()
 
@@ -17,12 +18,9 @@ class RegisterSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
     full_name = serializers.CharField(required=False, allow_blank=True)
 
-    email = serializers.EmailField(
-        validators=[UniqueValidator(queryset=User.objects.all(), message="This email is already registered.")]
-    )
-    username = serializers.CharField(
-        validators=[UniqueValidator(queryset=User.objects.all(), message="Username already taken.")]
-    )
+    # ✅ Removed UniqueValidator – we handle existence manually in the view
+    email = serializers.EmailField()
+    username = serializers.CharField()
 
     class Meta:
         model = User
@@ -83,6 +81,7 @@ class UserSerializer(serializers.ModelSerializer):
             'subject_interests', 'profile_completion'
         ]
         read_only_fields = ['id', 'username', 'email', 'role', 'date_joined']
+
     def get_profile_picture(self, obj):
         if obj.profile_picture:
             return obj.profile_picture.url
@@ -104,7 +103,6 @@ class UserSerializer(serializers.ModelSerializer):
         if obj.subject_interests and len(obj.subject_interests) > 0:
             filled += 1
         return int((filled / total_fields) * 100)
-
 
 
 class GoogleAuthSerializer(serializers.Serializer):
@@ -140,20 +138,33 @@ class GoogleAuthSerializer(serializers.Serializer):
                 username = f"{base_username}_{suffix}"
                 suffix += 1
 
-            user, created = User.objects.get_or_create(
-                email=email,
-                defaults={
-                    'username': username,
-                    'full_name': (idinfo.get('name') or base_username).title(),
-                    'role': 'Student'
-                }
-            )
+            # ✅ Check if user already exists with this email
+            user = User.objects.filter(email=email).first()
 
-            if not created:
-                desired_full_name = idinfo.get('name', base_username)
-                if not user.full_name or (idinfo.get('name') and user.full_name != idinfo.get('name')):
-                    user.full_name = desired_full_name
+            if user:
+                # ✅ If user exists but is inactive (unverified), activate them
+                if not user.is_active:
+                    user.is_active = True
                     user.save()
+                    # Delete any pending OTPs
+                    OTPVerification.objects.filter(user=user, purpose='Email Verification').delete()
+
+                self.context['user'] = user
+                return data
+
+            # ✅ Create new user with auto-verification
+            user = User.objects.create(
+                email=email,
+                username=username,
+                full_name=(idinfo.get('name') or base_username).title(),
+                role='Student',
+                is_active=True  # ✅ Auto-verify
+            )
+            user.set_unusable_password()  # No password for Google users
+            user.save()
+
+            # ✅ Delete any OTP if exists (shouldn't, but safe)
+            OTPVerification.objects.filter(user=user, purpose='Email Verification').delete()
 
             self.context['user'] = user
             return data

@@ -27,6 +27,48 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        username = request.data.get('username')
+
+        # ✅ Check if email already exists
+        existing_user = User.objects.filter(email=email).first()
+
+        if existing_user:
+            # If user exists but is not active → unverified, resend OTP
+            if not existing_user.is_active:
+                otp_code = str(random.randint(100000, 999999))
+                expires_at = timezone.now() + timezone.timedelta(minutes=10)
+
+                OTPVerification.objects.filter(user=existing_user, purpose='Email Verification').delete()
+                OTPVerification.objects.create(
+                    user=existing_user,
+                    otp_code=otp_code,
+                    purpose='Email Verification',
+                    expires_at=expires_at
+                )
+
+                # Send OTP email
+                self._send_otp_email(existing_user, otp_code, purpose='verification')
+
+                return Response({
+                    "message": "This email is already registered but not verified. A new OTP has been sent.",
+                    "requires_verification": True,
+                    "email": existing_user.email,
+                    "otp": otp_code,
+                }, status=status.HTTP_200_OK)
+
+            # If user exists and is active → already registered
+            return Response({
+                "error": "Email already registered. Please login."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # ✅ Check if username exists
+        if User.objects.filter(username=username).exists():
+            return Response({
+                "error": "Username already taken."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # ✅ New user → normal registration
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
@@ -44,25 +86,8 @@ class RegisterView(generics.CreateAPIView):
                 expires_at=expires_at
             )
 
-            try:
-                from_email = os.environ.get('FROM_EMAIL', 'zeeshanansari1081015@gmail.com')
-                message = Mail(
-                    from_email=from_email,
-                    to_emails=user.email,
-                    subject='Verify Your Email - Online Quiz System',
-                    html_content=f"""
-                    <p>Hello {user.full_name or user.username},</p>
-                    <p>Thank you for registering! Your OTP for email verification is: <b>{otp_code}</b></p>
-                    <p>This OTP is valid for 10 minutes.</p>
-                    <p>If you did not register, please ignore this email.</p>
-                    <p>- Online Quiz Team</p>
-                    """
-                )
-                sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
-                response = sg.send(message)
-                print(f"✅ Verification email sent to {user.email}, status: {response.status_code}")
-            except Exception as e:
-                print(f"❌ Email send failed: {e}")
+            # Send OTP email
+            self._send_otp_email(user, otp_code, purpose='verification')
 
             return Response({
                 "message": "Registration successful! Please verify your email with the OTP sent.",
@@ -73,6 +98,40 @@ class RegisterView(generics.CreateAPIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def _send_otp_email(self, user, otp_code, purpose='verification'):
+        """Helper to send OTP email (used for both registration and resend)"""
+        try:
+            from_email = os.environ.get('FROM_EMAIL', 'zeeshanansari1081015@gmail.com')
+            if purpose == 'verification':
+                subject = 'Verify Your Email - Online Quiz System'
+                html_content = f"""
+                <p>Hello {user.full_name or user.username},</p>
+                <p>Thank you for registering! Your OTP for email verification is: <b>{otp_code}</b></p>
+                <p>This OTP is valid for 10 minutes.</p>
+                <p>If you did not register, please ignore this email.</p>
+                <p>- Online Quiz Team</p>
+                """
+            else:  # password reset
+                subject = 'Password Reset OTP - Online Quiz System'
+                html_content = f"""
+                <p>Hello {user.full_name or user.username},</p>
+                <p>Your OTP for password reset is: <b>{otp_code}</b></p>
+                <p>This OTP is valid for 10 minutes.</p>
+                <p>- Online Quiz Team</p>
+                """
+
+            message = Mail(
+                from_email=from_email,
+                to_emails=user.email,
+                subject=subject,
+                html_content=html_content
+            )
+            sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+            response = sg.send(message)
+            print(f"✅ Email sent to {user.email}, status: {response.status_code}")
+        except Exception as e:
+            print(f"❌ Email send failed: {e}")
+
 
 class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
@@ -82,17 +141,46 @@ class LoginView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
-            
+
             if not user.is_active:
+                # ✅ Check if user is unverified (has pending OTP or never logged in)
+                otp_exists = OTPVerification.objects.filter(
+                    user=user,
+                    purpose='Email Verification'
+                ).exists()
+
+                if otp_exists or not user.last_login:
+                    # Resend OTP automatically
+                    otp_code = str(random.randint(100000, 999999))
+                    expires_at = timezone.now() + timezone.timedelta(minutes=10)
+
+                    OTPVerification.objects.filter(user=user, purpose='Email Verification').delete()
+                    OTPVerification.objects.create(
+                        user=user,
+                        otp_code=otp_code,
+                        purpose='Email Verification',
+                        expires_at=expires_at
+                    )
+
+                    # Send email
+                    self._send_otp_email(user, otp_code, purpose='verification')
+
+                    return Response({
+                        "error": "Email not verified. A new OTP has been sent to your email.",
+                        "requires_verification": True,
+                        "email": user.email,
+                    }, status=status.HTTP_403_FORBIDDEN)
+
                 if hasattr(user, 'deactivated_at') and user.deactivated_at:
                     return Response({
                         "error": f"Your account was deactivated on {user.deactivated_at.strftime('%Y-%m-%d')}. Please contact support to reactivate."
                     }, status=status.HTTP_403_FORBIDDEN)
-                else:
-                    return Response({
-                        "error": "Please verify your email before logging in."
-                    }, status=status.HTTP_403_FORBIDDEN)
-            
+
+                return Response({
+                    "error": "Please verify your email before logging in."
+                }, status=status.HTTP_403_FORBIDDEN)
+
+            # ✅ User is active → login
             refresh = RefreshToken.for_user(user)
             return Response({
                 "message": "Login Successful",
@@ -106,6 +194,38 @@ class LoginView(generics.GenericAPIView):
                 }
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def _send_otp_email(self, user, otp_code, purpose='verification'):
+        """Same helper as RegisterView (reuse)"""
+        try:
+            from_email = os.environ.get('FROM_EMAIL', 'zeeshanansari1081015@gmail.com')
+            if purpose == 'verification':
+                subject = 'Verify Your Email - Online Quiz System'
+                html_content = f"""
+                <p>Hello {user.full_name or user.username},</p>
+                <p>Your OTP for email verification is: <b>{otp_code}</b></p>
+                <p>This OTP is valid for 10 minutes.</p>
+                <p>- Online Quiz Team</p>
+                """
+            else:
+                subject = 'Password Reset OTP - Online Quiz System'
+                html_content = f"""
+                <p>Hello {user.full_name or user.username},</p>
+                <p>Your OTP for password reset is: <b>{otp_code}</b></p>
+                <p>This OTP is valid for 10 minutes.</p>
+                <p>- Online Quiz Team</p>
+                """
+            message = Mail(
+                from_email=from_email,
+                to_emails=user.email,
+                subject=subject,
+                html_content=html_content
+            )
+            sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+            response = sg.send(message)
+            print(f"✅ Email sent to {user.email}, status: {response.status_code}")
+        except Exception as e:
+            print(f"❌ Email send failed: {e}")
 
 
 class ProfileView(generics.RetrieveUpdateAPIView):
@@ -127,6 +247,7 @@ class ProfileView(generics.RetrieveUpdateAPIView):
             "user": serializer.data
         })
 
+
 class GoogleLoginView(APIView):
     permission_classes = [AllowAny]
 
@@ -147,6 +268,7 @@ class GoogleLoginView(APIView):
                 }
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ForgotPasswordView(APIView):
     permission_classes = [AllowAny]
@@ -174,13 +296,11 @@ class ForgotPasswordView(APIView):
 
         try:
             from_email = f"QuizGen AI <{os.environ.get('FROM_EMAIL', 'zeeshanansari1081015@gmail.com')}>"
-            
             message = Mail(
                 from_email=from_email,
                 to_emails=email,
                 subject='Password Reset OTP - Online Quiz System'
             )
-
             text_content = f"""
 Hello {user.full_name or user.username},
 
@@ -255,6 +375,7 @@ class VerifyOTPView(APIView):
         otp_record.save()
         return Response({"message": "OTP verified successfully"}, status=status.HTTP_200_OK)
 
+
 class ResetPasswordView(APIView):
     permission_classes = [AllowAny]
 
@@ -296,7 +417,8 @@ class ResetPasswordView(APIView):
         user.save()
         otp_record.delete()
         return Response({"message": "Password reset successfully"}, status=status.HTTP_200_OK)
-    
+
+
 class VerifyEmailView(APIView):
     permission_classes = [AllowAny]
 
@@ -308,8 +430,7 @@ class VerifyEmailView(APIView):
             return Response({"error": "Email and OTP are required"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-             user = User.objects.get(email=email)
-
+            user = User.objects.get(email=email)
         except User.DoesNotExist:
             return Response({"error": "No user found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -346,6 +467,7 @@ class VerifyEmailView(APIView):
                 "role": user.role
             }
         }, status=status.HTTP_200_OK)
+
 
 class ResendOTPView(APIView):
     permission_classes = [AllowAny]
@@ -402,7 +524,8 @@ class ResendOTPView(APIView):
             "message": "OTP resent successfully",
             "otp": otp_code
         }, status=200)
- 
+
+
 class PasswordChangeView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -690,6 +813,7 @@ class ClaimBadgeView(APIView):
             }, status=200)
         else:
             return Response({"error": "Invalid badge status"}, status=400)
+
     
 
 
