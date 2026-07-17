@@ -19,6 +19,7 @@ from .serializers import AllBadgeSerializer
 from .services.badge_progress import BadgeProgressHelper
 from .models import Badge
 from django.core.cache import cache 
+import time
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -552,33 +553,43 @@ class AllBadgesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        start_total = time.time()
         user = request.user
         
-        # 🔥 1. Cache check karo (10 minute ke liye store hoga)
         cache_key = f"badges_all_{user.id}"
         cached_data = cache.get(cache_key)
         
         if cached_data:
+            print(f"✅ Cache hit for user {user.id}")
             return Response(cached_data)
         
-        # 🔥 2. Agar cache nahi hai toh compute karo (pehle jaisa logic)
-        from .serializers import AllBadgeSerializer
-        from .services.badge_progress import BadgeProgressHelper
+        print(f"⏳ Cache miss for user {user.id}, computing...")
         
+        # Time the badge fetching
+        t1 = time.time()
         badges = Badge.objects.all().order_by('badge_id')
+        print(f"  📊 Badges fetched: {time.time() - t1:.2f}s")
+        
+        # Time the progress computation
+        t2 = time.time()
         progress_map = BadgeProgressHelper.get_all_progress(user, badges)
+        print(f"  📈 Progress computed: {time.time() - t2:.2f}s")
+        
+        # Time the serialization
+        t3 = time.time()
         context = {'user': user, 'progress_map': progress_map}
         serializer = AllBadgeSerializer(badges, many=True, context=context)
-        
         data = {
             "total": badges.count(),
             "earned": UserBadge.objects.filter(user=user).count(),
             "badges": serializer.data
         }
+        print(f"  📦 Serialized: {time.time() - t3:.2f}s")
         
-        # 🔥 3. Cache mein store karo (10 minutes = 600 seconds)
+        # Cache for 10 minutes
         cache.set(cache_key, data, 600)
         
+        print(f"✅ Total time: {time.time() - start_total:.2f}s")
         return Response(data)
     
 
