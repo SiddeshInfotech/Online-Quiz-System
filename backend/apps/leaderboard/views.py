@@ -2,7 +2,8 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Avg, Count, Max, Min, F
-from django.db.models.functions import Rank, Window
+from django.db.models import Window
+from django.db.models.functions import Rank
 from django.db import connection
 from apps.attempts.models import QuizAttempt, Result
 from apps.quizzes.models import Quiz
