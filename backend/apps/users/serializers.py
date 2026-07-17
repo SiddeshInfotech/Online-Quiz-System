@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import Badge, UserBadge 
 from .services.badge_progress import BadgeProgressHelper  
+from rest_framework.validators import UniqueValidator
 
 User = get_user_model()
 
@@ -15,6 +16,13 @@ class RegisterSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
     last_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
     full_name = serializers.CharField(required=False, allow_blank=True)
+
+    email = serializers.EmailField(
+        validators=[UniqueValidator(queryset=User.objects.all(), message="This email is already registered.")]
+    )
+    username = serializers.CharField(
+        validators=[UniqueValidator(queryset=User.objects.all(), message="Username already taken.")]
+    )
 
     class Meta:
         model = User
@@ -28,18 +36,18 @@ class RegisterSerializer(serializers.ModelSerializer):
         last_name = validated_data.pop('last_name', '')
         full_name = validated_data.pop('full_name', '')
         password = validated_data.pop('password')
-        
+
         if not full_name and (first_name or last_name):
             full_name = f"{first_name} {last_name}".strip()
-            
+
         if not full_name:
             full_name = validated_data.get('username')
-            
+
         validated_data['full_name'] = full_name
 
         if 'role' not in validated_data or not validated_data['role']:
             validated_data['role'] = 'Student'
-        
+
         user = User(**validated_data)
         user.set_password(password)
         user.save()
