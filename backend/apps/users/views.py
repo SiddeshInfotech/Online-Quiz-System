@@ -18,6 +18,7 @@ from sendgrid.helpers.mail import Mail, Content
 from .serializers import AllBadgeSerializer
 from .services.badge_progress import BadgeProgressHelper
 from .models import Badge
+from django.core.cache import cache 
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -551,17 +552,34 @@ class AllBadgesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        user = request.user
+        
+        # 🔥 1. Cache check karo (10 minute ke liye store hoga)
+        cache_key = f"badges_all_{user.id}"
+        cached_data = cache.get(cache_key)
+        
+        if cached_data:
+            return Response(cached_data)
+        
+        # 🔥 2. Agar cache nahi hai toh compute karo (pehle jaisa logic)
         from .serializers import AllBadgeSerializer
-        # Precompute progress for all badges in one go
+        from .services.badge_progress import BadgeProgressHelper
+        
         badges = Badge.objects.all().order_by('badge_id')
-        progress_map = BadgeProgressHelper.get_all_progress(request.user, badges)
-        context = {'user': request.user, 'progress_map': progress_map}
+        progress_map = BadgeProgressHelper.get_all_progress(user, badges)
+        context = {'user': user, 'progress_map': progress_map}
         serializer = AllBadgeSerializer(badges, many=True, context=context)
-        return Response({
+        
+        data = {
             "total": badges.count(),
-            "earned": UserBadge.objects.filter(user=request.user).count(),
+            "earned": UserBadge.objects.filter(user=user).count(),
             "badges": serializer.data
-        })
+        }
+        
+        # 🔥 3. Cache mein store karo (10 minutes = 600 seconds)
+        cache.set(cache_key, data, 600)
+        
+        return Response(data)
     
 
 
