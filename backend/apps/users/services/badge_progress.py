@@ -2,7 +2,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django.db.models import Count, Avg, Sum, Q
 from apps.attempts.models import QuizAttempt, UserAnswer
-from apps.quizzes.models import Question  # Add this import
+from apps.questions.models import Question  
 
 class BadgeProgressHelper:
     @staticmethod
