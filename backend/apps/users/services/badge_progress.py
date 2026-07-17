@@ -249,3 +249,23 @@ class BadgeProgressHelper:
             40: 5, 45: 1, 50: 70, 51: 20, 52: 20, 53: 10, 54: 100, 58: 10, 59: 95, 60: 100, 61: 1, 62: 1, 64: 1,
         }
         return target_map.get(badge.badge_id, 1)
+    
+    @staticmethod
+    def is_requirement_met(user, badge):
+        """Check if user meets badge requirement"""
+        requirement = badge.requirement.lower()
+        badge_id = badge.badge_id
+        
+        # Use existing progress map to get current value
+        progress_map = BadgeProgressHelper.get_all_progress(user, [badge])
+        current = progress_map.get(badge_id, 0)
+        target = BadgeProgressHelper.get_target(badge)
+        
+        # Special cases that need extra logic
+        if badge_id == 8:  # Comeback King – need to check if streak was broken
+            # User had streak >= 7 then lost it and regained 3+
+            # Simplified: check if current streak >= 3 and has previous streak > 7
+            # You'll need custom logic here
+            pass
+        
+        return current >= target
