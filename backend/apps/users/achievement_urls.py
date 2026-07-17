@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import UserBadgesView, AchievementStatsView, AchievementCategoriesView, AllBadgesView, XPProgressView
+from .views import UserBadgesView, AchievementStatsView, AchievementCategoriesView, AllBadgesView, XPProgressView, ClaimBadgeView
 
 urlpatterns = [
     path('badges/', UserBadgesView.as_view(), name='achievement-badges'),
@@ -7,4 +7,5 @@ urlpatterns = [
     path('categories/', AchievementCategoriesView.as_view(), name='achievement-categories'),
     path('all/', AllBadgesView.as_view(), name='achievement-all'),
     path('progress/', XPProgressView.as_view(), name='achievement-progress'),
+    path('claim/<int:badge_id>/', ClaimBadgeView.as_view(), name='claim-badge'),
 ]

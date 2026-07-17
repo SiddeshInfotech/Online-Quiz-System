@@ -159,22 +159,35 @@ class AllBadgeSerializer(serializers.ModelSerializer):
     target = serializers.SerializerMethodField()
     xp_reward = serializers.SerializerMethodField()
     awarded_at = serializers.SerializerMethodField()
+    claimed_at = serializers.SerializerMethodField()  # NEW
 
     class Meta:
         model = Badge
         fields = [
             'badge_id', 'name', 'description', 'image_url',
             'category', 'rarity', 'requirement',
-            'status', 'progress', 'target', 'xp_reward', 'awarded_at'
+            'status', 'progress', 'target', 'xp_reward', 
+            'awarded_at', 'claimed_at'  # ADD claimed_at
         ]
 
     def get_status(self, obj):
+        # earned_ids = badges the user has a UserBadge row for (CLAIMABLE or CLAIMED)
         earned_ids = self.context.get('earned_ids', set())
-        return "EARNED" if obj.badge_id in earned_ids else "LOCKED"
+        if obj.badge_id not in earned_ids:
+            return "LOCKED"
+        # Check if claimed
+        claimed_ids = self.context.get('claimed_ids', set())
+        if obj.badge_id in claimed_ids:
+            return "CLAIMED"
+        return "CLAIMABLE"
 
     def get_awarded_at(self, obj):
         awarded_at_map = self.context.get('awarded_at_map', {})
         return awarded_at_map.get(obj.badge_id, None)
+
+    def get_claimed_at(self, obj):
+        claimed_at_map = self.context.get('claimed_at_map', {})
+        return claimed_at_map.get(obj.badge_id, None)
 
     def get_progress(self, obj):
         progress_map = self.context.get('progress_map', {})
@@ -187,3 +200,4 @@ class AllBadgeSerializer(serializers.ModelSerializer):
     def get_xp_reward(self, obj):
         xp_map = {'COMMON': 25, 'RARE': 50, 'EPIC': 100, 'LEGENDARY': 200}
         return xp_map.get(obj.rarity, 25)
+
