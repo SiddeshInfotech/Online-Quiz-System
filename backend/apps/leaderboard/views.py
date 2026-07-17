@@ -2,11 +2,12 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Avg, Count, Max, Min, F, Q
-from django.db.models.functions import Rank, Window
+from django.db.models import Window
+from django.db.models.functions import Rank
 from django.db import connection
 from apps.attempts.models import QuizAttempt, Result
 from apps.quizzes.models import Quiz
-from apps.users.models import User, UserBadge  # ✅ FIXED
+from apps.users.models import User, UserBadge  
 from .serializers import LeaderboardEntrySerializer, QuizLeaderboardSerializer
 from rest_framework.permissions import IsAuthenticated
 
@@ -59,7 +60,7 @@ class QuizLeaderboardView(APIView):
                     "username": attempt.user.username,
                     "full_name": attempt.user.full_name,
                     "email": attempt.user.email,
-                    "profile_picture": profile_pic,  # ✅ Added
+                    "profile_picture": profile_pic, 
                 },
                 "score": attempt.score,
                 "percentage": attempt.percentage,
@@ -111,7 +112,7 @@ class GlobalLeaderboardView(APIView):
                 "quizzes_count": user.quizzes_completed,
                 "profile_picture": profile_picture_url,
                 "user_id": user.id,
-                "badge_count": badge_count,  # ✅ Added
+                "badge_count": badge_count,  
             })
 
         top_3 = all_rankings[:3] if len(all_rankings) >= 3 else all_rankings
@@ -138,7 +139,7 @@ class GlobalLeaderboardView(APIView):
                 "profile_picture": current_user_profile_pic,
                 "full_name": request.user.full_name or request.user.username,
                 "is_in_top_3": current_user["rank"] <= 3 if current_user else False,
-                "badge_count": current_user_badge_count,  # ✅ Added
+                "badge_count": current_user_badge_count,  
             },
             "top_3_podium": top_3,
             "all_rankings_list": all_rankings
