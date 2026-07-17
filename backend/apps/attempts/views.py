@@ -124,6 +124,11 @@ class SubmitAttemptView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, attempt_id):
+        from django.db import transaction
+        import time
+
+        start_time = time.time()
+
         try:
             attempt = QuizAttempt.objects.get(id=attempt_id, user=request.user, submitted_at__isnull=True)
         except QuizAttempt.DoesNotExist:
@@ -133,9 +138,21 @@ class SubmitAttemptView(APIView):
         duration = quiz.duration_minutes
         elapsed = (timezone.now() - attempt.started_at).total_seconds() / 60
         is_auto_submitted = elapsed > duration
+
+        # ✅ OPTIMIZATION 1: Prefetch all questions and options in ONE query
+        questions = Question.objects.filter(quiz=quiz).prefetch_related('questionoption_set')
+        
+        # Build lookup dicts for O(1) access
+        question_map = {q.id: q for q in questions}
+        option_map = {}
+        for q in questions:
+            for opt in q.questionoption_set.all():
+                option_map[opt.id] = opt
+
+        # ✅ OPTIMIZATION 2: Delete old answers (bulk delete is already efficient)
         UserAnswer.objects.filter(attempt=attempt).delete()
 
-        # Get answers data (supports both array and object formats)
+        # Parse answers
         answers_data = request.data.get('answers', [])
         if isinstance(answers_data, dict):
             answers_data = [
@@ -145,17 +162,15 @@ class SubmitAttemptView(APIView):
         if not answers_data:
             answers_data = []
 
+        # ✅ OPTIMIZATION 3: Process all answers in memory first
+        user_answers_to_create = []
         correct_count = 0
         wrong_count = 0
-        unanswered_count = 0
         total_score = 0
         total_marks = 0
-
-        all_questions = Question.objects.filter(quiz=quiz)
-        answered_question_ids = []
+        answered_question_ids = set()
 
         for answer_data in answers_data:
-            # Validate with serializer
             serializer = SubmitAnswerSerializer(data=answer_data, context={'attempt': attempt})
             if not serializer.is_valid():
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -164,76 +179,41 @@ class SubmitAttemptView(APIView):
             selected_option_id = serializer.validated_data.get('selected_option_id')
             answer_text = serializer.validated_data.get('answer_text', '')
 
-            try:
-                question = Question.objects.get(id=question_id, quiz=quiz)
-            except Question.DoesNotExist:
+            question = question_map.get(question_id)
+            if not question:
                 return Response({"error": f"Question {question_id} does not belong to this quiz."}, status=status.HTTP_400_BAD_REQUEST)
 
-            answered_question_ids.append(question_id)
+            answered_question_ids.add(question_id)
             is_correct = False
             marks_obtained = 0
 
             q_type = question.question_type
 
-            # ---------- MCQ ----------
-            if q_type == 'MCQ':
+            # Process based on question type (using in-memory data)
+            if q_type in ['MCQ', 'True/False']:
                 if selected_option_id:
-                    try:
-                        option = QuestionOption.objects.get(id=selected_option_id, question=question)
-                        is_correct = option.is_correct
-                        marks_obtained = question.marks if is_correct else 0
-                        
-                    except QuestionOption.DoesNotExist:
+                    option = option_map.get(selected_option_id)
+                    if not option or option.question_id != question_id:
                         return Response({"error": f"Invalid option for question {question_id}."}, status=status.HTTP_400_BAD_REQUEST)
-                else:
-                    is_correct = False
-                    marks_obtained = 0
-
-            # ---------- True/False ----------
-            elif q_type == 'True/False':
-                # True/False questions also have options (like MCQ)
-                if selected_option_id:
-                    try:
-                        option = QuestionOption.objects.get(id=selected_option_id, question=question)
-                        is_correct = option.is_correct
-                        marks_obtained = question.marks if is_correct else 0
-                        
-                    except QuestionOption.DoesNotExist:
-                        return Response({"error": f"Invalid option for question {question_id}."}, status=status.HTTP_400_BAD_REQUEST)
-                else:
-                    is_correct = False
-                    marks_obtained = 0
-
-            # ---------- Fill in the Blank ----------
-            elif q_type == 'Fill in the Blank':
-                # Check if the question has options (like our AI-generated ones)
-                has_options = question.questionoption_set.exists()
-                if has_options and selected_option_id:
-                    try:
-                        option = QuestionOption.objects.get(id=selected_option_id, question=question)
-                        is_correct = option.is_correct
-                        marks_obtained = question.marks if is_correct else 0
-                        
-                    except QuestionOption.DoesNotExist:
-                        is_correct = False
-                        marks_obtained = 0
-                elif answer_text:
-                    # Free-text fill-in-the-blank (if not using options)
-                    is_correct = answer_text.strip().lower() == question.correct_answer.strip().lower()
+                    is_correct = option.is_correct
                     marks_obtained = question.marks if is_correct else 0
                 else:
                     is_correct = False
                     marks_obtained = 0
 
-            # ---------- Save UserAnswer ----------
-            UserAnswer.objects.create(
-                attempt=attempt,
-                question=question,
-                selected_option_id=selected_option_id,
-                answer_text=answer_text,
-                is_correct=is_correct,
-                marks_obtained=marks_obtained
-            )
+            elif q_type == 'Fill in the Blank':
+                has_options = question.questionoption_set.exists()
+                if has_options and selected_option_id:
+                    option = option_map.get(selected_option_id)
+                    if option and option.question_id == question_id:
+                        is_correct = option.is_correct
+                        marks_obtained = question.marks if is_correct else 0
+                elif answer_text:
+                    is_correct = answer_text.strip().lower() == question.correct_answer.strip().lower()
+                    marks_obtained = question.marks if is_correct else 0
+                else:
+                    is_correct = False
+                    marks_obtained = 0
 
             total_marks += question.marks
             total_score += marks_obtained
@@ -243,66 +223,62 @@ class SubmitAttemptView(APIView):
             else:
                 wrong_count += 1
 
-        # Mark unanswered questions
-        unanswered_count = all_questions.count() - len(answered_question_ids)
-        for q in all_questions:
-            if q.id not in answered_question_ids:
-                UserAnswer.objects.create(
+            # ✅ OPTIMIZATION 4: Create UserAnswer objects in memory
+            user_answers_to_create.append(
+                UserAnswer(
                     attempt=attempt,
-                    question=q,
-                    is_correct=False,
-                    marks_obtained=0
+                    question=question,
+                    selected_option_id=selected_option_id,
+                    answer_text=answer_text,
+                    is_correct=is_correct,
+                    marks_obtained=marks_obtained
+                )
+            )
+
+        # Mark unanswered questions
+        for q in questions:
+            if q.id not in answered_question_ids:
+                total_marks += q.marks
+                user_answers_to_create.append(
+                    UserAnswer(
+                        attempt=attempt,
+                        question=q,
+                        is_correct=False,
+                        marks_obtained=0
+                    )
                 )
 
-        # Update attempt
-        attempt.submitted_at = timezone.now()
-        attempt.score = total_score
-        attempt.percentage = (total_score / total_marks * 100) if total_marks > 0 else 0
-        attempt.save()
+        # ✅ OPTIMIZATION 5: Bulk insert all UserAnswer records in ONE query
+        with transaction.atomic():
+            UserAnswer.objects.bulk_create(user_answers_to_create)
 
-        # Create Result
-        result = Result.objects.create(
-            attempt=attempt,
-            correct_answers=correct_count,
-            wrong_answers=wrong_count,
-            unanswered_questions=unanswered_count,
-            total_score=total_score,
-            percentage=(total_score / total_marks * 100) if total_marks > 0 else 0,
-            grade=self._calculate_grade((total_score / total_marks * 100) if total_marks > 0 else 0),
-            pass_status=(total_score / total_marks * 100) >= 40 if total_marks > 0 else False
-        )
+            # Update attempt
+            attempt.submitted_at = timezone.now()
+            attempt.score = total_score
+            attempt.percentage = (total_score / total_marks * 100) if total_marks > 0 else 0
+            attempt.save()
 
-        # Build response
-        time_diff = attempt.submitted_at - attempt.started_at
-        time_taken_seconds = int(time_diff.total_seconds())
-        time_remaining_seconds = max(0, (quiz.duration_minutes * 60) - time_taken_seconds)
+            # Create Result
+            result = Result.objects.create(
+                attempt=attempt,
+                correct_answers=correct_count,
+                wrong_answers=wrong_count,
+                unanswered_questions=questions.count() - len(answered_question_ids),
+                total_score=total_score,
+                percentage=(total_score / total_marks * 100) if total_marks > 0 else 0,
+                grade=self._calculate_grade((total_score / total_marks * 100) if total_marks > 0 else 0),
+                pass_status=(total_score / total_marks * 100) >= 40 if total_marks > 0 else False
+            )
+
+        # ✅ OPTIMIZATION 6: Minimal response – just enough for frontend to show "Processing"
+        elapsed_ms = int((time.time() - start_time) * 1000)
+        print(f"✅ Quiz submitted in {elapsed_ms}ms")
 
         return Response({
+            "status": "success",
             "attempt_id": attempt.id,
             "result_id": result.id,
-            "quiz": {
-                "id": quiz.id,
-                "title": quiz.title,
-                "category": quiz.category.category_name if quiz.category else "Uncategorized",
-                "difficulty": quiz.difficulty,
-                "total_questions": all_questions.count(),
-                "time_limit_minutes": quiz.duration_minutes,
-                "passing_marks": int(0.4 * all_questions.count()),
-                "marks_per_question": 1
-            },
-            "score": total_score,
-            "total_questions": all_questions.count(),
-            "correct_answers": correct_count,
-            "incorrect_answers": wrong_count,
-            "unanswered": unanswered_count,
-            "percentage": result.percentage,
-            "accuracy": result.percentage,
-            "passed": result.pass_status,
-            "points_earned": total_score,
-            "time_spent_seconds": time_taken_seconds,
-            "time_remaining_seconds": time_remaining_seconds,
-            "submitted_at": attempt.submitted_at.isoformat(),
-            "auto_submitted": is_auto_submitted
+            "message": "Quiz submitted successfully! Fetch result from /api/attempts/{attempt_id}/result/",
         }, status=status.HTTP_200_OK)
 
     def _calculate_grade(self, percentage):
