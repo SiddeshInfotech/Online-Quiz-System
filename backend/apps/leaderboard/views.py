@@ -9,6 +9,7 @@ from apps.quizzes.models import Quiz
 from .serializers import LeaderboardEntrySerializer, QuizLeaderboardSerializer
 from rest_framework.permissions import IsAuthenticated
 from apps.users.models import User
+from .models import User, UserBadge
 
 
 class QuizLeaderboardView(APIView):
@@ -94,6 +95,12 @@ class GlobalLeaderboardView(APIView):
             if user.profile_picture:
                 profile_picture_url = user.profile_picture.url
 
+            
+            badge_count = UserBadge.objects.filter(
+                user=user, 
+                status='CLAIMED'
+            ).count()
+
             all_rankings.append({
                 "rank": user.calculated_rank,
                 "full_name": user.full_name or user.username,
@@ -102,6 +109,7 @@ class GlobalLeaderboardView(APIView):
                 "quizzes_count": user.quizzes_completed,
                 "profile_picture": profile_picture_url,
                 "user_id": user.id,
+                "badge_count": badge_count,  # ✅ NEW
             })
 
         top_3 = all_rankings[:3] if len(all_rankings) >= 3 else all_rankings
@@ -115,10 +123,11 @@ class GlobalLeaderboardView(APIView):
         if request.user.profile_picture:
             current_user_profile_pic = request.user.profile_picture.url
 
-        # ✅ NEW: Check if user is in top 3
-        is_in_top_3 = False
-        if current_user:
-            is_in_top_3 = current_user["rank"] <= 3
+        # ✅ Get current user's badge count
+        current_user_badge_count = UserBadge.objects.filter(
+            user=request.user, 
+            status='CLAIMED'
+        ).count()
 
         return Response({
             "personal_stats": {
@@ -127,7 +136,8 @@ class GlobalLeaderboardView(APIView):
                 "quizzes_completed": request.user.quizzes_completed,
                 "profile_picture": current_user_profile_pic,
                 "full_name": request.user.full_name or request.user.username,
-                "is_in_top_3": is_in_top_3,  # ✅ NEW
+                "is_in_top_3": current_user["rank"] <= 3 if current_user else False,
+                "badge_count": current_user_badge_count,  # ✅ NEW
             },
             "top_3_podium": top_3,
             "all_rankings_list": all_rankings

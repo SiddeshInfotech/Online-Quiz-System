@@ -613,15 +613,25 @@ class AccountDestructionView(APIView):
             "message": "Your account has been deactivated. It will be permanently deleted after 30 days. You can contact support to reactivate."
         }, status=status.HTTP_200_OK)
     
+from django.core.cache import cache
+
 class UserBadgesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Only return CLAIMED badges for profile/leaderboard
+        user = request.user
+        
+        
+        cache_key = f"user_badges_{user.id}"
+        cached_data = cache.get(cache_key)
+        
+        if cached_data is not None:
+            return Response(cached_data)
+        
         user_badges = UserBadge.objects.filter(
-            user=request.user, 
+            user=user, 
             status='CLAIMED'
-        ).select_related('badge')
+        ).select_related('badge').order_by('-claimed_at')  
         
         badges_data = [
             {
@@ -631,12 +641,20 @@ class UserBadgesView(APIView):
                 "image_url": ub.badge.image_url,
                 "category": ub.badge.category,
                 "rarity": ub.badge.rarity,
-                "claimed_at": ub.claimed_at,  # Use claimed_at instead of awarded_at
+                "claimed_at": ub.claimed_at,
                 "status": ub.status
             }
             for ub in user_badges
         ]
-        return Response({"badges": badges_data})
+        
+        response_data = {
+            "badges": badges_data,
+            "count": len(badges_data)
+        }
+        
+        cache.set(cache_key, response_data, 300)
+        
+        return Response(response_data)
 
 class AchievementStatsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -764,45 +782,42 @@ class ClaimBadgeView(APIView):
 
     def post(self, request, badge_id):
         user = request.user
-        
-        # 1. Check if badge exists
+
         try:
             badge = Badge.objects.get(badge_id=badge_id)
         except Badge.DoesNotExist:
             return Response({"error": "Badge not found"}, status=404)
-        
-        # 2. Check if user has a UserBadge row (i.e., CLAIMABLE)
+
         try:
             user_badge = UserBadge.objects.get(user=user, badge=badge)
         except UserBadge.DoesNotExist:
             return Response({
                 "error": "You haven't unlocked this badge yet. Keep going!"
             }, status=403)
-        
-        # 3. Already claimed?
+
         if user_badge.status == 'CLAIMED':
             return Response({
                 "error": "Badge already claimed",
                 "claimed_at": user_badge.claimed_at
             }, status=400)
-        
-        # 4. If status is CLAIMABLE → mark as CLAIMED
+
         if user_badge.status == 'CLAIMABLE':
             user_badge.status = 'CLAIMED'
             user_badge.claimed_at = timezone.now()
             user_badge.save()
+
             
-            # Award XP to user (add to total_points)
             xp_map = {'COMMON': 25, 'RARE': 50, 'EPIC': 100, 'LEGENDARY': 200}
             xp_reward = xp_map.get(badge.rarity, 25)
             user.total_points += xp_reward
             user.xp += xp_reward
-            # Level up logic (if you have)
             user.save()
+
             
-            # Clear cache for this user
             cache.delete(f"badges_all_{user.id}")
-            
+            cache.delete(f"user_badges_{user.id}")  
+            cache.delete(f"badge_count_{user.id}")  
+
             return Response({
                 "message": "Badge claimed successfully!",
                 "badge_id": badge.badge_id,

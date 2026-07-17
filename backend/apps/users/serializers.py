@@ -72,13 +72,14 @@ class LoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     profile_picture = serializers.SerializerMethodField()
     profile_completion = serializers.SerializerMethodField()
+    badge_count = serializers.SerializerMethodField()  
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'full_name', 'role', 'bio',
             'date_joined', 'profile_picture', 'school', 'grade',
-            'subject_interests', 'profile_completion'
+            'subject_interests', 'profile_completion', 'badge_count' 
         ]
         read_only_fields = ['id', 'username', 'email', 'role', 'date_joined']
 
@@ -103,6 +104,10 @@ class UserSerializer(serializers.ModelSerializer):
         if obj.subject_interests and len(obj.subject_interests) > 0:
             filled += 1
         return int((filled / total_fields) * 100)
+
+    def get_badge_count(self, obj):
+        """Return count of CLAIMED badges for the user"""
+        return UserBadge.objects.filter(user=obj, status='CLAIMED').count()
 
 
 class GoogleAuthSerializer(serializers.Serializer):
