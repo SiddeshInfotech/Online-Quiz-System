@@ -5,6 +5,7 @@ from apps.attempts.models import QuizAttempt, UserAnswer
 from apps.users.models import Badge, UserBadge
 from apps.quizzes.models import Quiz
 
+
 class BadgeService:
     def __init__(self, user):
         self.user = user
@@ -18,7 +19,6 @@ class BadgeService:
         self._check_subject_badges()
         self._check_time_dedication_badges()
         self._check_miscellaneous_badges()
-        self._check_leaderboard_badges()  # Called from leaderboard view
         return self.earned_badges
 
     def _award_badge(self, badge_id):
@@ -35,31 +35,35 @@ class BadgeService:
     # ===== Streak Badges =====
     def _check_streak_badges(self):
         streak = self.user.current_streak if hasattr(self.user, 'current_streak') else 0
-        badge_map = {1:3, 2:7, 3:14, 4:30, 5:60, 6:100, 7:365}
+        badge_map = {1: 3, 2: 7, 3: 14, 4: 30, 5: 60, 6: 100, 7: 365}
         for b_id, req in badge_map.items():
             if streak >= req:
                 self._award_badge(b_id)
-        # Comeback King (8) - simplified: check if user rebuilt after a loss
-        # We'll implement later with history tracking
+        # Comeback King (8) - not yet implemented; needs streak-loss history tracking
 
     # ===== Quiz Count Badges =====
     def _check_quiz_count_badges(self):
         attempts = QuizAttempt.objects.filter(user=self.user, submitted_at__isnull=False)
         total = attempts.count()
-        # 9: 1, 10: 10, 11: 50, 12: 100, 13: 250, 16: 500, 55: 50 (but 55 already covered by 11? Actually 55 is also 50, but we'll award both)
-        badge_map = {9:1, 10:10, 11:50, 12:100, 13:250, 16:500, 55:50}
+
+        badge_map = {9: 1, 10: 10, 11: 50, 12: 100, 13: 250, 16: 500, 55: 50}
         for b_id, req in badge_map.items():
             if total >= req:
                 self._award_badge(b_id)
+
         # Century Club (14): 100 questions in one day
-        today = timezone.now().date()
-        today_qs = UserAnswer.objects.filter(attempt__user=self.user, attempt__submitted_at__date=today).count()
+        today = timezone.localtime(timezone.now()).date()
+        today_qs = UserAnswer.objects.filter(
+            attempt__user=self.user, attempt__submitted_at__date=today
+        ).count()
         if today_qs >= 100:
             self._award_badge(14)
+
         # Marathoner (15): 5 quizzes in one day
         today_qz = attempts.filter(submitted_at__date=today).count()
         if today_qz >= 5:
             self._award_badge(15)
+
         # Quiz Champion (54): win 100 quizzes (score >=80%)
         high_score = attempts.filter(percentage__gte=80).count()
         if high_score >= 100:
@@ -67,15 +71,30 @@ class BadgeService:
 
     # ===== Accuracy Badges =====
     def _check_accuracy_badges(self):
-        attempts = QuizAttempt.objects.filter(user=self.user, submitted_at__isnull=False).order_by('-submitted_at')
+        attempts = QuizAttempt.objects.filter(
+            user=self.user, submitted_at__isnull=False
+        ).select_related('quiz').order_by('-submitted_at')
+
+        # Pre-compute question counts once to avoid repeated queries per attempt
+        question_counts = {}
+        for att in attempts:
+            if att.quiz_id not in question_counts:
+                question_counts[att.quiz_id] = att.quiz.question_set.count()
+
         # Sharp Shooter (17): 90%+ on 10+ Qs
         for att in attempts:
-            if att.quiz.question_set.count() >= 10 and att.percentage >= 90:
+            if question_counts[att.quiz_id] >= 10 and att.percentage >= 90:
                 self._award_badge(17)
                 break
+
         # Perfectionist (18): 100% on any quiz (min 5 Qs)
-        if attempts.filter(percentage=100, quiz__question_set__gte=5).exists():
-            self._award_badge(18)
+        # NOTE: quiz__question_set__gte is not a valid Django lookup on a
+        # reverse-FK manager and will raise FieldError - use a Python loop instead.
+        for att in attempts:
+            if att.percentage == 100 and question_counts[att.quiz_id] >= 5:
+                self._award_badge(18)
+                break
+
         # Flawless Five (19): 10 consecutive 100% scores
         perfect_count = 0
         for att in attempts:
@@ -86,12 +105,14 @@ class BadgeService:
                     break
             else:
                 perfect_count = 0
+
         # Consistent Mind (20): 80%+ avg over last 20
-        last_20 = attempts[:20]
+        last_20 = list(attempts[:20])
         if last_20:
             avg = sum(a.percentage for a in last_20) / len(last_20)
             if avg >= 80:
                 self._award_badge(20)
+
         # No Mistakes Allowed (21): 3 quizzes without incorrect
         no_mistake = 0
         for att in attempts:
@@ -103,6 +124,7 @@ class BadgeService:
                 if no_mistake >= 3:
                     self._award_badge(21)
                     break
+
         # Redemption Arc (22): 100% on previously failed quiz
         quiz_ids = attempts.values_list('quiz_id', flat=True).distinct()
         for qid in quiz_ids:
@@ -113,63 +135,75 @@ class BadgeService:
                 if first.percentage < 60 and last.percentage == 100:
                     self._award_badge(22)
                     break
+
         # Peak Performer (59): 95%+ on 10+ Qs
         for att in attempts:
-            if att.quiz.question_set.count() >= 10 and att.percentage >= 95:
+            if question_counts[att.quiz_id] >= 10 and att.percentage >= 95:
                 self._award_badge(59)
                 break
+
         # Precision Master (60): 100 correct answers total
         total_correct = UserAnswer.objects.filter(attempt__user=self.user, is_correct=True).count()
         if total_correct >= 100:
             self._award_badge(60)
+
         # Speed Runner (61): complete in less than half time
         for att in attempts:
             time_taken = (att.submitted_at - att.started_at).total_seconds()
             time_limit = att.quiz.duration_minutes * 60
-            if time_taken < time_limit / 2:
+            if time_limit > 0 and time_taken < time_limit / 2:
                 self._award_badge(61)
                 break
 
     # ===== Subject Badges =====
     def _check_subject_badges(self):
-        attempts = QuizAttempt.objects.filter(user=self.user, submitted_at__isnull=False).select_related('quiz')
-        # Group by subject: count quizzes with score >=80% per subject
+        attempts = QuizAttempt.objects.filter(
+            user=self.user, submitted_at__isnull=False
+        ).select_related('quiz')
+
+        # Group by subject: track distinct quizzes (not attempts) with score >=80%
         subject_data = {}
         for att in attempts:
             subj = att.quiz.subject
             if subj not in subject_data:
-                subject_data[subj] = {'count': 0, 'scores': []}
-            subject_data[subj]['count'] += 1
+                subject_data[subj] = {'scores': [], 'quiz_ids': set()}
             subject_data[subj]['scores'].append(att.percentage)
-        # Determine mastered subjects: at least 5 quizzes with >=80% avg
-        mastered_subjects = {}
-        for subj, data in subject_data.items():
-            if data['count'] >= 5 and sum(data['scores']) / len(data['scores']) >= 80:
-                mastered_subjects[subj] = True
-        # Code Conqueror (27): 5 Coding quizzes mastered (subject contains "Coding" or question_type Coding)
-        # We'll check if any subject is "Coding" or quiz.question_type == 'Coding'
-        coding_mastered = 0
+            subject_data[subj]['quiz_ids'].add(att.quiz_id)
+
+        # Code Conqueror (27): 5 distinct Coding quizzes mastered (80%+)
+        coding_quiz_ids = set()
         for att in attempts:
             if att.quiz.question_type == 'Coding' and att.percentage >= 80:
-                coding_mastered += 1
-        if coding_mastered >= 5:
+                coding_quiz_ids.add(att.quiz_id)
+        if len(coding_quiz_ids) >= 5:
             self._award_badge(27)
-        # Python Pro (28): 5 Python quizzes mastered (subject contains Python)
-        python_mastered = attempts.filter(quiz__subject__icontains='Python', percentage__gte=80).count()
-        if python_mastered >= 5:
+
+        # Python Pro (28): 5 distinct Python quizzes mastered
+        python_quiz_ids = attempts.filter(
+            quiz__subject__icontains='Python', percentage__gte=80
+        ).values_list('quiz_id', flat=True).distinct()
+        if len(set(python_quiz_ids)) >= 5:
             self._award_badge(28)
-        # Java Genius (29): 5 Java quizzes mastered
-        java_mastered = attempts.filter(quiz__subject__icontains='Java', percentage__gte=80).count()
-        if java_mastered >= 5:
+
+        # Java Genius (29): 5 distinct Java quizzes mastered
+        java_quiz_ids = attempts.filter(
+            quiz__subject__icontains='Java', percentage__gte=80
+        ).values_list('quiz_id', flat=True).distinct()
+        if len(set(java_quiz_ids)) >= 5:
             self._award_badge(29)
-        # C++ Champion (30): 5 C++ quizzes mastered
-        cpp_mastered = attempts.filter(quiz__subject__icontains='C++', percentage__gte=80).count()
-        if cpp_mastered >= 5:
+
+        # C++ Champion (30): 5 distinct C++ quizzes mastered
+        cpp_quiz_ids = attempts.filter(
+            quiz__subject__icontains='C++', percentage__gte=80
+        ).values_list('quiz_id', flat=True).distinct()
+        if len(set(cpp_quiz_ids)) >= 5:
             self._award_badge(30)
-        # All-Rounder (32): 80%+ in 5 different subjects
-        subj_80 = [s for s, data in subject_data.items() if sum(data['scores'])/len(data['scores']) >= 80]
+
+        # All-Rounder (32): 80%+ avg in 5 different subjects
+        subj_80 = [s for s, data in subject_data.items() if sum(data['scores']) / len(data['scores']) >= 80]
         if len(subj_80) >= 5:
             self._award_badge(32)
+
         # Subject Master (33): 10 subjects mastered (>=80% avg)
         if len(subj_80) >= 10:
             self._award_badge(33)
@@ -177,9 +211,9 @@ class BadgeService:
     # ===== Time & Dedication Badges =====
     def _check_time_dedication_badges(self):
         attempts = QuizAttempt.objects.filter(user=self.user, submitted_at__isnull=False)
+        today = timezone.localtime(timezone.now()).date()
+
         # Daily Dedication (34): 7 consecutive days with at least one quiz
-        # We'll check last 7 days
-        today = timezone.now().date()
         days_with_quiz = 0
         for i in range(7):
             day = today - timedelta(days=i)
@@ -190,26 +224,33 @@ class BadgeService:
                 break
         if days_with_quiz >= 7:
             self._award_badge(34)
+
         # Time Keeper (35): 60 minutes in one day
         for day in [today - timedelta(days=i) for i in range(30)]:
             day_attempts = attempts.filter(submitted_at__date=day)
             total_time = day_attempts.aggregate(Sum('time_spent_seconds'))['time_spent_seconds__sum'] or 0
-            if total_time >= 3600:  # 60 minutes
+            if total_time >= 3600:
                 self._award_badge(35)
                 break
-        # Early Bird (37): quiz before 9 AM
+
+        # Early Bird (37): quiz before 9 AM local time
+        # NOTE: submitted_at is stored in UTC when USE_TZ=True. Comparing
+        # .hour directly against it checks UTC hour, not the user's local
+        # hour, so we convert with timezone.localtime() first.
         for att in attempts:
-            if att.submitted_at.hour < 9:
+            local_time = timezone.localtime(att.submitted_at)
+            if local_time.hour < 9:
                 self._award_badge(37)
                 break
-        # Night Owl (38): quiz after 10 PM
+
+        # Night Owl (38): quiz after 10 PM local time
         for att in attempts:
-            if att.submitted_at.hour >= 22:
+            local_time = timezone.localtime(att.submitted_at)
+            if local_time.hour >= 22:
                 self._award_badge(38)
                 break
+
         # Goal Getter (39): achieve today's goal 7 times
-        # We'll track goal achievements in a separate model or check daily completion relative to goal
-        # Simplified: count days where completed >= daily_quiz_goal
         daily_goal = getattr(self.user, 'daily_quiz_goal', 3)
         days_achieved = 0
         for day in [today - timedelta(days=i) for i in range(30)]:
@@ -225,40 +266,46 @@ class BadgeService:
     # ===== Miscellaneous Badges =====
     def _check_miscellaneous_badges(self):
         attempts = QuizAttempt.objects.filter(user=self.user, submitted_at__isnull=False)
+
         # Explorer (40): 5 different subjects
         subjects = attempts.values_list('quiz__subject', flat=True).distinct()
         if subjects.count() >= 5:
             self._award_badge(40)
+
         # Knowledge Seeker (58): 10 different subjects
         if subjects.count() >= 10:
             self._award_badge(58)
+
         # Risk Taker (50): Hard difficulty quiz with 70%+
-        for att in attempts:
+        for att in attempts.select_related('quiz'):
             if att.quiz.difficulty == 'Hard' and att.percentage >= 70:
                 self._award_badge(50)
                 break
+
         # Weekly Warrior (51): 20 quizzes in a week
         week_ago = timezone.now() - timedelta(days=7)
         week_count = attempts.filter(submitted_at__gte=week_ago).count()
         if week_count >= 20:
             self._award_badge(51)
-        # Analyst (52): review answers of 20 questions (we'll track review actions separately)
-        # Placeholder: we can increment a counter when user visits review page
-        # For now, skip or implement with a review log model
+
+        # Analyst (52): review answers of 20 questions
+        # Not yet implemented - needs a review-action log model to track views
+
         # Feedback Hero (64): submitted feedback
         from apps.feedback.models import Feedback
         if Feedback.objects.filter(user=self.user).exists():
             self._award_badge(64)
-        # Hidden Gem (45): complete a quiz with less than 2 total attempts (by all users)
-        for att in attempts:
+
+        # Hidden Gem (45): complete a quiz with 2 or fewer total attempts (by all users)
+        for att in attempts.select_related('quiz'):
             total_attempts = QuizAttempt.objects.filter(quiz=att.quiz, submitted_at__isnull=False).count()
             if total_attempts <= 2:
                 self._award_badge(45)
                 break
 
-    # ===== Leaderboard Badges (called externally) =====
+    # ===== Leaderboard Badges (called externally from the leaderboard view) =====
     def award_leaderboard_badge(self, rank):
         if rank <= 10:
-            self._award_badge(53)  # Top Performer (10)
+            self._award_badge(53)  # Top Performer
         if rank == 1:
-            self._award_badge(62)  # Legend in Progress (1)
+            self._award_badge(62)  # Legend in Progress
