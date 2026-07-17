@@ -186,17 +186,13 @@ class AllBadgeSerializer(serializers.ModelSerializer):
         user = self.context.get('user')
         if not user:
             return 0
-        return BadgeProgressHelper.get_progress(user, obj)
+        # Use cached progress from context (set in view)
+        progress_map = self.context.get('progress_map', {})
+        return progress_map.get(obj.badge_id, 0)
 
     def get_target(self, obj):
         return BadgeProgressHelper.get_target(obj)
 
     def get_xp_reward(self, obj):
-        # XP rewards can be configured per badge or based on rarity
-        xp_map = {
-            'COMMON': 25,
-            'RARE': 50,
-            'EPIC': 100,
-            'LEGENDARY': 200,
-        }
+        xp_map = {'COMMON': 25, 'RARE': 50, 'EPIC': 100, 'LEGENDARY': 200}
         return xp_map.get(obj.rarity, 25)

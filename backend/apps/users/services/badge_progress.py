@@ -1,298 +1,233 @@
 from django.utils import timezone
 from datetime import timedelta
-from django.db.models import Count, Avg
+from django.db.models import Count, Avg, Sum, Q
 from apps.attempts.models import QuizAttempt, UserAnswer
-from apps.quizzes.models import Quiz
-from django.db.models import Sum
-
 
 class BadgeProgressHelper:
     @staticmethod
-    def get_progress(user, badge):
-        """Calculate current progress for a badge based on its type."""
-        badge_id = badge.badge_id
+    def get_all_progress(user, badges):
+        """
+        Compute progress for all badges in one efficient pass.
+        Returns a dict mapping badge_id -> progress value.
+        """
+        # Fetch user data once
+        attempts = QuizAttempt.objects.filter(user=user, submitted_at__isnull=False).select_related('quiz')
+        answers = UserAnswer.objects.filter(attempt__user=user)
         
-        # ===== Streak Badges (1-8) =====
-        if badge_id in [1, 2, 3, 4, 5, 6, 7]:
-            streak = getattr(user, 'current_streak', 0)
-            return streak
+        # Pre-aggregate data
+        total_attempts = attempts.count()
+        total_correct = answers.filter(is_correct=True).count()
+        reviewed_count = answers.filter(reviewed=True).count()
+        perfect_attempts = attempts.filter(percentage=100)
+        perfect_count = perfect_attempts.count()
         
-        # ===== Quiz Count Badges (9-16, 55) =====
-        if badge_id in [9, 10, 11, 12, 13, 16, 55]:
-            total = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            ).count()
-            return total
+        # Streak (from user model)
+        streak = getattr(user, 'current_streak', 0)
         
-        if badge_id == 14:  # Century Club: 100 questions in one day
-            today = timezone.localtime(timezone.now()).date()
-            return UserAnswer.objects.filter(
-                attempt__user=user, attempt__submitted_at__date=today
-            ).count()
+        # Subject counts
+        subject_counts = {}
+        subject_avg = {}
+        for att in attempts:
+            subj = att.quiz.subject
+            if subj not in subject_counts:
+                subject_counts[subj] = {'count': 0, 'scores': []}
+            subject_counts[subj]['count'] += 1
+            subject_counts[subj]['scores'].append(att.percentage)
         
-        if badge_id == 15:  # Marathoner: 5 quizzes in one day
-            today = timezone.localtime(timezone.now()).date()
-            return QuizAttempt.objects.filter(
-                user=user, submitted_at__date=today
-            ).count()
+        # Distinct quizzes per subject with score >=80%
+        subject_mastered = {}
+        for subj, data in subject_counts.items():
+            if data['count'] >= 5 and sum(data['scores']) / len(data['scores']) >= 80:
+                subject_mastered[subj] = True
         
-        # ===== Accuracy Badges (17-22, 59, 60, 61) =====
-        if badge_id == 17 or badge_id == 59:  # Sharp Shooter / Peak Performer
-            attempts = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            ).order_by('-submitted_at')
-            for att in attempts:
-                if att.quiz.question_set.count() >= 10 and att.percentage >= 90:
-                    return 1
-            return 0
+        # Coding quizzes mastered
+        coding_quiz_ids = set()
+        python_quiz_ids = set()
+        java_quiz_ids = set()
+        cpp_quiz_ids = set()
+        hard_high_score = False
+        speed_run = False
+        hidden_gem_done = False
         
-        if badge_id == 18:  # Perfectionist: 100% on any quiz
-            attempts = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False, percentage=100
-            )
-            return attempts.count() if attempts.exists() else 0
-        
-        if badge_id == 19:  # Flawless Five: 5 consecutive 100% scores
-            attempts = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            ).order_by('-submitted_at')
-            perfect_count = 0
-            for att in attempts:
-                if att.percentage == 100:
-                    perfect_count += 1
-                    if perfect_count >= 5:
-                        return 5
-                else:
-                    perfect_count = 0
-            return perfect_count
-        
-        if badge_id == 20:  # Consistent Mind: 80%+ avg over last 20
-            attempts = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            ).order_by('-submitted_at')[:20]
-            if attempts:
-                avg = sum(a.percentage for a in attempts) / len(attempts)
-                return avg
-            return 0
-        
-        if badge_id == 21:  # No Mistakes Allowed: 3 quizzes without incorrect
-            attempts = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            ).order_by('-submitted_at')
-            no_mistake = 0
-            for att in attempts:
-                answers = UserAnswer.objects.filter(attempt=att)
-                if answers.filter(is_correct=False).exists():
-                    no_mistake = 0
-                else:
-                    no_mistake += 1
-                    if no_mistake >= 3:
-                        return 3
-            return no_mistake
-        
-        if badge_id == 22:  # Redemption Arc: 100% on previously failed quiz
-            attempts = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            ).order_by('submitted_at')
-            quiz_ids = attempts.values_list('quiz_id', flat=True).distinct()
-            for qid in quiz_ids:
-                q_attempts = attempts.filter(quiz_id=qid)
-                if q_attempts.count() >= 2:
-                    first = q_attempts.first()
-                    last = q_attempts.last()
-                    if first.percentage < 60 and last.percentage == 100:
-                        return 1
-            return 0
-        
-        if badge_id == 60:  # Precision Master: 100 correct answers total
-            return UserAnswer.objects.filter(
-                attempt__user=user, is_correct=True
-            ).count()
-        
-        if badge_id == 61:  # Speed Runner: complete in less than half time
-            attempts = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            ).order_by('-submitted_at')
-            for att in attempts:
-                time_taken = (att.submitted_at - att.started_at).total_seconds()
-                time_limit = att.quiz.duration_minutes * 60
-                if time_limit > 0 and time_taken < time_limit / 2:
-                    return 1
-            return 0
-        
-        # ===== Subject Badges (27-33) =====
-        if badge_id == 27:  # Code Conqueror: 5 distinct Coding quizzes mastered
-            attempts = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            )
-            coding_ids = set()
-            for att in attempts:
-                if att.quiz.question_type == 'Coding' and att.percentage >= 80:
-                    coding_ids.add(att.quiz_id)
-            return len(coding_ids)
-        
-        if badge_id == 28:  # Python Pro
-            attempts = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False,
-                quiz__subject__icontains='Python', percentage__gte=80
-            )
-            return len(set(attempts.values_list('quiz_id', flat=True)))
-        
-        if badge_id == 29:  # Java Genius
-            attempts = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False,
-                quiz__subject__icontains='Java', percentage__gte=80
-            )
-            return len(set(attempts.values_list('quiz_id', flat=True)))
-        
-        if badge_id == 30:  # C++ Champion
-            attempts = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False,
-                quiz__subject__icontains='C++', percentage__gte=80
-            )
-            return len(set(attempts.values_list('quiz_id', flat=True)))
-        
-        if badge_id == 32 or badge_id == 33:  # All-Rounder / Subject Master
-            attempts = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            ).select_related('quiz')
-            subject_data = {}
-            for att in attempts:
-                subj = att.quiz.subject
-                if subj not in subject_data:
-                    subject_data[subj] = {'scores': []}
-                subject_data[subj]['scores'].append(att.percentage)
-            count_80 = 0
-            for data in subject_data.values():
-                if sum(data['scores']) / len(data['scores']) >= 80:
-                    count_80 += 1
-            return count_80
-        
-        # ===== Time Badges (34-39) =====
-        if badge_id == 34:  # Daily Dedication: 7 consecutive days
-            attempts = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            )
-            today = timezone.localtime(timezone.now()).date()
-            days = 0
-            for i in range(7):
-                day = today - timedelta(days=i)
-                if attempts.filter(submitted_at__date=day).exists():
-                    days += 1
-                else:
-                    break
-            return days
-        
-        if badge_id == 35:  # Time Keeper: 60 minutes in one day
-            attempts = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            )
-            today = timezone.localtime(timezone.now()).date()
-            max_time = 0
-            for day in [today - timedelta(days=i) for i in range(30)]:
-                total = attempts.filter(submitted_at__date=day).aggregate(
-                    Sum('time_spent_seconds')
-                )['time_spent_seconds__sum'] or 0
-                if total > max_time:
-                    max_time = total
-            return max_time // 60  # Return in minutes
-        
-        if badge_id == 37:  # Early Bird: quiz before 9 AM
-            attempts = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            )
-            for att in attempts:
-                local = timezone.localtime(att.submitted_at)
-                if local.hour < 9:
-                    return 1
-            return 0
-        
-        if badge_id == 38:  # Night Owl: quiz after 10 PM
-            attempts = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            )
-            for att in attempts:
-                local = timezone.localtime(att.submitted_at)
-                if local.hour >= 22:
-                    return 1
-            return 0
-        
-        if badge_id == 39:  # Goal Getter: 7 times achieving daily goal
-            attempts = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            )
-            daily_goal = getattr(user, 'daily_quiz_goal', 3)
-            today = timezone.localtime(timezone.now()).date()
-            achieved = 0
-            for day in [today - timedelta(days=i) for i in range(30)]:
-                count = attempts.filter(submitted_at__date=day).count()
-                if count >= daily_goal:
-                    achieved += 1
-                else:
-                    achieved = 0
-            return achieved
-        
-        # ===== Miscellaneous Badges =====
-        if badge_id == 40 or badge_id == 58:  # Explorer / Knowledge Seeker
-            attempts = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            )
-            return len(set(attempts.values_list('quiz__subject', flat=True)))
-        
-        if badge_id == 45:  # Hidden Gem: quiz with 2 or fewer attempts
-            attempts = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            ).select_related('quiz')
-            for att in attempts:
-                total = QuizAttempt.objects.filter(quiz=att.quiz, submitted_at__isnull=False).count()
-                if total <= 2:
-                    return 1
-            return 0
-        
-        if badge_id == 50:  # Risk Taker: Hard quiz with 70%+
-            attempts = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            ).select_related('quiz')
-            for att in attempts:
-                if att.quiz.difficulty == 'Hard' and att.percentage >= 70:
-                    return 1
-            return 0
-        
-        if badge_id == 51:  # Weekly Warrior: 20 quizzes in a week
-            week_ago = timezone.now() - timedelta(days=7)
-            return QuizAttempt.objects.filter(
-                user=user, submitted_at__gte=week_ago
-            ).count()
-        
-        if badge_id == 52:  # Analyst: reviewed 20 questions
-            return UserAnswer.objects.filter(
-                attempt__user=user, reviewed=True
-            ).count()
-        
-        if badge_id == 64:  # Feedback Hero
-            from apps.feedback.models import Feedback
-            return 1 if Feedback.objects.filter(user=user).exists() else 0
-        
-        # ===== Leaderboard Badges (53, 62) =====
-        # Progress can't be computed here; handled separately in leaderboard view
-        
-        # ===== Milestone Badges (54) =====
-        if badge_id == 54:  # Quiz Champion: win 100 quizzes (80%+)
-            return QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False, percentage__gte=80
-            ).count()
-        
-        if badge_id == 9:  # First Step: complete 1 quiz
-            return QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            ).count()
-        
-        # ===== Default =====
+        for att in attempts:
+            # Coding
+            if att.quiz.question_type == 'Coding' and att.percentage >= 80:
+                coding_quiz_ids.add(att.quiz_id)
+            # Python, Java, C++ (case-insensitive)
+            subj_lower = att.quiz.subject.lower()
+            if 'python' in subj_lower and att.percentage >= 80:
+                python_quiz_ids.add(att.quiz_id)
+            if 'java' in subj_lower and att.percentage >= 80:
+                java_quiz_ids.add(att.quiz_id)
+            if 'c++' in subj_lower and att.percentage >= 80:
+                cpp_quiz_ids.add(att.quiz_id)
+            # Hard quiz with 70%+
+            if att.quiz.difficulty == 'Hard' and att.percentage >= 70:
+                hard_high_score = True
+            # Speed runner (less than half time)
+            time_taken = (att.submitted_at - att.started_at).total_seconds()
+            time_limit = att.quiz.duration_minutes * 60
+            if time_limit > 0 and time_taken < time_limit / 2:
+                speed_run = True
+            # Hidden gem: total attempts on this quiz <= 2
+            if not hidden_gem_done:
+                total_quiz_attempts = QuizAttempt.objects.filter(quiz=att.quiz, submitted_at__isnull=False).count()
+                if total_quiz_attempts <= 2:
+                    hidden_gem_done = True
+
+        # Daily counts (today)
+        today = timezone.localtime(timezone.now()).date()
+        today_attempts = attempts.filter(submitted_at__date=today)
+        today_questions = UserAnswer.objects.filter(attempt__user=user, attempt__submitted_at__date=today).count()
+        today_quiz_count = today_attempts.count()
+
+        # Consecutive days (for Daily Dedication)
+        consecutive_days = 0
+        for i in range(7):
+            day = today - timedelta(days=i)
+            if attempts.filter(submitted_at__date=day).exists():
+                consecutive_days += 1
+            else:
+                break
+
+        # Max time spent in a day (minutes)
+        max_day_minutes = 0
+        for day in [today - timedelta(days=i) for i in range(30)]:
+            total_sec = attempts.filter(submitted_at__date=day).aggregate(Sum('time_spent_seconds'))['time_spent_seconds__sum'] or 0
+            if total_sec // 60 > max_day_minutes:
+                max_day_minutes = total_sec // 60
+
+        # Goal achieved days (for Goal Getter)
+        daily_goal = getattr(user, 'daily_quiz_goal', 3)
+        goal_days = 0
+        for day in [today - timedelta(days=i) for i in range(30)]:
+            day_count = attempts.filter(submitted_at__date=day).count()
+            if day_count >= daily_goal:
+                goal_days += 1
+            else:
+                goal_days = 0
+
+        # Early bird and night owl flags
+        early_bird = False
+        night_owl = False
+        for att in attempts.order_by('submitted_at'):
+            local_time = timezone.localtime(att.submitted_at)
+            if local_time.hour < 9:
+                early_bird = True
+            if local_time.hour >= 22:
+                night_owl = True
+            if early_bird and night_owl:
+                break
+
+        # Quiz Champion: 100 quizzes with >=80%
+        champion_count = attempts.filter(percentage__gte=80).count()
+
+        # Top Performer and Legend in Progress: handled externally
+
+        # Build progress map
+        progress_map = {
+            # Streak (1-8)
+            1: streak, 2: streak, 3: streak, 4: streak, 5: streak, 6: streak, 7: streak,
+            # Quiz Count (9-16, 55)
+            9: total_attempts, 10: total_attempts, 11: total_attempts, 12: total_attempts,
+            13: total_attempts, 16: total_attempts, 55: total_attempts,
+            14: today_questions,
+            15: today_quiz_count,
+            # Accuracy (17-22, 59, 60, 61)
+            17: 1 if attempts.filter(quiz__question_set__gte=10, percentage__gte=90).exists() else 0,
+            18: perfect_count,
+            19: BadgeProgressHelper._consecutive_perfect_count(attempts),  # needs custom
+            20: BadgeProgressHelper._average_last_20(attempts),
+            21: BadgeProgressHelper._no_mistake_streak(attempts),
+            22: BadgeProgressHelper._redemption(attempts),
+            59: 1 if attempts.filter(quiz__question_set__gte=10, percentage__gte=95).exists() else 0,
+            60: total_correct,
+            61: 1 if speed_run else 0,
+            # Subject (27-33)
+            27: len(coding_quiz_ids),
+            28: len(python_quiz_ids),
+            29: len(java_quiz_ids),
+            30: len(cpp_quiz_ids),
+            32: BadgeProgressHelper._subjects_above_80(subject_avg, threshold=5),
+            33: BadgeProgressHelper._subjects_above_80(subject_avg, threshold=10),
+            # Time (34-39)
+            34: consecutive_days,
+            35: max_day_minutes,
+            37: 1 if early_bird else 0,
+            38: 1 if night_owl else 0,
+            39: goal_days,
+            # Miscellaneous (40,45,50,51,52,58,64)
+            40: len(subject_avg),
+            58: len(subject_avg),
+            45: 1 if hidden_gem_done else 0,
+            50: 1 if hard_high_score else 0,
+            51: attempts.filter(submitted_at__gte=timezone.now() - timedelta(days=7)).count(),
+            52: reviewed_count,
+            64: 1 if attempts.exists() else 0,  # Feedback hero checked later
+        }
+
+        # Override for badge 8 (Comeback King) - not implemented yet
+        progress_map[8] = 0  # Placeholder
+
+        # Override for badge 53 (Top Performer) and 62 (Legend in Progress) – handled elsewhere
+        progress_map[53] = 0
+        progress_map[62] = 0
+
+        # Badge 54 Quiz Champion
+        progress_map[54] = champion_count
+
+        return progress_map
+
+    @staticmethod
+    def _consecutive_perfect_count(attempts):
+        count = 0
+        for att in attempts.order_by('-submitted_at'):
+            if att.percentage == 100:
+                count += 1
+            else:
+                break
+        return count
+
+    @staticmethod
+    def _average_last_20(attempts):
+        last_20 = list(attempts.order_by('-submitted_at')[:20])
+        if last_20:
+            return sum(a.percentage for a in last_20) / len(last_20)
         return 0
 
     @staticmethod
+    def _no_mistake_streak(attempts):
+        no_mistake = 0
+        for att in attempts.order_by('-submitted_at'):
+            answers = UserAnswer.objects.filter(attempt=att)
+            if answers.filter(is_correct=False).exists():
+                no_mistake = 0
+            else:
+                no_mistake += 1
+        return no_mistake
+
+    @staticmethod
+    def _redemption(attempts):
+        quiz_ids = attempts.values_list('quiz_id', flat=True).distinct()
+        for qid in quiz_ids:
+            q_attempts = attempts.filter(quiz_id=qid).order_by('submitted_at')
+            if q_attempts.count() >= 2:
+                first = q_attempts.first()
+                last = q_attempts.last()
+                if first.percentage < 60 and last.percentage == 100:
+                    return 1
+        return 0
+
+    @staticmethod
+    def _subjects_above_80(subject_avg, threshold):
+        count = 0
+        for subj, data in subject_avg.items():
+            if sum(data['scores']) / len(data['scores']) >= 80:
+                count += 1
+        return count
+
+    @staticmethod
     def get_target(badge):
-        """Return the target value for a badge."""
         target_map = {
             1: 3, 2: 7, 3: 14, 4: 30, 5: 60, 6: 100, 7: 365,
             9: 1, 10: 10, 11: 50, 12: 100, 13: 250, 14: 100, 15: 5, 16: 500, 55: 50,
