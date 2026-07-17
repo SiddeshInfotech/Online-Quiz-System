@@ -78,7 +78,6 @@ class GlobalLeaderboardView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # ✅ Only include active users (exclude deactivated)
         ranked_users = User.objects.filter(
             deactivated_at__isnull=True,
             is_active=True
@@ -91,7 +90,6 @@ class GlobalLeaderboardView(APIView):
 
         all_rankings = []
         for user in ranked_users:
-            # ✅ Get profile picture URL
             profile_picture_url = None
             if user.profile_picture:
                 profile_picture_url = user.profile_picture.url
@@ -102,30 +100,34 @@ class GlobalLeaderboardView(APIView):
                 "username": user.username,
                 "points": user.total_points,
                 "quizzes_count": user.quizzes_completed,
-                "profile_picture": profile_picture_url,  # ✅ NEW: Added
-                "user_id": user.id,  # ✅ Added for frontend navigation
+                "profile_picture": profile_picture_url,
+                "user_id": user.id,
             })
 
         top_3 = all_rankings[:3] if len(all_rankings) >= 3 else all_rankings
 
-        # ✅ Find current user's rank
         current_user = next(
             (u for u in all_rankings if u["username"] == request.user.username),
             None
         )
 
-        # ✅ Add profile picture to personal stats
         current_user_profile_pic = None
         if request.user.profile_picture:
             current_user_profile_pic = request.user.profile_picture.url
+
+        # ✅ NEW: Check if user is in top 3
+        is_in_top_3 = False
+        if current_user:
+            is_in_top_3 = current_user["rank"] <= 3
 
         return Response({
             "personal_stats": {
                 "your_rank": current_user["rank"] if current_user else None,
                 "your_points": request.user.total_points,
                 "quizzes_completed": request.user.quizzes_completed,
-                "profile_picture": current_user_profile_pic,  # ✅ NEW
-                "full_name": request.user.full_name or request.user.username,  # ✅ NEW
+                "profile_picture": current_user_profile_pic,
+                "full_name": request.user.full_name or request.user.username,
+                "is_in_top_3": is_in_top_3,  # ✅ NEW
             },
             "top_3_podium": top_3,
             "all_rankings_list": all_rankings
