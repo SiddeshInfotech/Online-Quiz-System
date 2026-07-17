@@ -237,3 +237,15 @@ class BadgeProgressHelper:
             if data['count'] >= 5 and sum(data['scores']) / len(data['scores']) >= 80:
                 count += 1
         return count
+    
+    @staticmethod
+    def get_target(badge):
+        target_map = {
+            1: 3, 2: 7, 3: 14, 4: 30, 5: 60, 6: 100, 7: 365,
+            9: 1, 10: 10, 11: 50, 12: 100, 13: 250, 14: 100, 15: 5, 16: 500, 55: 50,
+            17: 90, 18: 100, 19: 5, 20: 80, 21: 3, 22: 1,
+            27: 5, 28: 5, 29: 5, 30: 5, 32: 5, 33: 10,
+            34: 7, 35: 60, 37: 1, 38: 1, 39: 7,
+            40: 5, 45: 1, 50: 70, 51: 20, 52: 20, 53: 10, 54: 100, 58: 10, 59: 95, 60: 100, 61: 1, 62: 1, 64: 1,
+        }
+        return target_map.get(badge.badge_id, 1)
