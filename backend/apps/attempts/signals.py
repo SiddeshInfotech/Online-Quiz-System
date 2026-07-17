@@ -42,6 +42,7 @@ def _unlock_badges_for_user(user):
     """Helper function to unlock badges when requirements are met"""
     all_badges = Badge.objects.all()
     unlocked_count = 0
+    unlocked_badge_names = []
 
     for badge in all_badges:
         # Check if user already has a UserBadge row
@@ -51,14 +52,20 @@ def _unlock_badges_for_user(user):
 
         # Check if requirement is met
         if BadgeProgressHelper.is_requirement_met(user, badge):
-            UserBadge.objects.create(
-                user=user,
-                badge=badge,
-                status='CLAIMABLE',
-                awarded_at=timezone.now()
-            )
-            unlocked_count += 1
+            try:
+                # ✅ FIX: Use 'earned_at' instead of 'awarded_at'
+                UserBadge.objects.create(
+                    user=user,
+                    badge=badge,
+                    status='CLAIMABLE',
+                    earned_at=timezone.now()  # ✅ CORRECT field name
+                )
+                unlocked_count += 1
+                unlocked_badge_names.append(badge.name)
+            except Exception as e:
+                print(f"❌ Error creating UserBadge for {badge.name}: {e}")
 
     # Clear cache if any badges unlocked
     if unlocked_count > 0:
         cache.delete(f"badges_all_{user.id}")
+        print(f"✅ Unlocked {unlocked_count} badge(s) for {user.username}: {', '.join(unlocked_badge_names)}")
