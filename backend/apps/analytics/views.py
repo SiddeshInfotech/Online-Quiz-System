@@ -29,22 +29,47 @@ class DashboardSummaryView(APIView):
         if total_quizzes > 0:
             progress_percentage = round((total_completed / total_quizzes) * 100, 2)
 
-        in_progress = QuizAttempt.objects.filter(
-            user=user, submitted_at__isnull=True
-        ).order_by('-started_at').first()
-
+        # ✅ FIXED: Continue Quiz Logic
         continue_quiz_data = None
-        if in_progress:
-            elapsed = (timezone.now() - in_progress.started_at).total_seconds()
-            remaining = max(0, (in_progress.quiz.duration_minutes * 60) - elapsed)
+        time_limit_hours = 24
+        cutoff_time = timezone.now() - timedelta(hours=time_limit_hours)
+        
+        in_progress_attempts = QuizAttempt.objects.filter(
+            user=user,
+            submitted_at__isnull=True,
+            started_at__gte=cutoff_time
+        ).select_related('quiz').order_by('-started_at')
+        
+        for attempt in in_progress_attempts:
+            # Check if user completed this quiz after starting this attempt
+            completed_after_start = QuizAttempt.objects.filter(
+                user=user,
+                quiz=attempt.quiz,
+                submitted_at__isnull=False,
+                started_at__gte=attempt.started_at
+            ).exists()
+            
+            if completed_after_start:
+                # Stale attempt - delete it
+                attempt.delete()
+                continue
+            
+            elapsed = (timezone.now() - attempt.started_at).total_seconds()
+            remaining = max(0, (attempt.quiz.duration_minutes * 60) - elapsed)
+            
+            if remaining <= 0:
+                attempt.delete()
+                continue
+            
             continue_quiz_data = {
-                "attempt_id": in_progress.id,
-                "quiz_id": in_progress.quiz.id,
-                "title": in_progress.quiz.title,
+                "attempt_id": attempt.id,
+                "quiz_id": attempt.quiz.id,
+                "title": attempt.quiz.title,
                 "remaining_time_seconds": int(remaining),
-                "started_at": in_progress.started_at,
-                "total_questions": in_progress.quiz.question_set.count()
+                "started_at": attempt.started_at,
+                "total_questions": attempt.quiz.question_set.count()
             }
+            break
 
         quizzes_available = total_quizzes
 
@@ -85,7 +110,6 @@ class DashboardSummaryView(APIView):
 
         recent_attempts_data = []
         for attempt in recent_attempts:
-            result = getattr(attempt, 'result', None)
             recent_attempts_data.append({
                 "attempt_id": attempt.id,
                 "quiz_title": attempt.quiz.title,
