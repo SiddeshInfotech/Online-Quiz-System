@@ -29,64 +29,45 @@ class DashboardSummaryView(APIView):
         if total_quizzes > 0:
             progress_percentage = round((total_completed / total_quizzes) * 100, 2)
 
-        # ✅ FIXED: Continue Quiz Logic with Progress Tracking & Auto-Submit
+        # ==================== CONTINUE QUIZ LOGIC (FIXED) ====================
         continue_quiz_data = None
-        time_limit_hours = 24
-        cutoff_time = timezone.now() - timedelta(hours=time_limit_hours)
-        
-        in_progress_attempts = QuizAttempt.objects.filter(
+
+        # ✅ Get most recent unsubmitted attempt (NO time window)
+        in_progress_attempt = QuizAttempt.objects.filter(
             user=user,
-            submitted_at__isnull=True,
-            started_at__gte=cutoff_time
-        ).select_related('quiz').order_by('-started_at')
-        
-        for attempt in in_progress_attempts:
-            # Check if user completed this quiz after starting this attempt
-            completed_after_start = QuizAttempt.objects.filter(
-                user=user,
-                quiz=attempt.quiz,
-                submitted_at__isnull=False,
-                started_at__gte=attempt.started_at
-            ).exists()
-            
-            if completed_after_start:
-                # Stale attempt - delete it
-                attempt.delete()
-                continue
-            
-            elapsed = (timezone.now() - attempt.started_at).total_seconds()
-            total_duration_seconds = attempt.quiz.duration_minutes * 60
-            remaining = max(0, total_duration_seconds - elapsed)
-            
-            # ✅ NEW: Get answered questions count
-            answered_count = UserAnswer.objects.filter(attempt=attempt).count()
-            total_questions = attempt.quiz.question_set.count()
-            
-            # ✅ Auto-submit if time expired OR all questions answered
+            submitted_at__isnull=True
+        ).select_related('quiz').order_by('-started_at').first()
+
+        if in_progress_attempt:
+            quiz = in_progress_attempt.quiz
+            elapsed = (timezone.now() - in_progress_attempt.started_at).total_seconds()
+            total_duration = quiz.duration_minutes * 60
+            remaining = max(0, total_duration - elapsed)
+
+            # Get answered questions count
+            answered_count = UserAnswer.objects.filter(attempt=in_progress_attempt).count()
+            total_questions = quiz.question_set.count()
+
+            # Auto-submit if expired
             if remaining <= 0:
-                attempt.submitted_at = timezone.now()
-                attempt.save()
-                print(f"⏰ Auto-submitted expired attempt {attempt.id} for user {user.username}")
-                continue
-            
-            if answered_count >= total_questions and total_questions > 0:
-                attempt.submitted_at = timezone.now()
-                attempt.save()
-                print(f"✅ Auto-submitted complete attempt {attempt.id} for user {user.username}")
-                continue
-            
-            # ✅ Valid in-progress attempt found
-            continue_quiz_data = {
-                "attempt_id": attempt.id,
-                "quiz_id": attempt.quiz.id,
-                "title": attempt.quiz.title,
-                "remaining_time_seconds": int(remaining),
-                "started_at": attempt.started_at,
-                "total_questions": total_questions,
-                "answered_questions": answered_count,
-                "progress_percentage": round((answered_count / total_questions) * 100, 2) if total_questions > 0 else 0
-            }
-            break  # Found valid attempt, stop searching
+                in_progress_attempt.submitted_at = timezone.now()
+                in_progress_attempt.save()
+                print(f"⏰ Auto-submitted expired attempt {in_progress_attempt.id} for user {user.username}")
+            else:
+                # ✅ Standardized response structure
+                continue_quiz_data = {
+                    "has_incomplete_quiz": True,
+                    "attempt_id": in_progress_attempt.id,
+                    "quiz_id": quiz.id,
+                    "quiz_title": quiz.title,
+                    "total_questions": total_questions,
+                    "current_question_index": answered_count,
+                    "answered_questions": answered_count,
+                    "remaining_time_seconds": int(remaining),
+                    "resume_url": f"/quiz/attempt/{in_progress_attempt.id}/",
+                    "started_at": in_progress_attempt.started_at.isoformat(),
+                    "progress_percentage": round((answered_count / total_questions) * 100, 2) if total_questions > 0 else 0
+                }
 
         quizzes_available = total_quizzes
 
