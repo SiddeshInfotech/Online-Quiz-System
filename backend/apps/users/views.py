@@ -826,6 +826,7 @@ class ClaimBadgeView(APIView):
             # prevents points from drifting on the next quiz submit.
             xp_reward = badge.xp_reward or 10
             user.xp += xp_reward
+            user.level = (user.xp // 100) + 1
             # total_points is recomputed authoritatively as quiz_score_sum +
             # claimed_badge_xp; set it directly here too so the response is
             # immediately correct without waiting for a quiz submit.
