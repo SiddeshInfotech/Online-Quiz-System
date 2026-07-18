@@ -7,10 +7,9 @@ from django.db.models.functions import Rank
 from django.db import connection
 from apps.attempts.models import QuizAttempt, Result
 from apps.quizzes.models import Quiz
-from apps.users.models import User, UserBadge  
+from apps.users.models import User, UserBadge, Badge  
 from .serializers import LeaderboardEntrySerializer, QuizLeaderboardSerializer
 from rest_framework.permissions import IsAuthenticated
-from .models import Badge
 
 
 class QuizLeaderboardView(APIView):
