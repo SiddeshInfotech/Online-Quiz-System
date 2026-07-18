@@ -23,12 +23,12 @@ const BadgeCard = ({ badge, onClaim, className = "" }) => {
     progress = 0,
     target = 1,
     requirement,
-    status = "locked",
+    status = "LOCKED",
   } = badge;
 
-  const isLocked = status === "locked";
-  const isClaimable = status === "claimable";
-  const isEarned = status === "earned";
+  const isLocked = status === "LOCKED";
+  const isClaimable = status === "CLAIMABLE";
+  const isClaimed = status === "CLAIMED";
 
   // Card styles
   const cardStyle = isClaimable
@@ -69,7 +69,7 @@ const BadgeCard = ({ badge, onClaim, className = "" }) => {
               )}
               
               {/* Status Icons */}
-              {isEarned && (
+              {isClaimed && (
                 <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-md border-2 border-white">
                   <Check size={14} strokeWidth={3} />
                 </div>
@@ -117,7 +117,7 @@ const BadgeCard = ({ badge, onClaim, className = "" }) => {
                 <ProgressBar 
                   current={progress} 
                   total={target || 1} 
-                  color={isEarned ? "emerald" : "violet"}
+                  color={isClaimed ? "emerald" : "violet"}
                 />
                 {(requirement || badge.requirement) && (
                   <p className="text-xs text-slate-400 line-clamp-2 mt-2">

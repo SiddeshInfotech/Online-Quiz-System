@@ -26,9 +26,9 @@ const UserBadgesPage = () => {
     const fetchBadges = async () => {
       try {
         const data = await achievementService.getAllBadges();
-        // Only show earned badges on the profile page
+        // Only show claimed badges on the profile page
         const earned = data
-          .filter(b => b.status === "earned")
+          .filter(b => b.status === "CLAIMED")
           .map(b => ({ ...b, image_url: resolveMediaUrl(b.image_url) }));
         setBadges(earned);
       } catch (error) {
@@ -57,8 +57,8 @@ const UserBadgesPage = () => {
         return (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
       case "Newest":
       default:
-        if (a.earned_date && b.earned_date) {
-          return new Date(b.earned_date) - new Date(a.earned_date);
+        if (a.claimed_at && b.claimed_at) {
+          return new Date(b.claimed_at) - new Date(a.claimed_at);
         }
         return 0;
     }
@@ -77,7 +77,7 @@ const UserBadgesPage = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold font-space-grotesk text-slate-900 mb-2">My Badges</h1>
         <p className="text-base text-slate-500">
-          You have earned <span className="font-bold text-violet-600">{badges.length}</span> badges so far.
+          You have claimed <span className="font-bold text-violet-600">{badges.length}</span> badges so far.
         </p>
       </div>
 
@@ -117,7 +117,7 @@ const UserBadgesPage = () => {
           ))}
         </BadgeGrid>
       ) : (
-        <EmptyState message={`No earned badges found for "${searchQuery}" or selected filters.`} />
+        <EmptyState message={`No claimed badges found for "${searchQuery}" or selected filters.`} />
       )}
     </div>
   );

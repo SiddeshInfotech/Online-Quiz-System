@@ -13,7 +13,7 @@ import BadgeGrid from "../../components/achievements/BadgeGrid";
 import Input from "../../components/ui/Input/Input";
 import { resolveMediaUrl } from "../../services/api";
 
-const FILTERS = ["All", "Earned", "Claimable", "Locked", "Common", "Rare", "Epic", "Legendary"];
+const FILTERS = ["All", "Claimed", "Claimable", "Locked", "Common", "Rare", "Epic", "Legendary"];
 const SORT_OPTIONS = ["Newest", "Progress", "XP", "Alphabetical", "Rarity"];
 
 const AchievementPage = () => {
@@ -96,7 +96,7 @@ const AchievementPage = () => {
     
     // Filter
     if (activeFilter === "All") return true;
-    if (activeFilter === "Earned") return badge.status === "EARNED";
+    if (activeFilter === "Claimed") return badge.status === "CLAIMED";
     if (activeFilter === "Claimable") return badge.status === "CLAIMABLE";
     if (activeFilter === "Locked") return badge.status === "LOCKED";
     
@@ -118,11 +118,11 @@ const AchievementPage = () => {
         return (rarityOrder[b.rarity?.toUpperCase()] || 0) - (rarityOrder[a.rarity?.toUpperCase()] || 0);
       case "Newest":
       default:
-        if (a.earned_date && b.earned_date) {
-          return new Date(b.earned_date) - new Date(a.earned_date);
-        } else if (a.earned_date) {
+        if (a.claimed_at && b.claimed_at) {
+          return new Date(b.claimed_at) - new Date(a.claimed_at);
+        } else if (a.claimed_at) {
           return -1;
-        } else if (b.earned_date) {
+        } else if (b.claimed_at) {
           return 1;
         }
         return 0; // fallback if no date

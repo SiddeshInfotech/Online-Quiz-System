@@ -71,9 +71,16 @@ const ClaimModal = ({ isOpen, badge, onClose }) => {
               )}
             </motion.div>
 
-            <div className="inline-flex items-center gap-2 bg-amber-50 text-amber-600 px-4 py-2 rounded-full font-bold text-lg mb-8 border border-amber-200 shadow-sm">
-              <Sparkles size={20} />
-              +{badge.xp_reward} XP
+            <div className="inline-flex flex-col items-center mb-8">
+              <div className="inline-flex items-center gap-2 bg-amber-50 text-amber-600 px-4 py-2 rounded-full font-bold text-lg border border-amber-200 shadow-sm">
+                <Sparkles size={20} />
+                +{badge.xp_earned || badge.xp_reward} XP
+              </div>
+              {badge.new_total_xp !== undefined && (
+                <p className="text-sm font-medium text-amber-700 mt-2">
+                  New Total: {badge.new_total_xp} XP
+                </p>
+              )}
             </div>
 
             <Button onClick={onClose} className="w-full justify-center py-3">

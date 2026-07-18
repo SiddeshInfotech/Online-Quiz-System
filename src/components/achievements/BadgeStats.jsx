@@ -26,12 +26,12 @@ const BadgeStats = ({ stats, totalBadges }) => {
   const xp = stats.xp || 0;
   
   // Use what backend returns or fallback
-  const earnedCount = stats.earned !== undefined ? stats.earned : (stats.earnedBadges || 0);
+  const claimedCount = stats.claimed !== undefined ? stats.claimed : (stats.claimedBadges || 0);
   const totalCount = stats.total !== undefined ? stats.total : (totalBadges || 1);
   const claimableCount = stats.claimable !== undefined ? stats.claimable : (stats.claimableBadges || 0);
   
   const completionPercent = totalCount > 0 
-    ? Math.round((earnedCount / totalCount) * 100) 
+    ? Math.round((claimedCount / totalCount) * 100) 
     : 0;
 
   return (
@@ -53,8 +53,8 @@ const BadgeStats = ({ stats, totalBadges }) => {
       />
       <StatCard
         icon={CheckCircle2}
-        label="Earned Badges"
-        value={earnedCount}
+        label="Claimed Badges"
+        value={claimedCount}
         colorClass="bg-emerald-100 text-emerald-600"
         delay={0.15}
       />
@@ -62,7 +62,7 @@ const BadgeStats = ({ stats, totalBadges }) => {
         icon={Award}
         label="Completion"
         value={`${completionPercent}%`}
-        subtext={`${earnedCount} / ${totalCount}`}
+        subtext={`${claimedCount} / ${totalCount}`}
         colorClass="bg-blue-100 text-blue-600"
         delay={0.2}
       />

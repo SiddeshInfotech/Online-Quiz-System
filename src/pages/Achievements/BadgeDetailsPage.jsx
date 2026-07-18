@@ -65,10 +65,10 @@ const BadgeDetailsPage = () => {
     target = 1,
     requirement,
     status = "locked",
-    earned_date
+    claimed_at
   } = badge;
 
-  const isEarned = status === "earned";
+  const isClaimed = status === "CLAIMED";
   const isLocked = status === "locked";
 
   return (
@@ -126,10 +126,10 @@ const BadgeDetailsPage = () => {
               <p className="text-slate-600 text-lg leading-relaxed mb-6">{description}</p>
               
               <div className="mb-8">
-                <ProgressBar current={progress} total={target || 1} color={isEarned ? "emerald" : "violet"} />
-                {isEarned && earned_date && (
+                <ProgressBar current={progress} total={target || 1} color={isClaimed ? "emerald" : "violet"} />
+                {isClaimed && claimed_at && (
                   <p className="text-sm font-medium text-emerald-600 mt-3 flex items-center gap-2">
-                    <Calendar size={16} /> Earned on {new Date(earned_date).toLocaleDateString()}
+                    <Calendar size={16} /> Claimed on {new Date(claimed_at).toLocaleDateString()}
                   </p>
                 )}
               </div>
@@ -137,7 +137,7 @@ const BadgeDetailsPage = () => {
               {/* Related Quizzes Mock Section */}
               <div className="border-t border-slate-100 pt-8 mt-8">
                 <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <BookOpen size={18} className="text-violet-600" /> Related Quizzes to Earn This
+                  <BookOpen size={18} className="text-violet-600" /> Related Quizzes to Claim This
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[1, 2].map(i => (

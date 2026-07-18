@@ -21,7 +21,7 @@ class AchievementService {
       target: badge.target,
       xp_reward: badge.xp_reward,
       requirement: badge.requirement,
-      earned_date: badge.awarded_at
+      claimed_at: badge.claimed_at
     }));
   }
 
@@ -37,7 +37,15 @@ class AchievementService {
    * Claim a claimable badge
    */
   async claimBadge(id) {
-    const response = await api.post(`/achievements/badges/${id}/claim`);
+    const response = await api.post(`/achievements/claim/${id}/`);
+    return response.data;
+  }
+
+  /**
+   * Get user authenticated badges
+   */
+  async getUserAuthBadges() {
+    const response = await api.get('/auth/badges/');
     return response.data;
   }
 
@@ -60,16 +68,16 @@ class AchievementService {
     } catch (e) {
       // Fallback categories if endpoint doesn't exist
       return [
-        { name: "Streak", earned: 0, total: 0 },
-        { name: "Volume", earned: 0, total: 0 },
-        { name: "Accuracy", earned: 0, total: 0 },
-        { name: "Speed", earned: 0, total: 0 },
-        { name: "Subject Mastery", earned: 0, total: 0 },
-        { name: "Time & Habit", earned: 0, total: 0 },
-        { name: "Exploration", earned: 0, total: 0 },
-        { name: "Leaderboard", earned: 0, total: 0 },
-        { name: "Growth", earned: 0, total: 0 },
-        { name: "Milestones", earned: 0, total: 0 }
+        { name: "Streak", claimed: 0, total: 0 },
+        { name: "Volume", claimed: 0, total: 0 },
+        { name: "Accuracy", claimed: 0, total: 0 },
+        { name: "Speed", claimed: 0, total: 0 },
+        { name: "Subject Mastery", claimed: 0, total: 0 },
+        { name: "Time & Habit", claimed: 0, total: 0 },
+        { name: "Exploration", claimed: 0, total: 0 },
+        { name: "Leaderboard", claimed: 0, total: 0 },
+        { name: "Growth", claimed: 0, total: 0 },
+        { name: "Milestones", claimed: 0, total: 0 }
       ];
     }
   }
