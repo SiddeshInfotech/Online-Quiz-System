@@ -12,6 +12,11 @@ class QuizAttempt(models.Model):
     started_at = models.DateTimeField(auto_now_add=True)
     submitted_at = models.DateTimeField(null=True, blank=True)
     time_spent_seconds = models.IntegerField(default=0)
+    class Meta:
+        indexes = [
+            models.Index(fields=['user', 'submitted_at']),
+            models.Index(fields=['quiz', 'submitted_at']),
+        ]
 
 class UserAnswer(models.Model):
     attempt = models.ForeignKey(QuizAttempt, on_delete=models.CASCADE)

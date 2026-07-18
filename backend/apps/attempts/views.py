@@ -124,8 +124,9 @@ class SubmitAttemptView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, attempt_id):
-        from django.db import transaction
         import time
+        from django.db import transaction
+        from django.core.cache import cache
 
         start_time = time.time()
 
@@ -135,21 +136,16 @@ class SubmitAttemptView(APIView):
             return Response({"error": "Attempt not found or already submitted."}, status=status.HTTP_404_NOT_FOUND)
 
         quiz = attempt.quiz
-        duration = quiz.duration_minutes
-        elapsed = (timezone.now() - attempt.started_at).total_seconds() / 60
-        is_auto_submitted = elapsed > duration
 
-        # ✅ OPTIMIZATION 1: Prefetch all questions and options in ONE query
+        # ✅ OPTIMIZATION 1: Fetch all questions and options in ONE query
         questions = Question.objects.filter(quiz=quiz).prefetch_related('questionoption_set')
-        
-        # Build lookup dicts for O(1) access
         question_map = {q.id: q for q in questions}
         option_map = {}
         for q in questions:
             for opt in q.questionoption_set.all():
                 option_map[opt.id] = opt
 
-        # ✅ OPTIMIZATION 2: Delete old answers (bulk delete is already efficient)
+        # ✅ OPTIMIZATION 2: Delete old answers
         UserAnswer.objects.filter(attempt=attempt).delete()
 
         # Parse answers
@@ -159,83 +155,50 @@ class SubmitAttemptView(APIView):
                 {"question_id": int(q_id), "selected_option_id": opt_id}
                 for q_id, opt_id in answers_data.items()
             ]
-        if not answers_data:
-            answers_data = []
 
-        # ✅ OPTIMIZATION 3: Process all answers in memory first
+        # ✅ OPTIMIZATION 3: Process in memory
         user_answers_to_create = []
         correct_count = 0
-        wrong_count = 0
         total_score = 0
         total_marks = 0
         answered_question_ids = set()
 
         for answer_data in answers_data:
-            serializer = SubmitAnswerSerializer(data=answer_data, context={'attempt': attempt})
-            if not serializer.is_valid():
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-            question_id = serializer.validated_data['question_id']
-            selected_option_id = serializer.validated_data.get('selected_option_id')
-            answer_text = serializer.validated_data.get('answer_text', '')
+            question_id = answer_data.get('question_id')
+            selected_option_id = answer_data.get('selected_option_id')
 
             question = question_map.get(question_id)
             if not question:
-                return Response({"error": f"Question {question_id} does not belong to this quiz."}, status=status.HTTP_400_BAD_REQUEST)
+                continue
 
             answered_question_ids.add(question_id)
             is_correct = False
             marks_obtained = 0
 
-            q_type = question.question_type
-
-            # Process based on question type (using in-memory data)
-            if q_type in ['MCQ', 'True/False']:
-                if selected_option_id:
-                    option = option_map.get(selected_option_id)
-                    if not option or option.question_id != question_id:
-                        return Response({"error": f"Invalid option for question {question_id}."}, status=status.HTTP_400_BAD_REQUEST)
+            # MCQ / True/False
+            if selected_option_id:
+                option = option_map.get(selected_option_id)
+                if option and option.question_id == question_id:
                     is_correct = option.is_correct
                     marks_obtained = question.marks if is_correct else 0
-                else:
-                    is_correct = False
-                    marks_obtained = 0
 
-            elif q_type == 'Fill in the Blank':
-                has_options = question.questionoption_set.exists()
-                if has_options and selected_option_id:
-                    option = option_map.get(selected_option_id)
-                    if option and option.question_id == question_id:
-                        is_correct = option.is_correct
-                        marks_obtained = question.marks if is_correct else 0
-                elif answer_text:
-                    is_correct = answer_text.strip().lower() == question.correct_answer.strip().lower()
-                    marks_obtained = question.marks if is_correct else 0
-                else:
-                    is_correct = False
-                    marks_obtained = 0
+            if is_correct:
+                correct_count += 1
 
             total_marks += question.marks
             total_score += marks_obtained
 
-            if is_correct:
-                correct_count += 1
-            else:
-                wrong_count += 1
-
-            # ✅ OPTIMIZATION 4: Create UserAnswer objects in memory
             user_answers_to_create.append(
                 UserAnswer(
                     attempt=attempt,
                     question=question,
                     selected_option_id=selected_option_id,
-                    answer_text=answer_text,
                     is_correct=is_correct,
                     marks_obtained=marks_obtained
                 )
             )
 
-        # Mark unanswered questions
+        # Mark unanswered
         for q in questions:
             if q.id not in answered_question_ids:
                 total_marks += q.marks
@@ -248,7 +211,7 @@ class SubmitAttemptView(APIView):
                     )
                 )
 
-        # ✅ OPTIMIZATION 5: Bulk insert all UserAnswer records in ONE query
+        # ✅ OPTIMIZATION 4: Bulk insert
         with transaction.atomic():
             UserAnswer.objects.bulk_create(user_answers_to_create)
 
@@ -259,10 +222,10 @@ class SubmitAttemptView(APIView):
             attempt.save()
 
             # Create Result
-            result = Result.objects.create(
+            Result.objects.create(
                 attempt=attempt,
                 correct_answers=correct_count,
-                wrong_answers=wrong_count,
+                wrong_answers=len(answers_data) - correct_count,
                 unanswered_questions=questions.count() - len(answered_question_ids),
                 total_score=total_score,
                 percentage=(total_score / total_marks * 100) if total_marks > 0 else 0,
@@ -270,15 +233,14 @@ class SubmitAttemptView(APIView):
                 pass_status=(total_score / total_marks * 100) >= 40 if total_marks > 0 else False
             )
 
-        # ✅ OPTIMIZATION 6: Minimal response – just enough for frontend to show "Processing"
+        # ✅ OPTIMIZATION 5: Minified response
         elapsed_ms = int((time.time() - start_time) * 1000)
         print(f"✅ Quiz submitted in {elapsed_ms}ms")
 
         return Response({
             "status": "success",
             "attempt_id": attempt.id,
-            "result_id": result.id,
-            "message": "Quiz submitted successfully! Fetch result from /api/attempts/{attempt_id}/result/",
+            "message": "Quiz submitted successfully! Fetch result from /api/attempts/{attempt_id}/result/"
         }, status=status.HTTP_200_OK)
 
     def _calculate_grade(self, percentage):
@@ -441,45 +403,55 @@ class AttemptResultView(APIView):
 
     def get(self, request, attempt_id):
         try:
+            # ✅ OPTIMIZATION: select_related to reduce queries
             if request.user.is_superuser:
-                attempt = QuizAttempt.objects.get(id=attempt_id)
+                attempt = QuizAttempt.objects.select_related('quiz', 'quiz__category', 'result').get(id=attempt_id)
             else:
-                attempt = QuizAttempt.objects.get(id=attempt_id, user=request.user)
+                attempt = QuizAttempt.objects.select_related('quiz', 'quiz__category', 'result').get(
+                    id=attempt_id, 
+                    user=request.user
+                )
         except QuizAttempt.DoesNotExist:
             return Response({"error": "Attempt not found."}, status=status.HTTP_404_NOT_FOUND)
 
         if not attempt.submitted_at:
             return Response({"error": "Attempt not submitted yet."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Get UserAnswer records for this attempt (should be unique now after submit fix)
-        user_answers = UserAnswer.objects.filter(attempt=attempt)
-        total_questions = attempt.quiz.question_set.count()
-
-        # Calculate correct and incorrect counts
-        correct_count = user_answers.filter(is_correct=True).count()
-        # Incorrect: answered but wrong (is_correct=False AND selected_option_id is not null)
-        incorrect_count = user_answers.filter(is_correct=False, selected_option_id__isnull=False).count()
-
-        # Unanswered: questions that were never answered (no UserAnswer or selected_option_id null)
-        # We can compute as total_questions - (correct_count + incorrect_count)
-        # But also include answers with selected_option_id null as unanswered
-        unanswered_count = total_questions - (correct_count + incorrect_count)
-        # Safety: ensure never negative
-        unanswered_count = max(0, unanswered_count)
-
-        # Score: assume 1 mark per correct answer (or use marks_obtained sum if needed)
-        # Since we cleared duplicates, we can just use correct_count
-        total_score = correct_count
-        percentage = (total_score / total_questions * 100) if total_questions > 0 else 0
+        # ✅ OPTIMIZATION: Use result if exists, otherwise calculate
+        if hasattr(attempt, 'result') and attempt.result:
+            result = attempt.result
+            correct_count = result.correct_answers
+            incorrect_count = result.wrong_answers
+            unanswered_count = result.unanswered_questions
+            total_score = result.total_score
+            percentage = float(result.percentage)
+            passed = result.pass_status
+            grade = result.grade
+        else:
+            # Fallback: calculate from UserAnswer
+            user_answers = UserAnswer.objects.filter(attempt=attempt)
+            total_questions = attempt.quiz.question_set.count()
+            
+            correct_count = user_answers.filter(is_correct=True).count()
+            incorrect_count = user_answers.filter(is_correct=False, selected_option_id__isnull=False).count()
+            unanswered_count = total_questions - (correct_count + incorrect_count)
+            unanswered_count = max(0, unanswered_count)
+            total_score = correct_count
+            percentage = (total_score / total_questions * 100) if total_questions > 0 else 0
+            passed = percentage >= 40
+            grade = self._calculate_grade(percentage)
 
         quiz = attempt.quiz
         time_diff = attempt.submitted_at - attempt.started_at
         time_taken_seconds = int(time_diff.total_seconds())
         time_remaining_seconds = max(0, (quiz.duration_minutes * 60) - time_taken_seconds)
 
+        # ✅ Get total questions count efficiently
+        total_questions = attempt.quiz.question_set.count()
+
         return Response({
             "attempt_id": attempt.id,
-            "result_id": getattr(attempt, 'result', None).id if hasattr(attempt, 'result') and attempt.result else None,
+            "result_id": attempt.result.id if hasattr(attempt, 'result') and attempt.result else None,
             "quiz": {
                 "id": quiz.id,
                 "title": quiz.title,
@@ -497,12 +469,27 @@ class AttemptResultView(APIView):
             "unanswered": unanswered_count,
             "percentage": round(percentage, 2),
             "accuracy": round(percentage, 2),
-            "passed": percentage >= 40,
+            "passed": passed,
             "points_earned": total_score,
             "time_spent_seconds": time_taken_seconds,
             "time_remaining_seconds": time_remaining_seconds,
-            "submitted_at": attempt.submitted_at.isoformat()
+            "submitted_at": attempt.submitted_at.isoformat(),
+            "grade": grade  # ✅ Added grade for frontend
         })
+
+    def _calculate_grade(self, percentage):
+        if percentage >= 90:
+            return "A+"
+        elif percentage >= 80:
+            return "A"
+        elif percentage >= 70:
+            return "B"
+        elif percentage >= 60:
+            return "C"
+        elif percentage >= 40:
+            return "D"
+        else:
+            return "F"
     
 class AttemptReviewView(APIView):
     permission_classes = [IsAuthenticated]
