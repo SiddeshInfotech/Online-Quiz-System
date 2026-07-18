@@ -116,6 +116,10 @@ def _unlock_badges_for_user(user):
             for badge in newly_unlocked:
                 notify_badge_claimable(user, badge)
 
+            from django.utils import timezone
+            from .tasks import compute_badge_progress_async
+            compute_badge_progress_async(user.id)
+
             print(
                 f"Unlocked {len(new_userbadges)} badge(s) for {user.username}: "
                 f"{', '.join(b.name for b in newly_unlocked)}"
