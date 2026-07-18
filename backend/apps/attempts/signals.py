@@ -109,6 +109,7 @@ def _unlock_badges_for_user(user):
             cache.delete(f"badges_all_{user.id}")
             cache.delete(f"user_badges_{user.id}")
             cache.delete(f"badge_count_{user.id}")
+            BadgeProgressHelper.clear_progress_cache(user)
 
             # #7/#13: notify the user for each achievement that just completed.
             from apps.notifications.services import notify_badge_claimable

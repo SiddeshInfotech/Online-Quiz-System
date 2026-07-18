@@ -837,6 +837,7 @@ class ClaimBadgeView(APIView):
             cache.delete(f"badges_all_{user.id}")
             cache.delete(f"user_badges_{user.id}")
             cache.delete(f"badge_count_{user.id}")
+            BadgeProgressHelper.clear_progress_cache(user)
 
             # #17: create a claim notification (also drives the celebratory
             # full-screen animation on the frontend) and return the badge

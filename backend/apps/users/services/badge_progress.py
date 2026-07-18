@@ -3,12 +3,27 @@ from datetime import timedelta
 from django.db.models import Count, Avg, Sum, Q
 from apps.attempts.models import QuizAttempt, UserAnswer
 from apps.questions.models import Question
+from django.core.cache import cache
 
 class BadgeProgressHelper:
+    
     @staticmethod
-    def get_all_progress(user, badges):
-        """Compute progress for all badges in one optimized pass."""
-        # Fetch user data once with necessary relations
+    def get_all_progress(user, badges=None):
+        """
+        Compute progress for all badges in one optimized pass.
+        Results are cached for 10 minutes to avoid recomputation.
+        """
+        cache_key = f"badge_progress_{user.id}"
+        cached_data = cache.get(cache_key)
+        
+        # If cache exists and we need all badges, return cached
+        if cached_data is not None:
+            if badges is None:
+                return cached_data
+            # Filter for specific badges if needed
+            return {b.badge_id: cached_data.get(b.badge_id, 0) for b in badges}
+        
+        # --- Full computation (existing logic) ---
         attempts = QuizAttempt.objects.filter(
             user=user, submitted_at__isnull=False
         ).select_related('quiz').order_by('-submitted_at')
@@ -221,7 +236,14 @@ class BadgeProgressHelper:
             64: BadgeProgressHelper._get_feedback_count(user),
         }
         
+        # ✅ Cache for 10 minutes (600 seconds)
+        cache.set(cache_key, progress_map, 600)
         return progress_map
+
+    @staticmethod
+    def clear_progress_cache(user):
+        """Clear the progress cache for a user."""
+        cache.delete(f"badge_progress_{user.id}")
 
     @staticmethod
     def _average_last_20(attempts):
