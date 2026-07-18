@@ -83,6 +83,10 @@ DATABASES = {
 }
 DATABASES['default']['OPTIONS'] = {'ssl': {}}
 
+SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
+FROM_EMAIL = os.environ.get('FROM_EMAIL', 'zeeshanansari1081015@gmail.com')
+ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', FROM_EMAIL) 
+
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
