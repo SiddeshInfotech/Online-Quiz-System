@@ -667,14 +667,30 @@ class AchievementStatsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        user = request.user
+        
+        # ✅ New fields for achievements page
+        total_badges = Badge.objects.count()
+        claimed_badges = UserBadge.objects.filter(
+            user=user, status='CLAIMED'
+        ).count()
+        claimable_badges = UserBadge.objects.filter(
+            user=user, status='CLAIMABLE'
+        ).count()
+        completion_percentage = round(
+            (claimed_badges / total_badges * 100), 2
+        ) if total_badges > 0 else 0
+        
+        # ✅ Level from XP
+        level = (user.xp // 100) + 1  # Assuming 100 XP per level
+        
+        # ✅ Existing rarity and category distributions (only CLAIMED)
         user_badges = UserBadge.objects.filter(
-            user=request.user, 
-            status='CLAIMED'
+            user=user, status='CLAIMED'
         ).select_related('badge')
-        total_badges = user_badges.count()
+        
         rarity_counts = {}
         category_counts = {}
-
         for ub in user_badges:
             rarity = ub.badge.rarity
             category = ub.badge.category
@@ -682,6 +698,13 @@ class AchievementStatsView(APIView):
             category_counts[category] = category_counts.get(category, 0) + 1
 
         return Response({
+            # ✅ New fields
+            "level": level,
+            "total_xp": user.xp,
+            "claimed_badges": claimed_badges,
+            "claimable_badges": claimable_badges,
+            "completion_percentage": completion_percentage,
+            # Existing fields
             "total_badges": total_badges,
             "rarity_distribution": rarity_counts,
             "category_distribution": category_counts,
