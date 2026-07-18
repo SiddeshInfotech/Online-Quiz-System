@@ -143,6 +143,13 @@ class LoginView(generics.GenericAPIView):
             user = serializer.validated_data['user']
 
             if not user.is_active:
+                # BUGFIX (#4): check deactivation FIRST so a deactivated user
+                # gets the correct message instead of "Email not verified".
+                if getattr(user, 'deactivated_at', None):
+                    return Response({
+                        "error": f"Your account was deactivated on {user.deactivated_at.strftime('%Y-%m-%d')}. Please contact support to reactivate.",
+                        "deactivated": True,
+                    }, status=status.HTTP_403_FORBIDDEN)
                 # ✅ Check if user is unverified (has pending OTP or never logged in)
                 otp_exists = OTPVerification.objects.filter(
                     user=user,
@@ -806,11 +813,24 @@ class ClaimBadgeView(APIView):
             user_badge.claimed_at = timezone.now()
             user_badge.save()
 
-            # Award XP
-            xp_map = {'COMMON': 25, 'RARE': 50, 'EPIC': 100, 'LEGENDARY': 200}
-            xp_reward = xp_map.get(badge.rarity, 25)
-            user.total_points += xp_reward
+            # Award XP  use the badge's own xp_reward so it matches the
+            # total_points recomputation in attempts/signals.py (which sums
+            # badge__xp_reward for CLAIMED badges). Keeping these in sync
+            # prevents points from drifting on the next quiz submit.
+            xp_reward = badge.xp_reward or 10
             user.xp += xp_reward
+            # total_points is recomputed authoritatively as quiz_score_sum +
+            # claimed_badge_xp; set it directly here too so the response is
+            # immediately correct without waiting for a quiz submit.
+            from apps.attempts.models import QuizAttempt
+            from django.db.models import Sum as _Sum
+            quiz_score_total = QuizAttempt.objects.filter(
+                user=user, submitted_at__isnull=False
+            ).aggregate(total=_Sum('score'))['total'] or 0
+            badge_xp = UserBadge.objects.filter(
+                user=user, status='CLAIMED'
+            ).aggregate(total=_Sum('badge__xp_reward'))['total'] or 0
+            user.total_points = quiz_score_total + badge_xp
             user.save()
 
             # ✅ Clear all caches
@@ -871,8 +891,3 @@ class CheckAndUnlockBadgesView(APIView):
             "unlocked_count": unlocked_count,
             "unlocked_badges": unlocked_badges
         }, status=status.HTTP_200_OK)
-
-    
-
-
-

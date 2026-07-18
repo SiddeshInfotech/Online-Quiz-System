@@ -23,7 +23,8 @@ def update_user_stats(sender, instance, created, **kwargs):
     except Result.DoesNotExist:
         points = instance.score or 0
 
-    total_points = QuizAttempt.objects.filter(
+    # Sum of quiz scores across all completed attempts
+    quiz_score_total = QuizAttempt.objects.filter(
         user=user, submitted_at__isnull=False
     ).aggregate(total=Sum('score'))['total'] or 0
 
@@ -31,8 +32,18 @@ def update_user_stats(sender, instance, created, **kwargs):
         user=user, submitted_at__isnull=False
     ).count()
 
+    # BUGFIX: previously total_points was overwritten with ONLY the quiz-score
+    # sum on every submit, which wiped out XP awarded when a user claimed a
+    # badge (ClaimBadgeView does user.total_points += xp_reward). That made the
+    # leaderboard understate points and made claimed-badge XP vanish on the next
+    # quiz. total_points must be quiz score sum + claimed-badge XP.
+    from apps.users.models import UserBadge
+    badge_xp = UserBadge.objects.filter(
+        user=user, status='CLAIMED'
+    ).aggregate(total=Sum('badge__xp_reward'))['total'] or 0
+
     User.objects.filter(id=user.id).update(
-        total_points=total_points,
+        total_points=quiz_score_total + badge_xp,
         quizzes_completed=quizzes_completed
     )
 
