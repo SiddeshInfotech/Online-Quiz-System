@@ -1,21 +1,193 @@
 @import "tailwindcss";
 
-html{
-  scroll-behavior:smooth;
+/* ============================================================
+   THEME SYSTEM  (item 18)
+   Light mode  = keeps the original brand colors (slate + violet).
+   Dark mode   = interactive gold-black & blue-black gradients.
+   Toggled by adding class="dark" on <html> (see ThemeContext).
+   ============================================================ */
+
+/* Tell Tailwind v4 that `dark:` responds to the .dark class, not OS. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* Surfaces */
+  --bg-app: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #FFFFFF;
+  --bg-subtle: #F1F5F9;
+
+  /* Text */
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+
+  /* Borders */
+  --border: #E2E8F0;
+  --border-strong: #CBD5E1;
+
+  /* Brand accent (unchanged in light) */
+  --accent: #7C3AED;
+  /* violet-600 */
+  --accent-hover: #6D28D9;
+  /* violet-700 */
+  --accent-soft: #EDE9FE;
+  /* violet-100 */
+  --accent-contrast: #FFFFFF;
+
+  /* Signature gradients  the hero glow / CTA use these */
+  --grad-primary: linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%);
+  --hero-glow-1: rgba(124, 58, 237, 0.18);
+  --hero-glow-2: rgba(79, 70, 229, 0.14);
+
+  --ring: #A78BFA;
+  --shadow-color: 15 23 42;
+  /* slate-900 rgb for box-shadows */
+  color-scheme: light;
 }
 
-body{
-  font-family:"Inter",sans-serif;
-  background:#F8FAFC;
-  color:#0F172A;
+.dark {
+  /* Surfaces  near-black base */
+  --bg-app: #08080C;
+  --bg-surface: #101018;
+  --bg-elevated: #16161F;
+  --bg-subtle: #1B1B26;
+
+  /* Text */
+  --text-primary: #F5F5FA;
+  --text-secondary: #C7C9D9;
+  --text-muted: #8B8DA3;
+
+  /* Borders  low-contrast on black */
+  --border: #24242F;
+  --border-strong: #33333F;
+
+  /* Interactive accent leans blue in dark, with gold as the premium pop */
+  --accent: #F5C451;
+  /* gold */
+  --accent-hover: #FFD873;
+  --accent-soft: rgba(245, 196, 81, 0.12);
+  --accent-contrast: #0A0A0F;
+
+  /* The two signature gradients requested: gold-black & blue-black */
+  --grad-gold: linear-gradient(135deg, #F5C451 0%, #8A6A1F 45%, #0A0A0F 100%);
+  --grad-blue: linear-gradient(135deg, #3B82F6 0%, #1E3A8A 45%, #0A0A0F 100%);
+  --grad-primary: linear-gradient(135deg, #F5C451 0%, #3B82F6 120%);
+
+  --hero-glow-1: rgba(245, 196, 81, 0.16);
+  /* gold glow */
+  --hero-glow-2: rgba(59, 130, 246, 0.18);
+  /* blue glow */
+
+  --ring: #F5C451;
+  --shadow-color: 0 0 0;
+  color-scheme: dark;
 }
 
-
-
-h1,h2,h3,h4,h5,h6{
-  font-family:"Space Grotesk",sans-serif;
+html {
+  scroll-behavior: smooth;
 }
 
-button{
-  cursor:pointer;
+body {
+  font-family: "Inter", sans-serif;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  transition: background-color 0.4s ease, color 0.3s ease;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Space Grotesk", sans-serif;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* ---- Semantic utility classes so existing components can adopt theming
+        without rewriting every hardcoded slate/white class. ---- */
+.surface {
+  background-color: var(--bg-surface);
+}
+
+.surface-elev {
+  background-color: var(--bg-elevated);
+}
+
+.surface-subtle {
+  background-color: var(--bg-subtle);
+}
+
+.text-app {
+  color: var(--text-primary);
+}
+
+.text-app-2 {
+  color: var(--text-secondary);
+}
+
+.text-app-muted {
+  color: var(--text-muted);
+}
+
+.border-app {
+  border-color: var(--border);
+}
+
+/* Signature gradient helpers (dark mode only meaningfully) */
+.grad-primary {
+  background: var(--grad-primary);
+}
+
+.grad-gold {
+  background: var(--grad-gold, var(--grad-primary));
+}
+
+.grad-blue {
+  background: var(--grad-blue, var(--grad-primary));
+}
+
+/* Interactive dark-mode sheen for cards/buttons */
+.dark .interactive-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.dark .interactive-glow::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(245, 196, 81, 0.5), rgba(59, 130, 246, 0.5));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.dark .interactive-glow:hover::before {
+  opacity: 1;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Keyboard focus visibility (quality floor) */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }

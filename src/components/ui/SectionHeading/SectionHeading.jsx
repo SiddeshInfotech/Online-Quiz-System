@@ -8,9 +8,8 @@ function SectionHeading({
 }) {
   return (
     <div
-      className={`mb-14 ${
-        align === "center" ? "text-center" : "text-left"
-      }`}
+      className={`mb-14 ${align === "center" ? "text-center" : "text-left"
+        }`}
     >
       {badge && (
         <div className="mb-4">
@@ -18,12 +17,12 @@ function SectionHeading({
         </div>
       )}
 
-      <h2 className="text-4xl font-bold text-slate-900">
+      <h2 className="text-4xl font-bold text-app">
         {title}
       </h2>
 
       {description && (
-        <p className="mt-4 text-lg text-slate-500">
+        <p className="mt-4 text-lg text-app-2">
           {description}
         </p>
       )}

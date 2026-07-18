@@ -25,7 +25,7 @@ const testimonials = [
 
 function Testimonials() {
   return (
-    <section className="bg-slate-50 py-24">
+    <section className="surface-subtle py-24">
       <Container>
         <SectionHeading
           badge="Testimonials"

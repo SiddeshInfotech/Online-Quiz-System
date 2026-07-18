@@ -255,29 +255,13 @@ const QuizAttemptPage = () => {
   };
 
   const handleFinalSubmit = async () => {
-    if (isSubmitting) return; // Prevent duplicates
+    if (isSubmitting) return; // Prevent duplicate submissions
     setIsSubmitting(true);
     setSubmitError(null);
     setIsTimerRunning(false); // Stop timer visually
 
-    console.log("answers =", answers);
-    console.log("answersRef =", answersRef.current);
-
-    console.log("answers type =", typeof answers);
-    console.log("answers constructor =", answers?.constructor?.name);
-
-    console.log("isArray =", Array.isArray(answers));
-
-    console.log("keys =", Object.keys(answers));
-
-    console.log("entries =", Object.entries(answers));
-
-    console.log("stringified =", JSON.stringify(answers));
-
+    // Use ref to capture the latest answers snapshot (important for auto-submit on timer expiry)
     const actualAnswers = answersRef.current || answers;
-    
-    console.log("Actual answers:", actualAnswers);
-    console.log("Object.entries(actualAnswers):", Object.entries(actualAnswers));
 
     const payload = {
       answers: Object.entries(actualAnswers).map(([qId, optId]) => ({
@@ -286,51 +270,19 @@ const QuizAttemptPage = () => {
       }))
     };
 
-    // Verify before the request is sent
-    console.assert(payload.answers, "answers exists");
-    console.assert(Array.isArray(payload.answers), "answers is an array");
-    payload.answers.forEach(ans => {
-      console.assert(typeof ans.question_id === "number", "question_id is an integer");
-      console.assert(typeof ans.selected_option_id === "number" || ans.selected_option_id === null, "selected_option_id is an integer");
-      console.assert(Object.keys(ans).length === 2, "No extra fields are being sent");
-    });
-
-    if (calculateStats().answered > 0 && payload.answers.length === 0) {
-      console.error(
-        "UI shows answered questions but submit payload is empty."
-      );
-    }
-
     try {
-      const response = await attemptsService.submitAttempt(attemptId, payload);
-      navigate(`/results/${attemptId}`, { 
-        replace: true, 
-        state: { result: response } 
-      });
+      // Backend now returns only { status, attempt_id, result_id }
+      // Do not use the response body — navigate to result page which fetches its own data
+      await attemptsService.submitAttempt(attemptId, payload);
+      navigate(`/results/${attemptId}`, { replace: true });
     } catch (err) {
       console.error("Submission failed", err);
-
-      console.log("Status:", err.response?.status);
-
-      console.log(
-        "Full error response:",
-        JSON.stringify(err.response?.data, null, 2)
-      );
-
-      if (err.response?.data?.non_field_errors) {
-        console.log(
-          "non_field_errors:",
-          err.response.data.non_field_errors
-        );
-      }
-
       setSubmitError(err.response?.data?.message || "Failed to submit quiz. Please try again.");
       setIsSubmitting(false);
-      
+
       if (remainingSeconds > 0) {
-        setIsTimerRunning(true); // Resume timer if it failed and time left
+        setIsTimerRunning(true); // Resume timer if submit failed and time remains
       }
-      throw err;
     }
   };
 

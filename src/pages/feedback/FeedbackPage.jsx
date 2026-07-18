@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, MessageSquarePlus, CheckCircle2 } from 'lucide-react';
 import feedbackService from '../../services/feedbackService';
+import achievementService from '../../services/achievementService';
 import RatingDistribution from './components/RatingDistribution';
 import FeedbackCard from './components/FeedbackCard';
 import StarRating from './components/StarRating';
@@ -18,6 +19,8 @@ const FeedbackPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -39,6 +42,7 @@ const FeedbackPage = () => {
       if (myFeedbackRes) {
         setRating(myFeedbackRes.rating || 0);
         setMessage(myFeedbackRes.message || '');
+        setIsEditing(true);
       }
     } catch (err) {
       console.error("Failed to fetch feedback data:", err);
@@ -70,18 +74,32 @@ const FeedbackPage = () => {
 
     setIsSubmitting(true);
     try {
-      await feedbackService.submitFeedback({ rating, message });
+      const res = await feedbackService.submitFeedback({ rating, message });
       setSubmitSuccess(true);
+      
+      if (res.updated) {
+        setSuccessMessage("Feedback updated successfully.");
+        setIsEditing(true);
+      } else if (res.created) {
+        setSuccessMessage("Feedback submitted successfully.");
+        setIsEditing(true);
+      } else {
+        setSuccessMessage(isEditing ? "Feedback updated successfully." : "Feedback submitted successfully.");
+      }
 
-      // Clear the form state explicitly as requested
-      setRating(0);
-      setMessage('');
-
-      // Refresh the data to show the new summary and the updated list
+      // Refresh feedback data to show new summary and updated list
       await fetchData();
 
+      // Trigger server-side badge evaluation so Feedback Hero badge
+      // becomes CLAIMABLE immediately on next achievements page visit.
+      // Fire-and-forget — checkUnlock() swallows its own errors.
+      achievementService.checkUnlock();
+
       // Hide success toast after 3 seconds
-      setTimeout(() => setSubmitSuccess(false), 3000);
+      setTimeout(() => {
+        setSubmitSuccess(false);
+        setSuccessMessage('');
+      }, 3000);
     } catch (err) {
       console.error("Submit feedback error:", err);
       setSubmitError(err.response?.data?.message || "Failed to submit feedback. Please try again.");
@@ -159,7 +177,7 @@ const FeedbackPage = () => {
             {submitSuccess && (
               <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-xl flex items-center gap-2 text-sm">
                 <CheckCircle2 size={18} />
-                Feedback submitted successfully!
+                {successMessage}
               </div>
             )}
 
@@ -203,7 +221,7 @@ const FeedbackPage = () => {
                 disabled={isSubmitting}
                 className="w-full mt-2"
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+                {isSubmitting ? (isEditing ? 'Updating...' : 'Submitting...') : (isEditing ? 'Update Feedback' : 'Submit Feedback')}
               </Button>
             </form>
           </div>

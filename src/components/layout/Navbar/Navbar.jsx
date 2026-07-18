@@ -5,6 +5,7 @@ import { Menu, X } from "lucide-react";
 import Button from "../../ui/Button";
 import Container from "../../ui/Container";
 import Logo from "../../ui/Logo";
+import ThemeToggle from "../../ui/ThemeToggle";
 
 const navLinks = [
   { label: "About", href: "#about" },
@@ -16,19 +17,18 @@ function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-app surface/80 backdrop-blur-md"
+      style={{ backgroundColor: "color-mix(in srgb, var(--bg-surface) 80%, transparent)" }}>
       <Container>
         <nav className="flex h-20 items-center justify-between">
-          {/* Logo */}
           <Logo />
 
-          {/* Desktop Navigation */}
           <ul className="hidden items-center gap-10 md:flex">
             {navLinks.map((item) => (
               <li key={item.label}>
                 <a
                   href={item.href}
-                  className="text-sm font-medium text-slate-600 transition hover:text-violet-600"
+                  className="text-sm font-medium text-app-2 transition hover:text-[var(--accent)]"
                 >
                   {item.label}
                 </a>
@@ -36,32 +36,28 @@ function Navbar() {
             ))}
           </ul>
 
-          {/* Desktop Buttons */}
-          <div className="hidden items-center gap-4 md:flex">
+          <div className="hidden items-center gap-3 md:flex">
+            <ThemeToggle />
             <Link to="/login">
-              <Button variant="ghost">
-                Log In
-              </Button>
+              <Button variant="ghost">Log In</Button>
             </Link>
-
             <Link to="/signup">
-              <Button>
-                Get Started Free
-              </Button>
+              <Button>Get Started Free</Button>
             </Link>
           </div>
 
-          {/* Mobile Menu Toggle */}
-          <button
-            className="md:hidden"
-            onClick={() => setIsOpen(!isOpen)}
-            aria-label="Toggle Menu"
-          >
-            {isOpen ? <X /> : <Menu />}
-          </button>
+          <div className="flex items-center gap-2 md:hidden">
+            <ThemeToggle />
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              aria-label="Toggle menu"
+              className="text-app"
+            >
+              {isOpen ? <X /> : <Menu />}
+            </button>
+          </div>
         </nav>
 
-        {/* Mobile Menu */}
         {isOpen && (
           <div className="pb-6 md:hidden">
             <div className="flex flex-col gap-4">
@@ -69,22 +65,17 @@ function Navbar() {
                 <a
                   key={item.label}
                   href={item.href}
-                  className="text-slate-700 transition hover:text-violet-600"
+                  className="text-app-2 transition hover:text-[var(--accent)]"
+                  onClick={() => setIsOpen(false)}
                 >
                   {item.label}
                 </a>
               ))}
-
-              <Link to="/login">
-                <Button variant="ghost" className="w-full">
-                  Log In
-                </Button>
+              <Link to="/login" onClick={() => setIsOpen(false)}>
+                <Button variant="ghost" className="w-full">Log In</Button>
               </Link>
-
-              <Link to="/signup">
-                <Button className="w-full">
-                  Get Started Free
-                </Button>
+              <Link to="/signup" onClick={() => setIsOpen(false)}>
+                <Button className="w-full">Get Started Free</Button>
               </Link>
             </div>
           </div>

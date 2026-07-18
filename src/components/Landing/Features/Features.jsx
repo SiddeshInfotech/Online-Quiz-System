@@ -52,7 +52,7 @@ const features = [
 
 function Features() {
   return (
-    <section className="bg-white py-24">
+    <section id="about" className="surface py-24">
       <Container>
         <SectionHeading
           badge="Features"

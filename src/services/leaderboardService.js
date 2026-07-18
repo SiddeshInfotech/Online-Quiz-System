@@ -65,6 +65,7 @@ const adaptEntry = (raw = {}, index) => {
     // Points = correct answers total. Accept multiple backend field names.
     points: Number(
       pick(
+        raw.your_points,
         raw.total_points,
         raw.points,
         raw.score,
@@ -75,6 +76,7 @@ const adaptEntry = (raw = {}, index) => {
     ),
     quizzesCompleted: Number(
       pick(
+        raw.quizzes_count,
         raw.quizzes_completed,
         raw.quizzesCompleted,
         raw.total_quizzes,
@@ -136,31 +138,56 @@ const adaptResponse = (raw = {}) => {
   const rawTop3 = Array.isArray(raw.top_3_podium) ? raw.top_3_podium : null;
   const top3 = rawTop3 ? adaptAndSortList(rawTop3) : entries.slice(0, 3);
 
-  // Current user entry
-  const rawCurrentUser =
-    raw.personal_stats ?? raw.current_user ?? raw.currentUser ?? raw.me ?? null;
+  // ── personal_stats (new backend contract) ──────────────────────────────────
+  // Backend returns:
+  //   personal_stats: { your_rank, is_in_top_3, badge_count, ... }
+  // We must NEVER manually inject the current user into the podium.
+  // isInTop3 is the authoritative flag from the backend.
+  const rawPersonalStats = raw.personal_stats ?? raw.current_user ?? raw.currentUser ?? raw.me ?? null;
 
   let currentUser = null;
-  if (rawCurrentUser) {
+  // is_in_top_3 is explicitly set by the backend
+  const isInTop3 = rawPersonalStats?.is_in_top_3 === true;
+
+  if (rawPersonalStats) {
     const userId = String(
-      pick(rawCurrentUser.id, rawCurrentUser.user_id, rawCurrentUser.userId) ?? ""
+      pick(rawPersonalStats.id, rawPersonalStats.user_id, rawPersonalStats.userId) ?? ""
     );
-    
-    // Adapt current user explicitly
-    currentUser = adaptEntry(rawCurrentUser, entries.length);
-    
-    // Use rank from backend if present, else fallback to matching entry in list
-    if (rawCurrentUser.rank !== undefined || rawCurrentUser.position !== undefined) {
-      currentUser.rank = pick(rawCurrentUser.rank, rawCurrentUser.position);
-    } else {
+
+    // Build current user entry for summary cards (rank/points/quizzes)
+    currentUser = adaptEntry(rawPersonalStats, entries.length);
+
+    // Explicitly map points and quizzes for currentUser based on backend fields
+    const backendPoints = pick(rawPersonalStats.your_points);
+    if (backendPoints !== undefined && backendPoints !== null) {
+      currentUser.points = Number(backendPoints);
+    }
+
+    const backendQuizzes = pick(rawPersonalStats.quizzes_completed, rawPersonalStats.quizzes_count);
+    if (backendQuizzes !== undefined && backendQuizzes !== null) {
+      currentUser.quizzesCompleted = Number(backendQuizzes);
+    }
+
+    // Use your_rank from personal_stats if available
+    const backendRank = pick(
+      rawPersonalStats.your_rank,
+      rawPersonalStats.rank,
+      rawPersonalStats.position
+    );
+    if (backendRank !== undefined && backendRank !== null) {
+      currentUser.rank = backendRank;
+    } else if (userId) {
       const existing = entries.find((e) => e.userId === userId);
-      if (existing) {
-        currentUser.rank = existing.rank;
-      }
+      if (existing) currentUser.rank = existing.rank;
+    }
+
+    // Attach badge_count if provided
+    if (rawPersonalStats.badge_count !== undefined) {
+      currentUser.badgeCount = rawPersonalStats.badge_count;
     }
   }
 
-  return { entries, top3, currentUser };
+  return { entries, top3, currentUser, isInTop3 };
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -23,12 +23,15 @@ const timeAgo = (dateString) => {
 };
 
 const FeedbackCard = ({ feedback }) => {
-  const { user, rating, message, created_at } = feedback;
+  const { user, rating, message, created_at, updated_at } = feedback;
   const userName = user?.full_name || user?.username || "Anonymous Learner";
   
   // Use UI Avatars as fallback if no profile picture
   const profilePic = user?.profile_picture || 
     `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=6D5EF9&color=fff`;
+
+  const isEdited = updated_at && new Date(updated_at).getTime() - new Date(created_at).getTime() > 1000;
+  const displayTime = isEdited ? `Updated ${timeAgo(updated_at)}` : timeAgo(created_at);
 
   return (
     <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-4 hover:shadow-md transition-shadow">
@@ -46,7 +49,7 @@ const FeedbackCard = ({ feedback }) => {
           <div>
             <h4 className="font-semibold text-slate-900 text-sm">{userName}</h4>
             <div className="text-xs text-slate-400">
-              {timeAgo(created_at)}
+              {displayTime}
             </div>
           </div>
         </div>

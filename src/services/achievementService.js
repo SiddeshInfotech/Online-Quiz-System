@@ -26,19 +26,28 @@ class AchievementService {
   }
 
   /**
-   * Get badge by ID
-   */
-  async getBadgeById(id) {
-    const response = await api.get(`/achievements/badges/${id}`);
-    return response.data;
-  }
-
-  /**
    * Claim a claimable badge
    */
   async claimBadge(id) {
     const response = await api.post(`/achievements/claim/${id}/`);
     return response.data;
+  }
+
+  /**
+   * Trigger server-side badge evaluation to check if any new badges
+   * have become unlocked (e.g. after feedback submission).
+   * POST /api/achievements/check-unlock/
+   * Silently fails — badge refresh is best-effort.
+   */
+  async checkUnlock() {
+    try {
+      const response = await api.post('/achievements/check-unlock/');
+      return response.data;
+    } catch (e) {
+      // Non-critical — swallow error so callers don't need to handle it
+      console.warn('Achievement check-unlock failed (non-critical):', e?.response?.status);
+      return null;
+    }
   }
 
   /**

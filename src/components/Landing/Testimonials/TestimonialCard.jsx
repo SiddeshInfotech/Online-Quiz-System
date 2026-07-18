@@ -5,7 +5,7 @@ function TestimonialCard({ name, role, message }) {
   return (
     <motion.div
       whileHover={{ y: -6 }}
-      className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm hover:shadow-xl"
+      className="interactive-glow rounded-3xl border border-app surface-elev p-8 shadow-sm hover:shadow-xl"
     >
       <div className="mb-4 flex gap-1 text-yellow-400">
         {[...Array(5)].map((_, i) => (
@@ -13,13 +13,13 @@ function TestimonialCard({ name, role, message }) {
         ))}
       </div>
 
-      <p className="leading-7 text-slate-600">
+      <p className="leading-7 text-app-2">
         "{message}"
       </p>
 
       <div className="mt-6">
-        <h4 className="font-semibold">{name}</h4>
-        <p className="text-sm text-slate-500">{role}</p>
+        <h4 className="font-semibold text-app">{name}</h4>
+        <p className="text-sm text-app-muted">{role}</p>
       </div>
     </motion.div>
   );

@@ -141,20 +141,12 @@ const AttemptCard = ({ attempt }) => {
   const category = attempt.category || "";
 
   const navigate = useNavigate();
-  const [isViewing, setIsViewing] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
 
-  const handleViewResult = async () => {
-    try {
-      setIsViewing(true);
-      const data = await attemptsService.getAttemptResult(attempt.id);
-      navigate(`/results/${attempt.id}`, { state: { result: data } });
-    } catch (err) {
-      console.error(err);
-      alert(err?.response?.data?.message || "Failed to load result. Please try again.");
-    } finally {
-      setIsViewing(false);
-    }
+  const handleViewResult = () => {
+    // QuizResultsPage always fetches its own data from GET /api/attempts/{id}/result/
+    // No need to prefetch here — just navigate directly.
+    navigate(`/results/${attempt.id}`);
   };
 
   const handleRetry = async () => {
@@ -228,15 +220,11 @@ const AttemptCard = ({ attempt }) => {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center lg:w-[310px] lg:justify-end">
           <ScoreRing percentage={Math.round(percentage)} />
           <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:min-w-[168px] sm:grid-cols-1">
-            <Button size="sm" className="gap-2" onClick={handleViewResult} disabled={isViewing || isRetrying}>
-              {isViewing ? (
-                <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <FileCheck2 size={15} />
-              )}
-              {isViewing ? "Loading..." : "View Result"}
+            <Button size="sm" className="gap-2" onClick={handleViewResult} disabled={isRetrying}>
+              <FileCheck2 size={15} />
+              View Result
             </Button>
-            <Button variant="secondary" size="sm" className="gap-2" onClick={handleRetry} disabled={isViewing || isRetrying}>
+            <Button variant="secondary" size="sm" className="gap-2" onClick={handleRetry} disabled={isRetrying}>
               {isRetrying ? (
                 <div className="w-3.5 h-3.5 border-2 border-slate-400/30 border-t-slate-600 rounded-full animate-spin" />
               ) : (

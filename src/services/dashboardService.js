@@ -137,15 +137,15 @@ const adaptResponse = (raw = {}) => {
   const rawLast = raw?.continue_quiz ?? raw?.last_quiz ?? raw?.lastQuiz ?? null;
   const lastQuiz = rawLast
     ? {
-        title: pick(rawLast.title, rawLast.quiz_title) ?? "Untitled Quiz",
-        subject: pick(rawLast.subject, rawLast.topic) ?? "General",
-        classLevel: pick(rawLast.class_level, rawLast.classLevel, rawLast.grade) ?? "",
-        progress: Number(
-          pick(rawLast.progress, rawLast.completion_percentage) ?? 0
-        ),
-        attempt_id: pick(rawLast.attempt_id, rawLast.id),
-        quiz_id: pick(rawLast.quiz_id, rawLast.quiz),
-      }
+      title: pick(rawLast.title, rawLast.quiz_title) ?? "Untitled Quiz",
+      subject: pick(rawLast.subject, rawLast.topic) ?? "General",
+      classLevel: pick(rawLast.class_level, rawLast.classLevel, rawLast.grade) ?? "",
+      progress: Number(
+        pick(rawLast.progress, rawLast.completion_percentage) ?? 0
+      ),
+      attempt_id: pick(rawLast.attempt_id, rawLast.id),
+      quiz_id: pick(rawLast.quiz_id, rawLast.quiz),
+    }
     : null;
 
   // ── Available Quizzes ─────────────────────────────────────────────────────
@@ -163,15 +163,15 @@ const adaptResponse = (raw = {}) => {
   const rawAttempts = raw?.recent_attempts ?? raw?.recentAttempts ?? [];
   const recentAttempts = Array.isArray(rawAttempts)
     ? rawAttempts.map((a, i) => ({
-        id: pick(a.id, a.attempt_id, a.quiz_attempt_id) ?? i,
-        title: pick(a.title, a.quiz_title, a.quiz_name) ?? "Untitled Quiz",
-        subject: pick(a.subject, a.topic, a.category) ?? "General",
-        classLevel: pick(a.class_level, a.classLevel, a.grade, a.standard) ?? "",
-        iconType: deriveIconType(pick(a.subject, a.topic, a.category) ?? ""),
-        score: Number(pick(a.score, a.percentage, a.marks, a.obtained_marks) ?? 0),
-        date: formatDate(pick(a.date, a.attempted_at, a.created_at, a.submitted_at)),
-        quiz_id: pick(a.quiz_id, a.quiz) ?? null,
-      }))
+      id: pick(a.id, a.attempt_id, a.quiz_attempt_id) ?? i,
+      title: pick(a.title, a.quiz_title, a.quiz_name) ?? "Untitled Quiz",
+      subject: pick(a.subject, a.topic, a.category) ?? "General",
+      classLevel: pick(a.class_level, a.classLevel, a.grade, a.standard) ?? "",
+      iconType: deriveIconType(pick(a.subject, a.topic, a.category) ?? ""),
+      score: Number(pick(a.score, a.percentage, a.marks, a.obtained_marks) ?? 0),
+      date: formatDate(pick(a.date, a.attempted_at, a.created_at, a.submitted_at)),
+      quiz_id: pick(a.quiz_id, a.quiz) ?? null,
+    }))
     : [];
 
   // ── Performance Stats ─────────────────────────────────────────────────────
@@ -209,29 +209,38 @@ const adaptResponse = (raw = {}) => {
     raw?.performance?.weekly_data ?? raw?.chart_data ?? raw?.chartData ?? raw?.weekly_scores ?? raw?.performance_chart ?? [];
   const chartData = Array.isArray(rawChart)
     ? rawChart.map((d) => ({
-        day: pick(d.day, d.label, d.date, d.period) ?? "",
-        score: Number(pick(d.score, d.value, d.percentage, d.avg_score) ?? 0),
-      }))
+      day: pick(d.day, d.label, d.date, d.period) ?? "",
+      score: Number(pick(d.score, d.value, d.percentage, d.avg_score) ?? 0),
+    }))
     : [];
 
   // ── Notifications ─────────────────────────────────────────────────────────
+  const NOTIF_ICON = {
+    achievement: "trophy",
+    badge_claimed: "trophy",
+    daily_goal: "target",
+    quiz_result: "document",
+    system: "star",
+  };
   const rawNotifs = raw?.notifications ?? [];
   const notifications =
     Array.isArray(rawNotifs) && rawNotifs.length > 0
       ? rawNotifs.map((n, i) => ({
-          id: pick(n.id, n.notification_id) ?? i,
-          text: pick(n.text, n.message, n.body, n.description) ?? "",
-          time: formatDate(pick(n.time, n.created_at, n.sent_at)) ?? "Recently",
-          iconType: pick(n.icon_type, n.iconType, n.type) ?? "star",
-        }))
+        id: pick(n.id, n.notification_id) ?? i,
+        text: pick(n.text, n.message, n.body, n.description) ?? "",
+        title: pick(n.title, "") ?? "",
+        time: formatDate(pick(n.time, n.created_at, n.sent_at)) ?? "Recently",
+        isRead: pick(n.is_read, n.isRead) ?? false,
+        iconType: pick(n.icon_type, n.iconType) ?? NOTIF_ICON[n.type] ?? "star",
+      }))
       : [
-          {
-            id: 1,
-            text: "Welcome to QuizGen AI! Start your first quiz today.",
-            time: "Just now",
-            iconType: "star",
-          },
-        ];
+        {
+          id: 1,
+          text: "Welcome to QuizGen AI! Start your first quiz today.",
+          time: "Just now",
+          iconType: "star",
+        },
+      ];
 
   return {
     user,

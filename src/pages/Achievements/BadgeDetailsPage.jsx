@@ -23,7 +23,9 @@ const BadgeDetailsPage = () => {
   useEffect(() => {
     const fetchBadge = async () => {
       try {
-        const data = await achievementService.getBadgeById(id);
+        const badges = await achievementService.getAllBadges();
+        const data = badges.find(b => String(b.id) === String(id));
+        if (!data) throw new Error("Badge not found");
         setBadge({
           ...data,
           image_url: resolveMediaUrl(data.image_url)
@@ -69,7 +71,7 @@ const BadgeDetailsPage = () => {
   } = badge;
 
   const isClaimed = status === "CLAIMED";
-  const isLocked = status === "locked";
+  const isLocked = status === "LOCKED";
 
   return (
     <div className="w-full max-w-4xl mx-auto pb-12">

@@ -1,6 +1,6 @@
 const variants = {
   primary:
-    "bg-violet-100 text-violet-700 border border-violet-200",
+    "bg-[var(--accent-soft)] text-[var(--accent)] border border-[color:var(--accent)]/30",
 
   success:
     "bg-green-100 text-green-700 border border-green-200",

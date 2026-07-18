@@ -422,7 +422,7 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
                     {subjectInterests.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">
                         {subjectInterests.map((subject, idx) => (
-                          <div key={idx} className="flex items-center gap-1 bg-violet-50 text-violet-700 px-3 py-1 rounded-full text-xs font-medium border border-violet-100">
+                          <div key={subject} className="flex items-center gap-1 bg-violet-50 text-violet-700 px-3 py-1 rounded-full text-xs font-medium border border-violet-100">
                             {subject}
                             <button
                               type="button"
@@ -670,7 +670,7 @@ const ProfilePage = () => {
     const load = async () => {
       try {
         await fetchProfile();
-        // Fetch badges for preview
+        // Fetch recent badges for the profile preview (image thumbnails only)
         const badgesData = await achievementService.getUserAuthBadges();
         const badgesList = badgesData.badges || badgesData || [];
         const claimed = badgesList.filter(b => b.status === "CLAIMED").map(b => ({
@@ -679,6 +679,8 @@ const ProfilePage = () => {
         }));
         // Sort by newest if claimed_at exists
         claimed.sort((a, b) => new Date(b.claimed_at || 0) - new Date(a.claimed_at || 0));
+        // Use profile.badge_count from backend if available, otherwise count from list.
+        // profile.badge_count is the authoritative value per new backend contract.
         setTotalClaimedBadges(claimed.length);
         setRecentBadges(claimed.slice(0, 5));
       } catch (err) {
@@ -690,6 +692,14 @@ const ProfilePage = () => {
     load();
     return () => { cancelled = true; };
   }, [fetchProfile]);
+
+  // Sync totalClaimedBadges from profile.badge_count whenever the profile updates.
+  // This eliminates the need for a separate API call when the badge count changes.
+  useEffect(() => {
+    if (currentUser?.badge_count !== undefined) {
+      setTotalClaimedBadges(currentUser.badge_count);
+    }
+  }, [currentUser?.badge_count]);
 
   const handleSaved = async (updated) => {
     updateUser(updated); // keep AuthContext in sync

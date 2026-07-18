@@ -1,20 +1,23 @@
 const variants = {
+  // Primary uses the theme accent (violet in light, gold in dark) via CSS vars.
   primary:
-    "bg-violet-600 text-white shadow-lg shadow-violet-600/20 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-600/30",
+    "text-[var(--accent-contrast)] shadow-lg hover:-translate-y-0.5 [background:var(--grad-primary)] hover:shadow-xl hover:brightness-110",
 
   secondary:
-    "bg-white text-slate-900 border border-slate-200 hover:bg-slate-50 hover:border-violet-300 hover:shadow-lg",
+    "surface text-app border border-app hover:border-[var(--accent)] hover:shadow-lg",
 
   outline:
-    "border border-violet-600 text-violet-600 hover:bg-violet-50 hover:shadow-md",
+    "border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent-soft)] hover:shadow-md",
 
   ghost:
-    "bg-transparent text-slate-700 hover:bg-slate-100",
+    "bg-transparent text-app-2 hover:surface-subtle",
 
   danger:
     "bg-red-600 text-white hover:bg-red-700 hover:shadow-lg hover:shadow-red-600/20",
+
+  // On-gradient CTA button (used on colored panels)
   cta:
-  "bg-white text-violet-600 shadow-lg hover:bg-slate-100 hover:shadow-xl",
+    "bg-white text-violet-600 shadow-lg hover:bg-slate-100 hover:shadow-xl dark:bg-[#0A0A0F] dark:text-[#F5C451] dark:hover:bg-[#16161F]",
 };
 
 const sizes = {
@@ -38,25 +41,12 @@ function Button({
       onClick={onClick}
       disabled={disabled}
       className={`
-        inline-flex
-        items-center
-        justify-center
-        rounded-xl
-        font-medium
-        transition-all
-        duration-300
-        ease-in-out
-        hover:-translate-y-0.5
-        hover:scale-105
-        active:scale-95
-        focus:outline-none
-        focus:ring-2
-        focus:ring-violet-400
-        focus:ring-offset-2
-        disabled:opacity-50
-        disabled:pointer-events-none
-        disabled:hover:scale-100
-        disabled:hover:translate-y-0
+        inline-flex items-center justify-center rounded-xl font-medium
+        transition-all duration-300 ease-in-out
+        hover:scale-105 active:scale-95
+        focus:outline-none focus-visible:outline-2
+        disabled:opacity-50 disabled:pointer-events-none
+        disabled:hover:scale-100 disabled:hover:translate-y-0
         ${variants[variant]}
         ${sizes[size]}
         ${className}

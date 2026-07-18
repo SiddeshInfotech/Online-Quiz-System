@@ -6,6 +6,7 @@ import BadgeStats from "../../components/achievements/BadgeStats";
 import BadgeCategory from "../../components/achievements/BadgeCategory";
 import BadgeFilters from "../../components/achievements/BadgeFilters";
 import ClaimModal from "../../components/achievements/ClaimModal";
+import BadgeCelebration from "../../components/achievements/BadgeCelebration";
 import SkeletonBadge from "../../components/achievements/SkeletonBadge";
 import EmptyState from "../../components/achievements/EmptyState";
 import BadgeCard from "../../components/achievements/BadgeCard";
@@ -21,13 +22,14 @@ const AchievementPage = () => {
   const [stats, setStats] = useState(null);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [activeSort, setActiveSort] = useState("Newest");
-  
+
   const [selectedBadge, setSelectedBadge] = useState(null);
   const [showClaimModal, setShowClaimModal] = useState(false);
+  const [celebration, setCelebration] = useState(null); // { badge, xpEarned }
   const [toast, setToast] = useState(null);
 
   const loadData = async () => {
@@ -37,7 +39,7 @@ const AchievementPage = () => {
         achievementService.getUserStats(),
         achievementService.getCategories()
       ]);
-      
+
       // Resolve media URLs
       const processedBadges = fetchedBadges.map(b => ({
         ...b,
@@ -60,24 +62,42 @@ const AchievementPage = () => {
 
   const handleClaim = async (badge) => {
     try {
-      const updatedBadge = await achievementService.claimBadge(badge.id);
-      
-      // Update local state
-      setBadges(prev => prev.map(b => b.id === updatedBadge.id ? { ...updatedBadge, image_url: resolveMediaUrl(updatedBadge.image_url) } : b));
-      
-      // Fetch fresh stats
-      const freshStats = await achievementService.getUserStats();
-      setStats(freshStats);
-      
-      setSelectedBadge(updatedBadge);
-      setShowClaimModal(true);
-      
+      const res = await achievementService.claimBadge(badge.id);
+
+      // Backend returns { badge_id, status, xp_earned, badge: {...}, celebrate }.
+      // Mark the badge CLAIMED in local state (match on badge_id, not res.id).
+      const claimedId = res.badge_id ?? badge.id;
+      setBadges(prev =>
+        prev.map(b =>
+          b.id === claimedId
+            ? { ...b, status: "CLAIMED", claimed_at: res.claimed_at }
+            : b
+        )
+      );
+
+      // Fetch fresh stats (badge counts / XP)
+      try {
+        const freshStats = await achievementService.getUserStats();
+        setStats(freshStats);
+      } catch (_) { /* non-critical */ }
+
+      // #17: full-screen celebration driven by the backend payload.
+      if (res.celebrate && res.badge) {
+        setCelebration({
+          badge: { ...res.badge, image_url: resolveMediaUrl(res.badge.image_url) },
+          xpEarned: res.xp_earned,
+        });
+      } else {
+        // Fallback to the existing modal if celebrate wasn't returned.
+        setSelectedBadge({ ...badge, ...res });
+        setShowClaimModal(true);
+      }
     } catch (error) {
       console.error("Failed to claim badge", error);
-      // Could show error toast here
+      showToast("Could not claim badge. Please try again.");
     }
   };
-  
+
   const showToast = (message) => {
     setToast(message);
     setTimeout(() => setToast(null), 3000);
@@ -93,13 +113,13 @@ const AchievementPage = () => {
   const filteredBadges = badges.filter(badge => {
     // Search
     if (searchQuery && !badge.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    
+
     // Filter
     if (activeFilter === "All") return true;
     if (activeFilter === "Claimed") return badge.status === "CLAIMED";
     if (activeFilter === "Claimable") return badge.status === "CLAIMABLE";
     if (activeFilter === "Locked") return badge.status === "LOCKED";
-    
+
     return badge.rarity?.toUpperCase() === activeFilter.toUpperCase();
   });
 
@@ -176,10 +196,10 @@ const AchievementPage = () => {
       {/* Controls */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
         <div className="w-full md:w-72">
-          <Input 
+          <Input
             name="search"
-            placeholder="Search badges..." 
-            leftIcon={Search} 
+            placeholder="Search badges..."
+            leftIcon={Search}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="mb-0 border-slate-200 bg-slate-50"
@@ -187,7 +207,7 @@ const AchievementPage = () => {
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
           <span className="text-sm font-medium text-slate-500 shrink-0">Sort by:</span>
-          <select 
+          <select
             value={activeSort}
             onChange={(e) => setActiveSort(e.target.value)}
             className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-violet-500 focus:border-violet-500 block p-2.5 outline-none cursor-pointer"
@@ -202,7 +222,7 @@ const AchievementPage = () => {
       {/* Categories */}
       {loading ? (
         <BadgeGrid>
-          {[1,2,3,4].map(i => <SkeletonBadge key={i} />)}
+          {[1, 2, 3, 4].map(i => <SkeletonBadge key={i} />)}
         </BadgeGrid>
       ) : sortedBadges.length > 0 ? (
         <div>
@@ -211,7 +231,7 @@ const AchievementPage = () => {
             const categoryBadges = sortedBadges.filter(b => b.category === categoryName);
             return <BadgeCategory key={categoryName} category={categoryName} badges={categoryBadges} onClaim={handleClaim} />
           })}
-          
+
           {/* Catch-all for badges without a known category */}
           {(() => {
             const unknownBadges = sortedBadges.filter(b => !categories.some(c => (c.name || c) === b.category));
@@ -226,6 +246,12 @@ const AchievementPage = () => {
       )}
 
       <ClaimModal isOpen={showClaimModal} badge={selectedBadge} onClose={handleModalClose} />
+      <BadgeCelebration
+        isOpen={!!celebration}
+        badge={celebration?.badge}
+        xpEarned={celebration?.xpEarned}
+        onClose={() => { setCelebration(null); showToast("Badge claimed!"); }}
+      />
     </div>
   );
 };

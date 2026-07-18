@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import React, { useEffect, useState, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import attemptsService from "../../services/attemptsService";
 import Button from "../../components/ui/Button";
 
@@ -14,30 +14,31 @@ import ResultActions from "./components/results/ResultActions";
 const QuizResultsPage = () => {
   const { attemptId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
 
-  const [result, setResult] = useState(location.state?.result || null);
-  const [isLoading, setIsLoading] = useState(!location.state?.result);
+  // Always fetch the result from the API — never rely on submit response state.
+  // The submit endpoint now returns only { status, attempt_id, result_id }.
+  const [result, setResult] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchResult = async () => {
-      try {
-        setIsLoading(true);
-        const data = await attemptsService.getAttemptResult(attemptId);
-        setResult(data);
-      } catch (err) {
-        console.error("Failed to fetch results", err);
-        setError("Failed to load quiz results. Please try again.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (attemptId && !location.state?.result) {
-      fetchResult();
+  const fetchResult = useCallback(async () => {
+    if (!attemptId) return;
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await attemptsService.getAttemptResult(attemptId);
+      setResult(data);
+    } catch (err) {
+      console.error("Failed to fetch results", err);
+      setError("Failed to load quiz results. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
-  }, [attemptId, location.state?.result]);
+  }, [attemptId]);
+
+  useEffect(() => {
+    fetchResult();
+  }, [fetchResult]);
 
   const handleRetry = async () => {
     if (!result?.quiz?.id) return;
@@ -68,9 +69,14 @@ const QuizResultsPage = () => {
         </div>
         <h2 className="text-xl font-bold text-slate-800 mb-2">Something went wrong</h2>
         <p className="text-slate-500 mb-6">{error}</p>
-        <Button variant="primary" onClick={() => navigate("/dashboard")}>
-          Return to Dashboard
-        </Button>
+        <div className="flex gap-3">
+          <Button variant="secondary" onClick={() => navigate("/dashboard")}>
+            Return to Dashboard
+          </Button>
+          <Button variant="primary" onClick={fetchResult}>
+            Try Again
+          </Button>
+        </div>
       </div>
     );
   }

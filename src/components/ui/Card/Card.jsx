@@ -10,15 +10,14 @@ function Card({
       className={`
         rounded-3xl
         border
-        border-slate-200
-        bg-white
+        border-app
+        surface-elev
         shadow-sm
         transition-all
         duration-300
-        ${
-          hover
-            ? "hover:-translate-y-1 hover:shadow-xl hover:border-violet-200"
-            : ""
+        ${hover
+          ? "hover:-translate-y-1 hover:shadow-xl hover:border-[var(--accent)]"
+          : ""
         }
         ${className}
       `}

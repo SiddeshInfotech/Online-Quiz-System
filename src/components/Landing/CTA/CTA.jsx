@@ -5,14 +5,14 @@ import { Link } from "react-router-dom";
 
 function CTA() {
   return (
-    <section className="py-24">
+    <section id="contact" className="py-24">
       <Container>
-        <div className="rounded-[32px] bg-gradient-to-r from-violet-600 to-indigo-600 px-8 py-20 text-center text-white">
+        <div className="relative overflow-hidden rounded-[32px] px-8 py-20 text-center text-white [background:var(--grad-primary)]">
           <h2 className="text-4xl font-bold">
             Ready to Create Smarter Quizzes?
           </h2>
 
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-violet-100">
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-white/85">
             Join thousands of teachers and students using QuizGen AI.
           </p>
 
@@ -24,8 +24,8 @@ function CTA() {
             </Link>
 
             <Button variant="cta">
-  Learn More
-</Button>
+              Learn More
+            </Button>
           </div>
         </div>
       </Container>

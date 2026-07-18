@@ -31,7 +31,7 @@ const steps = [
 
 function HowItWorks() {
   return (
-    <section className="bg-slate-50 py-24">
+    <section id="how-it-works" className="surface-subtle py-24">
       <Container>
         <SectionHeading
           badge="How It Works"

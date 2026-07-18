@@ -12,14 +12,14 @@ const companies = [
 
 function TrustedCompanies() {
   return (
-    <section className="py-16 bg-white">
+    <section className="py-16 surface">
       <Container>
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
         >
-          <p className="mb-10 text-center text-sm font-medium uppercase tracking-widest text-slate-400">
+          <p className="mb-10 text-center text-sm font-medium uppercase tracking-widest text-app-muted">
             Trusted by Students & Educators
           </p>
 
@@ -27,9 +27,9 @@ function TrustedCompanies() {
             {companies.map((company) => (
               <div
                 key={company}
-                className="flex h-16 items-center justify-center rounded-2xl border border-slate-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-violet-300 hover:shadow-md"
+                className="flex h-16 items-center justify-center rounded-2xl border border-app surface-elev transition-all duration-300 hover:-translate-y-1 hover:border-[var(--accent)] hover:shadow-md"
               >
-                <span className="font-semibold text-slate-500">
+                <span className="font-semibold text-app-2">
                   {company}
                 </span>
               </div>

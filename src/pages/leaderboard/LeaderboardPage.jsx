@@ -209,7 +209,7 @@ const PodiumBlock = ({ config, entry, isCurrentUser }) => {
   );
 };
 
-const Podium = ({ top3, currentUserId }) => {
+const Podium = ({ top3, isInTop3 = false, currentUserId }) => {
   // Display order: 2nd, 1st, 3rd
   const displayOrder = [top3[1], top3[0], top3[2]];
   const configs = podiumConfig;
@@ -230,14 +230,20 @@ const Podium = ({ top3, currentUserId }) => {
           </h2>
         </div>
         <div className="flex items-end gap-2 sm:gap-3 justify-center">
-          {displayOrder.map((entry, idx) => (
-            <PodiumBlock
-              key={configs[idx].label}
-              config={configs[idx]}
-              entry={entry}
-              isCurrentUser={entry?.userId === currentUserId}
-            />
-          ))}
+          {displayOrder.map((entry, idx) => {
+            // Only mark as current user if backend explicitly says is_in_top_3
+            // AND the user's userId matches this entry (safety check)
+            const isCurrentUser =
+              isInTop3 && !!currentUserId && entry?.userId === currentUserId;
+            return (
+              <PodiumBlock
+                key={configs[idx].label}
+                config={configs[idx]}
+                entry={entry}
+                isCurrentUser={isCurrentUser}
+              />
+            );
+          })}
         </div>
       </Card>
     </motion.div>
@@ -491,6 +497,7 @@ const LeaderboardPage = () => {
   const [entries, setEntries] = useState([]);
   const [top3, setTop3] = useState([]);
   const [currentUserEntry, setCurrentUserEntry] = useState(null);
+  const [isInTop3, setIsInTop3] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [apiError, setApiError] = useState(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
@@ -515,8 +522,10 @@ const LeaderboardPage = () => {
       const data = await fetchLeaderboard();
       setEntries(data.entries);
       setTop3(data.top3);
-      // Prefer the currentUser entry provided by the service adapter,
-      // but also try to locate the current user in the entry list.
+      // isInTop3 comes directly from backend personal_stats.is_in_top_3
+      // Never manually inject current user into podium
+      setIsInTop3(data.isInTop3 ?? false);
+      // currentUserEntry is used for summary cards only (rank/points/quizzes)
       const serviceCurrentUser = data.currentUser;
       if (serviceCurrentUser) {
         setCurrentUserEntry(serviceCurrentUser);
@@ -560,9 +569,23 @@ const LeaderboardPage = () => {
   };
 
   // ── Derive "my stats" for summary cards ──────────────────────────────────
-  const myRank = currentUserEntry?.rank ?? null;
-  const myPoints = currentUserEntry?.points ?? 0;
-  const myQuizzes = currentUserEntry?.quizzesCompleted ?? 0;
+  const derivedUserEntry = useMemo(() => {
+    if (currentUserEntry) return currentUserEntry;
+    if (!currentUserId || entries.length === 0) return null;
+    return (
+      entries.find((e) => e.userId === currentUserId) ??
+      entries.find(
+        (e) =>
+          e.username?.toLowerCase() ===
+          (currentUser?.username ?? "").toLowerCase()
+      ) ??
+      null
+    );
+  }, [currentUserEntry, currentUserId, entries, currentUser]);
+
+  const myRank = derivedUserEntry?.rank ?? null;
+  const myPoints = derivedUserEntry?.points ?? 0;
+  const myQuizzes = derivedUserEntry?.quizzesCompleted ?? 0;
 
   // ── Check if a row belongs to the current user ───────────────────────────
   const isCurrentUserRow = (entry) => {
@@ -642,7 +665,11 @@ const LeaderboardPage = () => {
 
           {/* ── Podium ────────────────────────────────────────────────────── */}
           {top3.length >= 1 && (
-            <Podium top3={top3} currentUserId={currentUserId} />
+            <Podium
+              top3={top3}
+              isInTop3={isInTop3}
+              currentUserId={currentUserId}
+            />
           )}
 
           {/* ── Table ─────────────────────────────────────────────────────── */}

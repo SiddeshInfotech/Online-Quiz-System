@@ -2,7 +2,7 @@ import { Trophy, Calendar, Star, FileText, Target } from "lucide-react";
 import Card from "../ui/Card/Card";
 
 const getNotificationIcon = (type) => {
-  switch (type) {
+  switch (String(type).toLowerCase()) {
     case "trophy":
       return { icon: Trophy, bg: "bg-amber-100", color: "text-amber-500" };
     case "calendar":

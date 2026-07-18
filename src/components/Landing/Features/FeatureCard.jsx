@@ -6,21 +6,21 @@ function FeatureCard({ icon, title, description }) {
     <motion.div
       whileHover={{ y: -8 }}
       transition={{ duration: 0.25 }}
-      className="group rounded-3xl border border-slate-200 bg-white p-8 shadow-sm hover:border-violet-200 hover:shadow-xl"
+      className="group interactive-glow rounded-3xl border border-app surface-elev p-8 shadow-sm hover:border-[var(--accent)] hover:shadow-xl"
     >
-      <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 text-violet-600 transition group-hover:scale-110">
+      <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] transition group-hover:scale-110">
         {icon}
       </div>
 
-      <h3 className="mb-3 text-xl font-semibold text-slate-900">
+      <h3 className="mb-3 text-xl font-semibold text-app">
         {title}
       </h3>
 
-      <p className="mb-6 text-slate-500 leading-7">
+      <p className="mb-6 text-app-2 leading-7">
         {description}
       </p>
 
-      <ArrowUpRight className="text-violet-600 transition group-hover:translate-x-1 group-hover:-translate-y-1" />
+      <ArrowUpRight className="text-[var(--accent)] transition group-hover:translate-x-1 group-hover:-translate-y-1" />
     </motion.div>
   );
 }
