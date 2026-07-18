@@ -29,7 +29,7 @@ class DashboardSummaryView(APIView):
         if total_quizzes > 0:
             progress_percentage = round((total_completed / total_quizzes) * 100, 2)
 
-        # ✅ FIXED: Continue Quiz Logic
+        # ✅ FIXED: Continue Quiz Logic with Progress Tracking & Auto-Submit
         continue_quiz_data = None
         time_limit_hours = 24
         cutoff_time = timezone.now() - timedelta(hours=time_limit_hours)
@@ -55,21 +55,38 @@ class DashboardSummaryView(APIView):
                 continue
             
             elapsed = (timezone.now() - attempt.started_at).total_seconds()
-            remaining = max(0, (attempt.quiz.duration_minutes * 60) - elapsed)
+            total_duration_seconds = attempt.quiz.duration_minutes * 60
+            remaining = max(0, total_duration_seconds - elapsed)
             
+            # ✅ NEW: Get answered questions count
+            answered_count = UserAnswer.objects.filter(attempt=attempt).count()
+            total_questions = attempt.quiz.question_set.count()
+            
+            # ✅ Auto-submit if time expired OR all questions answered
             if remaining <= 0:
-                attempt.delete()
+                attempt.submitted_at = timezone.now()
+                attempt.save()
+                print(f"⏰ Auto-submitted expired attempt {attempt.id} for user {user.username}")
                 continue
             
+            if answered_count >= total_questions and total_questions > 0:
+                attempt.submitted_at = timezone.now()
+                attempt.save()
+                print(f"✅ Auto-submitted complete attempt {attempt.id} for user {user.username}")
+                continue
+            
+            # ✅ Valid in-progress attempt found
             continue_quiz_data = {
                 "attempt_id": attempt.id,
                 "quiz_id": attempt.quiz.id,
                 "title": attempt.quiz.title,
                 "remaining_time_seconds": int(remaining),
                 "started_at": attempt.started_at,
-                "total_questions": attempt.quiz.question_set.count()
+                "total_questions": total_questions,
+                "answered_questions": answered_count,
+                "progress_percentage": round((answered_count / total_questions) * 100, 2) if total_questions > 0 else 0
             }
-            break
+            break  # Found valid attempt, stop searching
 
         quizzes_available = total_quizzes
 
