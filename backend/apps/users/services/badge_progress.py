@@ -32,7 +32,7 @@ class BadgeProgressHelper:
         # Subject stats
         subject_data = {}
         for att in attempts:
-            subj = att.quiz.subject
+            subj = att.quiz.subject or 'Uncategorized'
             if subj not in subject_data:
                 subject_data[subj] = {'count': 0, 'scores': []}
             subject_data[subj]['count'] += 1
@@ -79,7 +79,7 @@ class BadgeProgressHelper:
             # Coding, Python, Java, C++
             if att.percentage >= 80:
                 qtype = att.quiz.question_type
-                subj = att.quiz.subject.lower()
+                subj = (att.quiz.subject or '').lower()
                 if qtype == 'Coding':
                     coding_quiz_ids.add(qid)
                 if 'python' in subj:
@@ -288,3 +288,28 @@ class BadgeProgressHelper:
         """Check if user has submitted feedback"""
         from apps.feedback.models import Feedback
         return Feedback.objects.filter(user=user).count()
+
+    @staticmethod
+    def get_met_badge_ids(user, badges):
+        """
+        Return the set of badge_ids whose requirement is met, computing the
+        expensive progress map ONCE for all badges instead of once per badge.
+
+        This is the performance fix for slow quiz-submit (badge signal used to
+        call is_requirement_met -> get_all_progress per badge = O(badges) full
+        recomputations, each with N+1 queries).
+        """
+        progress_map = BadgeProgressHelper.get_all_progress(user, badges)
+        met = set()
+        for badge in badges:
+            bid = badge.badge_id
+            target = BadgeProgressHelper.get_target(badge)
+            # Badge 64 (Feedback Hero) target may live in the requirement text
+            if bid == 64:
+                import re
+                numbers = re.findall(r'\d+', (badge.requirement or '').lower())
+                target = int(numbers[0]) if numbers else 1
+            current = progress_map.get(bid, 0)
+            if current >= target:
+                met.add(bid)
+        return met

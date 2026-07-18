@@ -47,31 +47,46 @@ def check_badges_on_login(sender, request, user, **kwargs):
 
 
 def _unlock_badges_for_user(user):
-    """Helper function to unlock badges when requirements are met"""
-    all_badges = Badge.objects.all()
-    unlocked_count = 0
-    unlocked_badge_names = []
+    """
+    Unlock badges whose requirements are met.
 
-    for badge in all_badges:
-        existing = UserBadge.objects.filter(user=user, badge=badge).first()
-        if existing:
-            continue
+    Performance fix (item 9): progress is computed ONCE for all not-yet-earned
+    badges via get_met_badge_ids, instead of recomputing the full progress map
+    per badge (which caused slow quiz-submit / axios timeout). Fully wrapped so
+    badge logic can never break or block a quiz submission.
+    """
+    try:
+        earned_badge_ids = set(
+            UserBadge.objects.filter(user=user).values_list("badge_id", flat=True)
+        )
+        candidate_badges = [b for b in Badge.objects.all() if b.id not in earned_badge_ids]
+        if not candidate_badges:
+            return
 
-        if BadgeProgressHelper.is_requirement_met(user, badge):
-            try:
-                UserBadge.objects.create(
-                    user=user,
-                    badge=badge,
-                    status='CLAIMABLE',
-                    earned_at=timezone.now()
+        met_ids = BadgeProgressHelper.get_met_badge_ids(user, candidate_badges)
+
+        new_userbadges = []
+        unlocked_badge_names = []
+        for badge in candidate_badges:
+            if badge.badge_id in met_ids:
+                new_userbadges.append(
+                    UserBadge(
+                        user=user,
+                        badge=badge,
+                        status="CLAIMABLE",
+                        earned_at=timezone.now(),
+                    )
                 )
-                unlocked_count += 1
                 unlocked_badge_names.append(badge.name)
-            except Exception as e:
-                print(f"❌ Error creating UserBadge for {badge.name}: {e}")
 
-    if unlocked_count > 0:
-        cache.delete(f"badges_all_{user.id}")
-        cache.delete(f"user_badges_{user.id}")
-        cache.delete(f"badge_count_{user.id}")
-        print(f"✅ Unlocked {unlocked_count} badge(s) for {user.username}: {', '.join(unlocked_badge_names)}")
+        if new_userbadges:
+            UserBadge.objects.bulk_create(new_userbadges, ignore_conflicts=True)
+            cache.delete(f"badges_all_{user.id}")
+            cache.delete(f"user_badges_{user.id}")
+            cache.delete(f"badge_count_{user.id}")
+            print(
+                f"Unlocked {len(new_userbadges)} badge(s) for {user.username}: "
+                f"{', '.join(unlocked_badge_names)}"
+            )
+    except Exception as e:
+        print(f"[badge-unlock] skipped due to error: {e}")

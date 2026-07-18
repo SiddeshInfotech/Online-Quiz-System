@@ -3,11 +3,10 @@ from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator, MinLengthValidator, MaxLengthValidator
 
 class Feedback(models.Model):
-    user = models.OneToOneField(
+    user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='feedback',
-        unique=True
+        related_name='feedback'
     )
     rating = models.SmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)]

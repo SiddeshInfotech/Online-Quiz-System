@@ -1,11 +1,16 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.db.models import Avg, Count, Q
+from django.db.models import Avg
+from django.shortcuts import get_object_or_404
 from .models import Feedback
-from .serializers import FeedbackSerializer, FeedbackCreateSerializer, FeedbackSummarySerializer
+from .serializers import FeedbackSerializer, FeedbackCreateSerializer
+
+MAX_FEEDBACK_PER_USER = 2
+
 
 class FeedbackCreateView(APIView):
+    """Create feedback. Each user may create at most 2 (item 14)."""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
@@ -13,27 +18,30 @@ class FeedbackCreateView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        validated_data = serializer.validated_data
+        existing_count = Feedback.objects.filter(user=request.user).count()
+        if existing_count >= MAX_FEEDBACK_PER_USER:
+            return Response(
+                {"detail": f"You can submit a maximum of {MAX_FEEDBACK_PER_USER} feedback entries. "
+                           f"Edit an existing one instead."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
-        # One feedback per user — update if exists, create otherwise
-        feedback, created = Feedback.objects.update_or_create(
+        feedback = Feedback.objects.create(
             user=request.user,
-            defaults={
-                'rating': validated_data['rating'],
-                'message': validated_data['message']
-            }
+            rating=serializer.validated_data['rating'],
+            message=serializer.validated_data['message'],
         )
-
         return Response({
             "message": "Feedback submitted successfully",
             "feedback": FeedbackSerializer(feedback).data
-        }, status=status.HTTP_200_OK)
+        }, status=status.HTTP_201_CREATED)
 
 
 class FeedbackListView(generics.ListAPIView):
+    """All feedback, visible to every user (item 14)."""
     serializer_class = FeedbackSerializer
     permission_classes = [permissions.IsAuthenticated]
-    pagination_class = None  # Disable for now, or use DRF's default pagination
+    pagination_class = None
 
     def get_queryset(self):
         return Feedback.objects.select_related('user').order_by('-created_at')
@@ -45,12 +53,9 @@ class FeedbackSummaryView(APIView):
     def get(self, request):
         total_reviews = Feedback.objects.count()
         avg_rating = Feedback.objects.aggregate(Avg('rating'))['rating__avg'] or 0
-
-        # Distribution: count per rating
-        distribution = {}
-        for rating in range(1, 6):
-            distribution[str(rating)] = Feedback.objects.filter(rating=rating).count()
-
+        distribution = {
+            str(r): Feedback.objects.filter(rating=r).count() for r in range(1, 6)
+        }
         return Response({
             "average_rating": round(avg_rating, 2),
             "total_reviews": total_reviews,
@@ -59,21 +64,27 @@ class FeedbackSummaryView(APIView):
 
 
 class MyFeedbackView(APIView):
+    """List the current user's feedback entries (0, 1, or 2)."""
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        try:
-            feedback = Feedback.objects.get(user=request.user)
-            return Response(FeedbackSerializer(feedback).data, status=status.HTTP_200_OK)
-        except Feedback.DoesNotExist:
-            return Response({"detail": "No feedback found."}, status=status.HTTP_404_NOT_FOUND)
+        qs = Feedback.objects.filter(user=request.user).order_by('created_at')
+        return Response({
+            "count": qs.count(),
+            "max_allowed": MAX_FEEDBACK_PER_USER,
+            "results": FeedbackSerializer(qs, many=True).data
+        }, status=status.HTTP_200_OK)
 
-    def put(self, request):
-        try:
-            feedback = Feedback.objects.get(user=request.user)
-        except Feedback.DoesNotExist:
-            return Response({"detail": "No feedback found."}, status=status.HTTP_404_NOT_FOUND)
 
+class MyFeedbackDetailView(APIView):
+    """Edit or delete ONE of the current user's feedback entries by id (item 14: editable)."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _get_object(self, request, pk):
+        return get_object_or_404(Feedback, pk=pk, user=request.user)
+
+    def put(self, request, pk):
+        feedback = self._get_object(request, pk)
         serializer = FeedbackCreateSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -81,20 +92,13 @@ class MyFeedbackView(APIView):
         feedback.rating = serializer.validated_data['rating']
         feedback.message = serializer.validated_data['message']
         feedback.save()
-
         return Response({
             "message": "Feedback updated successfully",
             "feedback": FeedbackSerializer(feedback).data
         }, status=status.HTTP_200_OK)
 
-
-class MyFeedbackDeleteView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def delete(self, request):
-        try:
-            feedback = Feedback.objects.get(user=request.user)
-            feedback.delete()
-            return Response({"message": "Feedback deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
-        except Feedback.DoesNotExist:
-            return Response({"detail": "No feedback found."}, status=status.HTTP_404_NOT_FOUND)
+    def delete(self, request, pk):
+        feedback = self._get_object(request, pk)
+        feedback.delete()
+        return Response({"message": "Feedback deleted successfully"},
+                        status=status.HTTP_204_NO_CONTENT)

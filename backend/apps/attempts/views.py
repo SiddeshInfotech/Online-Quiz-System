@@ -159,6 +159,7 @@ class SubmitAttemptView(APIView):
         # ✅ OPTIMIZATION 3: Process in memory
         user_answers_to_create = []
         correct_count = 0
+        wrong_count = 0
         total_score = 0
         total_marks = 0
         answered_question_ids = set()
@@ -171,22 +172,31 @@ class SubmitAttemptView(APIView):
             if not question:
                 continue
 
-            answered_question_ids.add(question_id)
+            # Skip duplicate submissions for the same question
+            if question_id in answered_question_ids:
+                continue
+
             is_correct = False
             marks_obtained = 0
 
-            # MCQ / True/False
+            # MCQ / True/False -- only counts as "answered" if an option was chosen
             if selected_option_id:
+                answered_question_ids.add(question_id)
                 option = option_map.get(selected_option_id)
                 if option and option.question_id == question_id:
                     is_correct = option.is_correct
                     marks_obtained = question.marks if is_correct else 0
 
-            if is_correct:
-                correct_count += 1
+                if is_correct:
+                    correct_count += 1
+                else:
+                    wrong_count += 1
 
-            total_marks += question.marks
-            total_score += marks_obtained
+                total_marks += question.marks
+                total_score += marks_obtained
+            else:
+                # Selected nothing -> treated as unanswered below, skip
+                continue
 
             user_answers_to_create.append(
                 UserAnswer(
@@ -211,6 +221,11 @@ class SubmitAttemptView(APIView):
                     )
                 )
 
+        total_questions = questions.count()
+        answered_count = len(answered_question_ids)
+        unanswered_count = total_questions - answered_count
+        percentage = round((total_score / total_marks * 100), 2) if total_marks > 0 else 0
+
         # ✅ OPTIMIZATION 4: Bulk insert
         with transaction.atomic():
             UserAnswer.objects.bulk_create(user_answers_to_create)
@@ -218,19 +233,21 @@ class SubmitAttemptView(APIView):
             # Update attempt
             attempt.submitted_at = timezone.now()
             attempt.score = total_score
-            attempt.percentage = (total_score / total_marks * 100) if total_marks > 0 else 0
+            attempt.percentage = percentage
             attempt.save()
 
-            # Create Result
-            Result.objects.create(
+            # Create/replace Result (idempotent so re-submits don't error)
+            Result.objects.update_or_create(
                 attempt=attempt,
-                correct_answers=correct_count,
-                wrong_answers=len(answers_data) - correct_count,
-                unanswered_questions=questions.count() - len(answered_question_ids),
-                total_score=total_score,
-                percentage=(total_score / total_marks * 100) if total_marks > 0 else 0,
-                grade=self._calculate_grade((total_score / total_marks * 100) if total_marks > 0 else 0),
-                pass_status=(total_score / total_marks * 100) >= 40 if total_marks > 0 else False
+                defaults={
+                    "correct_answers": correct_count,
+                    "wrong_answers": wrong_count,
+                    "unanswered_questions": unanswered_count,
+                    "total_score": total_score,
+                    "percentage": percentage,
+                    "grade": self._calculate_grade(percentage),
+                    "pass_status": percentage >= 40,
+                },
             )
 
         # ✅ OPTIMIZATION 5: Minified response
