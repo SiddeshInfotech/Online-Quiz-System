@@ -49,7 +49,17 @@ class FeedbackCreateView(APIView):
 
     def _send_admin_notification(self, user, feedback, is_new):
         """Send email to admin when feedback is created or updated."""
+        print(f"🔍 [FeedbackCreate] Sending admin notification for {user.username}")
+        
         try:
+            admin_email = getattr(settings, 'ADMIN_EMAIL', None) or getattr(settings, 'FROM_EMAIL', None)
+            print(f"📧 [FeedbackCreate] Admin email: {admin_email}")
+            
+            if not admin_email:
+                print("❌ [FeedbackCreate] Admin email not configured!")
+                logger.warning("Admin email not configured, skipping notification.")
+                return
+
             subject = f"[Feedback] {'New' if is_new else 'Updated'} feedback from {user.username}"
             message = f"""
 Feedback {'submitted' if is_new else 'updated'} by:
@@ -62,18 +72,18 @@ Message: {feedback.message}
 Time: {feedback.updated_at.strftime('%Y-%m-%d %H:%M:%S')}
 Status: {'New Feedback' if is_new else 'Updated Feedback'}
             """
-            admin_email = getattr(settings, 'ADMIN_EMAIL', None) or getattr(settings, 'FROM_EMAIL', None)
-            if admin_email:
-                send_mail(
-                    subject,
-                    message,
-                    settings.DEFAULT_FROM_EMAIL,
-                    [admin_email],
-                    fail_silently=True,
-                )
-            else:
-                logger.warning("Admin email not configured, skipping notification.")
+
+            send_mail(
+                subject,
+                message.strip(),
+                settings.DEFAULT_FROM_EMAIL,
+                [admin_email],
+                fail_silently=False,  # ✅ Changed to False so errors show
+            )
+            print(f"✅ [FeedbackCreate] Email sent to {admin_email}")
+
         except Exception as e:
+            print(f"❌ [FeedbackCreate] Email error: {e}")
             logger.error(f"Failed to send feedback notification: {e}")
 
 
@@ -150,8 +160,18 @@ class MyFeedbackDetailView(APIView):
                         status=status.HTTP_204_NO_CONTENT)
 
     def _send_admin_notification(self, user, feedback, is_new):
-        """Same helper as above."""
+        """Send email to admin when feedback is created or updated."""
+        print(f"🔍 [FeedbackUpdate] Sending admin notification for {user.username}")
+        
         try:
+            admin_email = getattr(settings, 'ADMIN_EMAIL', None) or getattr(settings, 'FROM_EMAIL', None)
+            print(f"📧 [FeedbackUpdate] Admin email: {admin_email}")
+            
+            if not admin_email:
+                print("❌ [FeedbackUpdate] Admin email not configured!")
+                logger.warning("Admin email not configured, skipping notification.")
+                return
+
             subject = f"[Feedback] {'New' if is_new else 'Updated'} feedback from {user.username}"
             message = f"""
 Feedback {'submitted' if is_new else 'updated'} by:
@@ -164,14 +184,16 @@ Message: {feedback.message}
 Time: {feedback.updated_at.strftime('%Y-%m-%d %H:%M:%S')}
 Status: {'New Feedback' if is_new else 'Updated Feedback'}
             """
-            admin_email = getattr(settings, 'ADMIN_EMAIL', None) or getattr(settings, 'FROM_EMAIL', None)
-            if admin_email:
-                send_mail(
-                    subject,
-                    message,
-                    settings.DEFAULT_FROM_EMAIL,
-                    [admin_email],
-                    fail_silently=True,
-                )
+
+            send_mail(
+                subject,
+                message.strip(),
+                settings.DEFAULT_FROM_EMAIL,
+                [admin_email],
+                fail_silently=False,  # ✅ Changed to False so errors show
+            )
+            print(f"✅ [FeedbackUpdate] Email sent to {admin_email}")
+
         except Exception as e:
+            print(f"❌ [FeedbackUpdate] Email error: {e}")
             logger.error(f"Failed to send feedback notification: {e}")
