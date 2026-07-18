@@ -50,6 +50,20 @@ def update_user_stats(sender, instance, created, **kwargs):
     # Auto-unlock badges
     _unlock_badges_for_user(user)
 
+    # #7: notify once/day when the user completes their daily quiz goal.
+    try:
+        from django.db.models import Q
+        from apps.notifications.services import notify_daily_goal_complete
+        target = getattr(user, 'daily_quiz_goal', 3) or 3
+        today = timezone.localdate()
+        completed_today = QuizAttempt.objects.filter(
+            user=user, submitted_at__date=today
+        ).exclude(submitted_at__isnull=True).count()
+        if completed_today >= target:
+            notify_daily_goal_complete(user, completed_today, target)
+    except Exception as e:
+        print(f"[daily-goal-notify] skipped: {e}")
+
 
 # ✅ NEW: Check badges on every login (covers existing users)
 @receiver(user_logged_in)
@@ -77,7 +91,7 @@ def _unlock_badges_for_user(user):
         met_ids = BadgeProgressHelper.get_met_badge_ids(user, candidate_badges)
 
         new_userbadges = []
-        unlocked_badge_names = []
+        newly_unlocked = []
         for badge in candidate_badges:
             if badge.badge_id in met_ids:
                 new_userbadges.append(
@@ -88,16 +102,22 @@ def _unlock_badges_for_user(user):
                         earned_at=timezone.now(),
                     )
                 )
-                unlocked_badge_names.append(badge.name)
+                newly_unlocked.append(badge)
 
         if new_userbadges:
             UserBadge.objects.bulk_create(new_userbadges, ignore_conflicts=True)
             cache.delete(f"badges_all_{user.id}")
             cache.delete(f"user_badges_{user.id}")
             cache.delete(f"badge_count_{user.id}")
+
+            # #7/#13: notify the user for each achievement that just completed.
+            from apps.notifications.services import notify_badge_claimable
+            for badge in newly_unlocked:
+                notify_badge_claimable(user, badge)
+
             print(
                 f"Unlocked {len(new_userbadges)} badge(s) for {user.username}: "
-                f"{', '.join(unlocked_badge_names)}"
+                f"{', '.join(b.name for b in newly_unlocked)}"
             )
     except Exception as e:
         print(f"[badge-unlock] skipped due to error: {e}")

@@ -838,13 +838,32 @@ class ClaimBadgeView(APIView):
             cache.delete(f"user_badges_{user.id}")
             cache.delete(f"badge_count_{user.id}")
 
+            # #17: create a claim notification (also drives the celebratory
+            # full-screen animation on the frontend) and return the badge
+            # metadata the animation needs.
+            try:
+                from apps.notifications.services import notify_badge_claimed
+                notify_badge_claimed(user, badge, xp_reward)
+            except Exception as e:
+                print(f"[claim-notify] skipped: {e}")
+
             return Response({
                 "message": "Badge claimed successfully!",
                 "badge_id": badge.badge_id,
                 "status": "CLAIMED",
                 "claimed_at": user_badge.claimed_at,
                 "xp_earned": xp_reward,
-                "new_total_xp": user.xp
+                "new_total_xp": user.xp,
+                # extra fields so the claim animation can render the badge
+                "badge": {
+                    "badge_id": badge.badge_id,
+                    "name": badge.name,
+                    "description": badge.description,
+                    "image_url": badge.image_url,
+                    "rarity": badge.rarity,
+                    "category": badge.category,
+                },
+                "celebrate": True,
             }, status=200)
         else:
             return Response({"error": "Invalid badge status"}, status=400)
