@@ -3,9 +3,11 @@ from django.dispatch import receiver
 from django.db.models import Sum, Max
 from django.utils import timezone
 from django.core.cache import cache
+from django.contrib.auth.signals import user_logged_in  # ✅ NEW
 from .models import QuizAttempt, Result
 from apps.users.models import User, Badge, UserBadge
 from apps.users.services.badge_progress import BadgeProgressHelper
+
 
 @receiver(post_save, sender=QuizAttempt)
 def update_user_stats(sender, instance, created, **kwargs):
@@ -34,7 +36,13 @@ def update_user_stats(sender, instance, created, **kwargs):
         quizzes_completed=quizzes_completed
     )
 
-    # --- NEW: Auto-unlock badges ---
+    # Auto-unlock badges
+    _unlock_badges_for_user(user)
+
+
+# ✅ NEW: Check badges on every login (covers existing users)
+@receiver(user_logged_in)
+def check_badges_on_login(sender, request, user, **kwargs):
     _unlock_badges_for_user(user)
 
 
@@ -45,27 +53,25 @@ def _unlock_badges_for_user(user):
     unlocked_badge_names = []
 
     for badge in all_badges:
-        # Check if user already has a UserBadge row
         existing = UserBadge.objects.filter(user=user, badge=badge).first()
         if existing:
             continue
 
-        # Check if requirement is met
         if BadgeProgressHelper.is_requirement_met(user, badge):
             try:
-                # ✅ FIX: Use 'earned_at' instead of 'awarded_at'
                 UserBadge.objects.create(
                     user=user,
                     badge=badge,
                     status='CLAIMABLE',
-                    earned_at=timezone.now()  # ✅ CORRECT field name
+                    earned_at=timezone.now()
                 )
                 unlocked_count += 1
                 unlocked_badge_names.append(badge.name)
             except Exception as e:
                 print(f"❌ Error creating UserBadge for {badge.name}: {e}")
 
-    # Clear cache if any badges unlocked
     if unlocked_count > 0:
         cache.delete(f"badges_all_{user.id}")
+        cache.delete(f"user_badges_{user.id}")
+        cache.delete(f"badge_count_{user.id}")
         print(f"✅ Unlocked {unlocked_count} badge(s) for {user.username}: {', '.join(unlocked_badge_names)}")

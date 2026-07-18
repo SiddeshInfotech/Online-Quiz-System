@@ -806,17 +806,17 @@ class ClaimBadgeView(APIView):
             user_badge.claimed_at = timezone.now()
             user_badge.save()
 
-            
+            # Award XP
             xp_map = {'COMMON': 25, 'RARE': 50, 'EPIC': 100, 'LEGENDARY': 200}
             xp_reward = xp_map.get(badge.rarity, 25)
             user.total_points += xp_reward
             user.xp += xp_reward
             user.save()
 
-            
+            # ✅ Clear all caches
             cache.delete(f"badges_all_{user.id}")
-            cache.delete(f"user_badges_{user.id}")  
-            cache.delete(f"badge_count_{user.id}")  
+            cache.delete(f"user_badges_{user.id}")
+            cache.delete(f"badge_count_{user.id}")
 
             return Response({
                 "message": "Badge claimed successfully!",
@@ -828,6 +828,49 @@ class ClaimBadgeView(APIView):
             }, status=200)
         else:
             return Response({"error": "Invalid badge status"}, status=400)
+
+class CheckAndUnlockBadgesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        unlocked_count = 0
+        unlocked_badges = []
+
+        all_badges = Badge.objects.all()
+
+        for badge in all_badges:
+            # Check if user already has a UserBadge row
+            existing = UserBadge.objects.filter(user=user, badge=badge).first()
+            if existing:
+                continue
+
+            # Check if user meets the requirement
+            if BadgeProgressHelper.is_requirement_met(user, badge):
+                user_badge = UserBadge.objects.create(
+                    user=user,
+                    badge=badge,
+                    status='CLAIMABLE',
+                    earned_at=timezone.now()
+                )
+                unlocked_count += 1
+                unlocked_badges.append({
+                    "badge_id": badge.badge_id,
+                    "name": badge.name,
+                    "status": "CLAIMABLE"
+                })
+
+        # Clear all caches
+        if unlocked_count > 0:
+            cache.delete(f"badges_all_{user.id}")
+            cache.delete(f"user_badges_{user.id}")
+            cache.delete(f"badge_count_{user.id}")
+
+        return Response({
+            "message": f"{unlocked_count} new badge(s) unlocked!",
+            "unlocked_count": unlocked_count,
+            "unlocked_badges": unlocked_badges
+        }, status=status.HTTP_200_OK)
 
     
 
