@@ -256,8 +256,18 @@ class BadgeProgressHelper:
         """Check if user meets badge requirement"""
         requirement = badge.requirement.lower()
         badge_id = badge.badge_id
-        
-        # ✅ Special case for Feedback Hero (badge_id 64)
+
+        # ✅ SPECIAL CASE: Badge 20 (Consistent Mind – Average of last 20 quizzes >= 80%)
+        if badge_id == 20:
+            attempts = QuizAttempt.objects.filter(
+                user=user, submitted_at__isnull=False
+            ).order_by('-submitted_at')[:20]
+            if attempts.count() < 20:
+                return False
+            avg = sum(a.percentage for a in attempts) / len(attempts)
+            return avg >= 80
+
+        # ✅ SPECIAL CASE: Badge 64 (Feedback Hero)
         if badge_id == 64:
             from apps.feedback.models import Feedback
             feedback_count = Feedback.objects.filter(user=user).count()
@@ -265,12 +275,12 @@ class BadgeProgressHelper:
             numbers = re.findall(r'\d+', requirement)
             target = int(numbers[0]) if numbers else 1
             return feedback_count >= target
-        
-        # Use existing progress map for other badges
+
+        # ✅ For all other badges, use generic progress map
         progress_map = BadgeProgressHelper.get_all_progress(user, [badge])
         current = progress_map.get(badge_id, 0)
         target = BadgeProgressHelper.get_target(badge)
-        
+
         return current >= target
     
     @staticmethod
