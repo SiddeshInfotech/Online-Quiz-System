@@ -4,6 +4,7 @@ from django.db.models import Count, Avg, Sum, Q
 from apps.attempts.models import QuizAttempt, UserAnswer
 from apps.questions.models import Question
 from django.core.cache import cache
+import time
 
 class BadgeProgressHelper:
     
@@ -18,10 +19,13 @@ class BadgeProgressHelper:
         
         # If cache exists and we need all badges, return cached
         if cached_data is not None:
+            print(f"✅ [PROGRESS CACHE HIT] user={user.id}")
             if badges is None:
                 return cached_data
             # Filter for specific badges if needed
             return {b.badge_id: cached_data.get(b.badge_id, 0) for b in badges}
+        print(f"⏳ [PROGRESS CACHE MISS] user={user.id}, computing...")
+        start = time.time()
         
         # --- Full computation (existing logic) ---
         attempts = QuizAttempt.objects.filter(
@@ -238,6 +242,7 @@ class BadgeProgressHelper:
         
         # ✅ Cache for 10 minutes (600 seconds)
         cache.set(cache_key, progress_map, 600)
+        print(f"✅ [PROGRESS CACHE SET] user={user.id}, took {time.time() - start:.2f}s")
         return progress_map
 
     @staticmethod
@@ -307,9 +312,11 @@ class BadgeProgressHelper:
     
     @staticmethod
     def _get_feedback_count(user):
-        """Check if user has submitted feedback"""
-        from apps.feedback.models import Feedback
-        return Feedback.objects.filter(user=user).count()
+        try:
+            from apps.feedback.models import Feedback
+            return Feedback.objects.filter(user=user).count()
+        except:
+            return 0
 
     @staticmethod
     def get_met_badge_ids(user, badges):
@@ -335,3 +342,9 @@ class BadgeProgressHelper:
             if current >= target:
                 met.add(bid)
         return met
+    
+    @staticmethod
+    def clear_progress_cache(user):
+        """Clear the progress cache for a user."""
+        cache.delete(f"badge_progress_{user.id}")
+        print(f"🗑️ PROGRESS CACHE CLEARED for user {user.id}")

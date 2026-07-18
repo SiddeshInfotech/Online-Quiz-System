@@ -718,10 +718,10 @@ class AllBadgesView(APIView):
         cached_data = cache.get(cache_key)
         
         if cached_data:
-            print(f"✅ Cache hit for user {user.id}")
+            print(f"✅ [ALL BADGES CACHE HIT] user={user.id}")
             return Response(cached_data)
         
-        print(f"⏳ Cache miss for user {user.id}, computing...")
+        print(f"⏳ [ALL BADGES CACHE MISS] user={user.id}, computing...")
         
         # Precompute UserBadge data
         user_badges = UserBadge.objects.filter(user=user).select_related('badge')
