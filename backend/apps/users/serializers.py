@@ -72,14 +72,15 @@ class LoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     profile_picture = serializers.SerializerMethodField()
     profile_completion = serializers.SerializerMethodField()
-    badge_count = serializers.SerializerMethodField()  
+    badge_count = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'full_name', 'role', 'bio',
             'date_joined', 'profile_picture', 'school', 'grade',
-            'subject_interests', 'profile_completion', 'badge_count' 
+            'subject_interests', 'profile_completion', 'badge_count'
+            
         ]
         read_only_fields = ['id', 'username', 'email', 'role', 'date_joined']
 
@@ -106,7 +107,6 @@ class UserSerializer(serializers.ModelSerializer):
         return int((filled / total_fields) * 100)
 
     def get_badge_count(self, obj):
-        """Return count of CLAIMED badges for the user"""
         return UserBadge.objects.filter(user=obj, status='CLAIMED').count()
 
 
