@@ -3,14 +3,19 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
+from django.core.mail import send_mail
+from django.conf import settings
 from .models import Feedback
 from .serializers import FeedbackSerializer, FeedbackCreateSerializer
+import logging
+
+logger = logging.getLogger(__name__)
 
 MAX_FEEDBACK_PER_USER = 2
 
 
 class FeedbackCreateView(APIView):
-    """Create feedback. Each user may create at most 2 (item 14)."""
+    """Create feedback. Each user may create at most 2."""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
@@ -31,14 +36,49 @@ class FeedbackCreateView(APIView):
             rating=serializer.validated_data['rating'],
             message=serializer.validated_data['message'],
         )
+
+        # ✅ Send admin notification (new)
+        self._send_admin_notification(request.user, feedback, is_new=True)
+
         return Response({
             "message": "Feedback submitted successfully",
+            "created": True,
+            "updated": False,
             "feedback": FeedbackSerializer(feedback).data
         }, status=status.HTTP_201_CREATED)
 
+    def _send_admin_notification(self, user, feedback, is_new):
+        """Send email to admin when feedback is created or updated."""
+        try:
+            subject = f"[Feedback] {'New' if is_new else 'Updated'} feedback from {user.username}"
+            message = f"""
+Feedback {'submitted' if is_new else 'updated'} by:
+
+User Name: {user.full_name or 'Not set'}
+Username: {user.username}
+Email: {user.email}
+Rating: {feedback.rating}★
+Message: {feedback.message}
+Time: {feedback.updated_at.strftime('%Y-%m-%d %H:%M:%S')}
+Status: {'New Feedback' if is_new else 'Updated Feedback'}
+            """
+            admin_email = getattr(settings, 'ADMIN_EMAIL', None) or getattr(settings, 'FROM_EMAIL', None)
+            if admin_email:
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [admin_email],
+                    fail_silently=True,
+                )
+            else:
+                logger.warning("Admin email not configured, skipping notification.")
+        except Exception as e:
+            logger.error(f"Failed to send feedback notification: {e}")
+
 
 class FeedbackListView(generics.ListAPIView):
-    """All feedback, visible to every user (item 14)."""
+    """All feedback, visible to every user."""
     serializer_class = FeedbackSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = None
@@ -77,7 +117,7 @@ class MyFeedbackView(APIView):
 
 
 class MyFeedbackDetailView(APIView):
-    """Edit or delete ONE of the current user's feedback entries by id (item 14: editable)."""
+    """Edit or delete ONE of the current user's feedback entries by id."""
     permission_classes = [permissions.IsAuthenticated]
 
     def _get_object(self, request, pk):
@@ -92,8 +132,14 @@ class MyFeedbackDetailView(APIView):
         feedback.rating = serializer.validated_data['rating']
         feedback.message = serializer.validated_data['message']
         feedback.save()
+
+        # ✅ Send admin notification (update)
+        self._send_admin_notification(request.user, feedback, is_new=False)
+
         return Response({
             "message": "Feedback updated successfully",
+            "created": False,
+            "updated": True,
             "feedback": FeedbackSerializer(feedback).data
         }, status=status.HTTP_200_OK)
 
@@ -102,3 +148,30 @@ class MyFeedbackDetailView(APIView):
         feedback.delete()
         return Response({"message": "Feedback deleted successfully"},
                         status=status.HTTP_204_NO_CONTENT)
+
+    def _send_admin_notification(self, user, feedback, is_new):
+        """Same helper as above."""
+        try:
+            subject = f"[Feedback] {'New' if is_new else 'Updated'} feedback from {user.username}"
+            message = f"""
+Feedback {'submitted' if is_new else 'updated'} by:
+
+User Name: {user.full_name or 'Not set'}
+Username: {user.username}
+Email: {user.email}
+Rating: {feedback.rating}★
+Message: {feedback.message}
+Time: {feedback.updated_at.strftime('%Y-%m-%d %H:%M:%S')}
+Status: {'New Feedback' if is_new else 'Updated Feedback'}
+            """
+            admin_email = getattr(settings, 'ADMIN_EMAIL', None) or getattr(settings, 'FROM_EMAIL', None)
+            if admin_email:
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [admin_email],
+                    fail_silently=True,
+                )
+        except Exception as e:
+            logger.error(f"Failed to send feedback notification: {e}")
