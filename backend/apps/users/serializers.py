@@ -84,6 +84,42 @@ class UserSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'username', 'email', 'role', 'date_joined']
 
+    def update(self, instance, validated_data):
+        request = self.context.get('request')
+        profile_pic_updated = False
+        
+        if request:
+            profile_pic = request.FILES.get('profile_picture') or request.data.get('profile_picture')
+            
+            if isinstance(profile_pic, str) and profile_pic.startswith('data:image'):
+                try:
+                    import base64
+                    from django.core.files.base import ContentFile
+                    format, imgstr = profile_pic.split(';base64,')
+                    ext = format.split('/')[-1]
+                    if ext == 'jpeg':
+                        ext = 'jpg'
+                    file_name = f"profile_picture_{instance.id}.{ext}"
+                    profile_pic_file = ContentFile(base64.b64decode(imgstr), name=file_name)
+                    instance.profile_picture = profile_pic_file
+                    profile_pic_updated = True
+                except Exception as e:
+                    print(f"Error parsing base64 profile picture: {e}")
+            elif profile_pic and not isinstance(profile_pic, str):
+                instance.profile_picture = profile_pic
+                profile_pic_updated = True
+            elif profile_pic is None and 'profile_picture' in request.data:
+                instance.profile_picture = None
+                profile_pic_updated = True
+
+        updated_instance = super().update(instance, validated_data)
+        
+        if profile_pic_updated:
+            updated_instance.save()
+            updated_instance.refresh_from_db()
+            
+        return updated_instance
+
     def get_profile_picture(self, obj):
         if obj.profile_picture:
             return obj.profile_picture.url
