@@ -59,6 +59,41 @@ def process_quiz_submission_background(user_id, attempt_id):
                 user=user, submitted_at__isnull=False
             ).count()
 
+            # --- Calculate current streak and longest streak ---
+            from datetime import timedelta, datetime
+            today = timezone.localdate()
+            streak = 0
+            check_date = today
+
+            # Check if user has submitted any quiz today
+            day_start = timezone.make_aware(datetime.combine(today, datetime.min.time()))
+            day_end = timezone.make_aware(datetime.combine(today, datetime.max.time()))
+            has_today = QuizAttempt.objects.filter(
+                user=user,
+                submitted_at__isnull=False,
+                submitted_at__range=(day_start, day_end)
+            ).exists()
+
+            if not has_today:
+                check_date = today - timedelta(days=1)
+
+            while True:
+                d_start = timezone.make_aware(datetime.combine(check_date, datetime.min.time()))
+                d_end = timezone.make_aware(datetime.combine(check_date, datetime.max.time()))
+                attempts_on_day = QuizAttempt.objects.filter(
+                    user=user,
+                    submitted_at__isnull=False,
+                    submitted_at__range=(d_start, d_end)
+                ).exists()
+
+                if attempts_on_day:
+                    streak += 1
+                    check_date -= timedelta(days=1)
+                else:
+                    break
+
+            longest_streak = max(getattr(user, 'longest_streak', 0) or 0, streak)
+
             # Retrieve badges XP
             badge_xp = UserBadge.objects.filter(
                 user=user, status='CLAIMED'
@@ -67,8 +102,18 @@ def process_quiz_submission_background(user_id, attempt_id):
             # Update User profile statistics
             User.objects.filter(id=user.id).update(
                 total_points=quiz_score_total + badge_xp,
-                quizzes_completed=quizzes_completed
+                quizzes_completed=quizzes_completed,
+                current_streak=streak,
+                longest_streak=longest_streak,
+                last_active_date=today
             )
+            
+            # Update the in-memory user object attributes for subsequent badge checks
+            user.current_streak = streak
+            user.longest_streak = longest_streak
+            user.last_active_date = today
+            user.total_points = quiz_score_total + badge_xp
+            user.quizzes_completed = quizzes_completed
             
             # Clear leaderboard cache so it recalculates with new stats
             cache.delete("leaderboard_all_rankings")

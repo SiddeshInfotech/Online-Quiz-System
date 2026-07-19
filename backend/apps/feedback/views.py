@@ -57,7 +57,7 @@ class FeedbackCreateView(APIView):
             from sendgrid.helpers.mail import Mail
             
             admin_email = getattr(settings, 'ADMIN_EMAIL', None) or getattr(settings, 'FROM_EMAIL', None) or 'zeeshanansari1081015@gmail.com'
-            from_email = 'zeeshanansari1081015@gmail.com'
+            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'zeeshanansari1081015@gmail.com')
             
             subject = f"[Feedback] {'New' if is_new else 'Updated'} feedback from {user.username}"
             html_content = f"""

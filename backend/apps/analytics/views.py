@@ -197,22 +197,34 @@ class DashboardSummaryView(APIView):
         streak = 0
         check_date = today
 
+        # If they did not attempt today, check if they attempted yesterday.
+        # If they did not attempt yesterday either, their active streak is 0.
+        # If they attempted yesterday, we begin counting consecutive days from yesterday.
+        day_start = timezone.make_aware(datetime.combine(today, datetime.min.time()))
+        day_end = timezone.make_aware(datetime.combine(today, datetime.max.time()))
+        has_today = QuizAttempt.objects.filter(
+            user=user,
+            submitted_at__isnull=False,
+            submitted_at__range=(day_start, day_end)
+        ).exists()
+
+        if not has_today:
+            check_date = today - timedelta(days=1)
+
         while True:
-            day_start = timezone.make_aware(datetime.combine(check_date, datetime.min.time()))
-            day_end = timezone.make_aware(datetime.combine(check_date, datetime.max.time()))
+            d_start = timezone.make_aware(datetime.combine(check_date, datetime.min.time()))
+            d_end = timezone.make_aware(datetime.combine(check_date, datetime.max.time()))
 
             attempts_on_day = QuizAttempt.objects.filter(
                 user=user,
                 submitted_at__isnull=False,
-                submitted_at__range=(day_start, day_end)
+                submitted_at__range=(d_start, d_end)
             ).exists()
 
             if attempts_on_day:
                 streak += 1
                 check_date -= timedelta(days=1)
             else:
-                if check_date == today:
-                    return 0
                 break
 
         return streak
