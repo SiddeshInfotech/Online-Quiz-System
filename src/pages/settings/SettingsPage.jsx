@@ -3,20 +3,20 @@ import { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Palette,
   Bell,
-  BookOpen,
-  Info,
   LogOut,
   Trash2,
-  X,
   AlertTriangle,
-  ChevronRight
+  ChevronRight,
+  MessageSquare,
+  Moon,
+  Sun,
+  Palette
 } from "lucide-react";
 import Card from "../../components/ui/Card/Card";
 import Button from "../../components/ui/Button/Button";
 import { AuthContext } from "../../context/AuthContext";
-import { useDashboardContext } from "../../context/DashboardContext";
+import { useTheme } from "../../context/ThemeContext";
 import authService from "../../services/authService";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -31,7 +31,7 @@ const DeleteAccountModal = ({ onClose, onConfirm }) => {
 
   const handleConfirm = async () => {
     if (inputValue !== "DELETE") return;
-    
+
     setIsDeleting(true);
     setErrorMsg("");
     try {
@@ -58,7 +58,7 @@ const DeleteAccountModal = ({ onClose, onConfirm }) => {
       onClick={(e) => { if (e.target === e.currentTarget && !isDeleting && !successMsg) onClose(); }}
     >
       <motion.div
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -68,16 +68,16 @@ const DeleteAccountModal = ({ onClose, onConfirm }) => {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 12 }}
         transition={{ duration: 0.2 }}
-        className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 p-8 z-10 text-center"
+        className="relative w-full max-w-md surface rounded-3xl shadow-2xl border border-app p-8 z-10 text-center"
       >
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <AlertTriangle className="text-red-600" size={32} />
         </div>
-        
-        <h2 className="text-2xl font-bold font-space-grotesk text-slate-900 mb-2">
+
+        <h2 className="text-2xl font-bold font-space-grotesk text-app mb-2">
           Delete Account?
         </h2>
-        <p className="text-slate-500 mb-6">
+        <p className="text-app-muted mb-6">
           Your account will be permanently deleted after 30 days. You can cancel this within 30 days by contacting support.
         </p>
 
@@ -96,14 +96,14 @@ const DeleteAccountModal = ({ onClose, onConfirm }) => {
         {!successMsg && (
           <>
             <div className="mb-6 text-left">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-app-2 mb-2">
                 Type <strong>DELETE</strong> to confirm
               </label>
               <input
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-slate-900"
+                className="w-full px-4 py-3 rounded-xl border border-app focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-app"
                 placeholder="DELETE"
                 disabled={isDeleting}
               />
@@ -141,15 +141,13 @@ const DeleteAccountModal = ({ onClose, onConfirm }) => {
 const Toggle = ({ checked, onChange }) => (
   <button
     type="button"
-    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-      checked ? 'bg-violet-600' : 'bg-slate-200'
-    }`}
+    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${checked ? 'bg-violet-600' : 'surface-subtle border border-app'
+      }`}
     onClick={onChange}
   >
     <span
-      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-        checked ? 'translate-x-5' : 'translate-x-0'
-      }`}
+      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full surface shadow ring-0 transition duration-200 ease-in-out ${checked ? 'translate-x-5' : 'translate-x-0'
+        }`}
     />
   </button>
 );
@@ -159,40 +157,13 @@ const Toggle = ({ checked, onChange }) => (
 
 const SettingsPage = () => {
   const { logout } = useContext(AuthContext);
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
-  const { data, refetch } = useDashboardContext();
-
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [pushNotifs, setPushNotifs] = useState(false);
-  
-  const initialGoal = data?.dailyGoal?.total?.toString() || '3';
-  const [dailyGoal, setDailyGoal] = useState(initialGoal);
-
-  useEffect(() => {
-    if (data?.dailyGoal?.total) {
-      setDailyGoal(data.dailyGoal.total.toString());
-    }
-  }, [data?.dailyGoal?.total]);
-
-  const handleDailyGoalChange = async (e) => {
-    const newGoal = e.target.value;
-    setDailyGoal(newGoal); // Optimistic UI update
-    try {
-      await authService.updateSettings({ daily_quiz_goal: parseInt(newGoal, 10) });
-      if (refetch) {
-        await refetch();
-      }
-    } catch (err) {
-      console.error("Failed to update daily goal:", err);
-      // Revert on error
-      if (data?.dailyGoal?.total) {
-        setDailyGoal(data.dailyGoal.total.toString());
-      }
-    }
-  };
 
   const handleLogout = () => {
     logout();
@@ -216,43 +187,72 @@ const SettingsPage = () => {
           transition={{ duration: 0.3 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold font-space-grotesk text-slate-900 mb-2">
+          <h1 className="text-3xl font-bold font-space-grotesk text-app mb-2">
             Settings
           </h1>
-          <p className="text-base text-slate-500">
+          <p className="text-base text-app-muted">
             Customize your QuizGen AI experience
           </p>
         </motion.div>
 
         <div className="flex flex-col gap-6">
 
+          {/* Appearance Section */}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.05 }}>
+            <Card className="p-0 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+              <div className="p-6 sm:p-8">
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-app">
+                  <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
+                    <Palette className="text-violet-600" size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold font-space-grotesk text-app">Appearance</h3>
+                    <p className="text-sm text-app-muted">Customize the look and feel.</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between p-4 rounded-xl surface-subtle border border-app">
+                    <div className="flex items-center gap-3">
+                      {theme === 'dark' ? <Moon className="text-blue-500" size={20} /> : <Sun className="text-amber-500" size={20} />}
+                      <div>
+                        <p className="font-semibold text-app">Dark Mode</p>
+                        <p className="text-sm text-app-muted">Easier on the eyes in low light environments.</p>
+                      </div>
+                    </div>
+                    <Toggle checked={theme === 'dark'} onChange={() => setTheme(theme === 'dark' ? 'light' : 'dark')} />
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
 
           {/* Notifications Section */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.1 }}>
             <Card className="p-0 overflow-hidden hover:shadow-xl transition-shadow duration-300">
               <div className="p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-app">
                   <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
                     <Bell className="text-green-600" size={20} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold font-space-grotesk text-slate-900">Notifications</h3>
-                    <p className="text-sm text-slate-500">Manage how we contact you.</p>
+                    <h3 className="text-lg font-bold font-space-grotesk text-app">Notifications</h3>
+                    <p className="text-sm text-app-muted">Manage how we contact you.</p>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-4">
-                  <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50/50 border border-slate-100">
+                  <div className="flex items-center justify-between p-4 rounded-xl surface-subtle border border-app">
                     <div>
-                      <p className="font-semibold text-slate-900">Email Notifications</p>
-                      <p className="text-sm text-slate-500">Receive updates and reminders via email.</p>
+                      <p className="font-semibold text-app">Email Notifications</p>
+                      <p className="text-sm text-app-muted">Receive updates and reminders via email.</p>
                     </div>
                     <Toggle checked={emailNotifs} onChange={() => setEmailNotifs(!emailNotifs)} />
                   </div>
-                  <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50/50 border border-slate-100">
+                  <div className="flex items-center justify-between p-4 rounded-xl surface-subtle border border-app">
                     <div>
-                      <p className="font-semibold text-slate-900">Push Notifications</p>
-                      <p className="text-sm text-slate-500">Get notified on your device when a new quiz is ready.</p>
+                      <p className="font-semibold text-app">Push Notifications</p>
+                      <p className="text-sm text-app-muted">Get notified on your device when a new quiz is ready.</p>
                     </div>
                     <Toggle checked={pushNotifs} onChange={() => setPushNotifs(!pushNotifs)} />
                   </div>
@@ -261,80 +261,45 @@ const SettingsPage = () => {
             </Card>
           </motion.div>
 
-          {/* Learning Preferences Section */}
+          {/* Support Section */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.15 }}>
             <Card className="p-0 overflow-hidden hover:shadow-xl transition-shadow duration-300">
-              <div className="p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-                  <div className="w-10 h-10 rounded-xl bg-fuchsia-100 flex items-center justify-center">
-                    <BookOpen className="text-fuchsia-600" size={20} />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold font-space-grotesk text-slate-900">Learning Preferences</h3>
-                    <p className="text-sm text-slate-500">Tailor your learning experience.</p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-slate-50/50 border border-slate-100 gap-4">
-                    <div>
-                      <p className="font-semibold text-slate-900">Daily Quiz Goal</p>
-                      <p className="text-sm text-slate-500">Number of quizzes to complete each day.</p>
-                    </div>
-                    <select 
-                      value={dailyGoal}
-                      onChange={handleDailyGoalChange}
-                      className="px-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-600/20 focus:border-violet-600 font-medium text-slate-700 w-full sm:w-auto"
-                    >
-                      <option value="1">1 Quiz / Day</option>
-                      <option value="3">3 Quizzes / Day</option>
-                      <option value="5">5 Quizzes / Day</option>
-                      <option value="10">10 Quizzes / Day</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-
-          {/* About Section */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.2 }}>
-            <Card className="p-0 overflow-hidden hover:shadow-xl transition-shadow duration-300">
-              <div className="p-6 sm:p-8 flex items-center justify-between">
+              <div
+                className="p-6 sm:p-8 flex items-center justify-between cursor-pointer hover:bg-[var(--bg-elevated)] transition-colors"
+                onClick={() => navigate('/feedback')}
+              >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
-                    <Info className="text-slate-600" size={20} />
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                    <MessageSquare className="text-blue-600" size={20} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold font-space-grotesk text-slate-900">About QuizGen AI</h3>
-                    <p className="text-sm text-slate-500">Version 1.0.0 (Beta)</p>
+                    <h3 className="text-lg font-bold font-space-grotesk text-app">Support & Feedback</h3>
+                    <p className="text-sm text-app-muted">Help us improve QuizGen AI.</p>
                   </div>
                 </div>
-                <Button variant="ghost" className="text-violet-600 hover:bg-violet-50">
-                  Release Notes <ChevronRight size={16} className="ml-1" />
-                </Button>
+                <ChevronRight size={20} className="text-app-muted" />
               </div>
             </Card>
           </motion.div>
 
           {/* Danger Zone */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.25 }}>
-            <Card className="p-0 overflow-hidden border-red-100 hover:shadow-xl transition-shadow duration-300">
-              <div className="p-6 sm:p-8 bg-red-50/30">
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-red-100">
-                  <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
-                    <AlertTriangle className="text-red-600" size={20} />
+            <Card className="p-0 overflow-hidden border-red-500/20 hover:shadow-xl transition-shadow duration-300">
+              <div className="p-6 sm:p-8 bg-red-500/5">
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-red-500/20">
+                  <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-500/20 flex items-center justify-center">
+                    <AlertTriangle className="text-red-600 dark:text-red-500" size={20} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold font-space-grotesk text-red-700">Account Actions</h3>
-                    <p className="text-sm text-red-500/80">Manage your session and account data.</p>
+                    <h3 className="text-lg font-bold font-space-grotesk text-red-600 dark:text-red-500">Account Actions</h3>
+                    <p className="text-sm text-red-600/80 dark:text-red-500/80">Manage your session and account data.</p>
                   </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button
                     variant="ghost"
-                    className="flex-1 gap-2 h-12 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+                    className="flex-1 gap-2 h-12 surface border border-app text-app-2 hover:bg-[var(--bg-elevated)] transition-colors"
                     onClick={handleLogout}
                   >
                     <LogOut size={18} />
@@ -343,7 +308,7 @@ const SettingsPage = () => {
 
                   <Button
                     variant="ghost"
-                    className="flex-1 gap-2 h-12 bg-white border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors"
+                    className="flex-1 gap-2 h-12 surface border border-red-500/20 text-red-600 dark:text-red-500 hover:bg-red-500/10 hover:border-red-500/30 transition-colors"
                     onClick={() => setShowDeleteModal(true)}
                   >
                     <Trash2 size={18} />

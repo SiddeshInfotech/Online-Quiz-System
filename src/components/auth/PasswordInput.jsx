@@ -26,7 +26,7 @@ const PasswordInput = ({
         <button
           type="button"
           onClick={() => setShowPassword(!showPassword)}
-          className="text-slate-400 transition hover:text-violet-600"
+          className="text-app-muted transition hover:text-violet-600"
           aria-label={showPassword ? "Hide password" : "Show password"}
         >
           {showPassword ? (

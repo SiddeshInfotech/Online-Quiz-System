@@ -8,8 +8,8 @@ const QuizActivityCards = ({ lastQuiz, availableQuizzesCount, isLoading }) => {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       
       {/* Continue Last Quiz / No Quiz In Progress */}
-      <Card hover className="p-5 flex flex-col justify-between border-slate-200">
-        <h3 className="font-semibold text-slate-700 text-sm mb-4">Continue Last Quiz</h3>
+      <Card hover className="p-5 flex flex-col justify-between border-app">
+        <h3 className="font-semibold text-app-2 text-sm mb-4">Continue Last Quiz</h3>
 
         {isLoading ? (
           <div className="flex flex-col flex-1 gap-4 animate-pulse pt-2">
@@ -35,27 +35,40 @@ const QuizActivityCards = ({ lastQuiz, availableQuizzesCount, isLoading }) => {
               <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-700 flex items-center justify-center shadow-inner relative overflow-hidden flex-shrink-0 transition-transform group-hover:scale-105">
                  <div className="absolute w-16 h-4 border-2 border-white/20 rounded-[50%] -rotate-12"></div>
                  <div className="w-6 h-6 rounded-full bg-indigo-300 shadow-[inset_-2px_-2px_4px_rgba(0,0,0,0.3)] z-10"></div>
-                 <div className="absolute top-2 left-2 w-1 h-1 bg-white rounded-full"></div>
+                 <div className="absolute top-2 left-2 w-1 h-1 surface rounded-full"></div>
                  <div className="absolute bottom-3 right-3 w-1.5 h-1.5 bg-indigo-200 rounded-full"></div>
               </div>
               <div className="flex-1 overflow-hidden">
-                <h4 className="font-semibold text-slate-900 truncate group-hover:text-violet-700 transition-colors">{lastQuiz.title}</h4>
-                <p className="text-xs text-slate-500 truncate">{lastQuiz.subject} • {lastQuiz.classLevel}</p>
+                <h4 className="font-semibold text-app truncate group-hover:text-violet-700 transition-colors">{lastQuiz.title}</h4>
+                <p className="text-xs text-app-muted truncate">
+                  {lastQuiz.subject}{lastQuiz.classLevel ? ` • ${lastQuiz.classLevel}` : ""}
+                </p>
               </div>
             </div>
             
             <div className="flex items-center gap-3">
               <div className="flex-1">
-                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full surface-elev rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-violet-600 rounded-full transition-all duration-1000 ease-out" 
                     style={{ width: `${lastQuiz.progress}%` }} 
                   />
                 </div>
-                <p className="text-[10px] font-medium text-slate-500 mt-1">{lastQuiz.progress}% Completed</p>
+                <p className="text-[10px] font-medium text-app-muted mt-1 flex items-center justify-between">
+                  <span>{lastQuiz.progress}% Completed</span>
+                  {lastQuiz.total_questions > 0 && (
+                    <span>({lastQuiz.answered_questions}/{lastQuiz.total_questions})</span>
+                  )}
+                </p>
               </div>
               {(lastQuiz.attempt_id || lastQuiz.quiz_id) ? (
-                <Link to={lastQuiz.attempt_id ? `/attempts/${lastQuiz.attempt_id}` : `/quiz/${lastQuiz.quiz_id}`}>
+                <Link 
+                  to={lastQuiz.attempt_id ? `/attempts/${lastQuiz.attempt_id}` : `/quiz/${lastQuiz.quiz_id}`}
+                  state={{ 
+                    startIndex: lastQuiz.current_question_index, 
+                    remainingTime: lastQuiz.remaining_time_seconds 
+                  }}
+                >
                   <Button variant="primary" size="sm" className="px-4 text-xs h-8 hover:scale-105 transition-transform">Continue</Button>
                 </Link>
               ) : (
@@ -66,14 +79,14 @@ const QuizActivityCards = ({ lastQuiz, availableQuizzesCount, isLoading }) => {
         ) : (
           /* Empty State */
           <div className="flex flex-col items-center justify-center flex-1 gap-3 py-4">
-            <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-violet-50 group-hover:text-violet-500 transition-colors">
+            <div className="w-12 h-12 rounded-xl surface-subtle flex items-center justify-center text-slate-400 group-hover:bg-violet-50 group-hover:text-violet-500 transition-colors">
               <BookOpen size={22} />
             </div>
-            <p className="text-xs text-slate-400 text-center font-medium leading-relaxed group-hover:text-slate-500 transition-colors">
+            <p className="text-xs text-app-muted text-center font-medium leading-relaxed group-hover:text-app-2 transition-colors">
               No quiz in progress.<br />Start one to continue here!
             </p>
             <Link to="/library">
-              <Button variant="outline" size="sm" className="text-xs font-semibold bg-white mt-1 hover:border-violet-300 hover:text-violet-700 transition-colors">
+              <Button variant="outline" size="sm" className="text-xs font-semibold surface mt-1 hover:border-violet-300 hover:text-violet-700 transition-colors">
                 Browse Quizzes
               </Button>
             </Link>
@@ -83,7 +96,7 @@ const QuizActivityCards = ({ lastQuiz, availableQuizzesCount, isLoading }) => {
 
       {/* Available Quizzes */}
       <Card hover className="p-5 flex flex-col items-center justify-center text-center">
-        <h3 className="font-semibold text-slate-700 text-sm w-full text-left absolute top-5 left-5">Available Quizzes</h3>
+        <h3 className="font-semibold text-app-2 text-sm w-full text-left absolute top-5 left-5">Available Quizzes</h3>
         {isLoading ? (
           <div className="mt-6 flex flex-col items-center gap-2 animate-pulse">
             <div className="w-12 h-12 rounded-2xl bg-slate-200 mb-1"></div>
@@ -96,8 +109,8 @@ const QuizActivityCards = ({ lastQuiz, availableQuizzesCount, isLoading }) => {
             <div className="w-12 h-12 rounded-2xl bg-violet-100 text-violet-600 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
               <ClipboardList size={24} />
             </div>
-            <h2 className="text-3xl font-bold font-space-grotesk text-slate-900">{availableQuizzesCount}</h2>
-            <p className="text-xs text-slate-500 font-medium mb-4">Quizzes Available</p>
+            <h2 className="text-3xl font-bold font-space-grotesk text-app">{availableQuizzesCount}</h2>
+            <p className="text-xs text-app-muted font-medium mb-4">Quizzes Available</p>
             <Link to="/library" className="w-full">
               <Button variant="outline" size="sm" className="w-full text-xs font-semibold bg-white hover:border-violet-300 hover:text-violet-700 transition-colors">Browse Library</Button>
             </Link>

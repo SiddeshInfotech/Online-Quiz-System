@@ -13,7 +13,7 @@ const QuizHeader = ({
   // Skeleton loader
   if (isLoading) {
     return (
-      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-4 md:px-8">
+      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-app px-4 py-4 md:px-8">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div className="flex-1">
             <div className="animate-pulse bg-slate-200 h-6 w-1/3 rounded mb-2"></div>
@@ -44,18 +44,18 @@ const QuizHeader = ({
   const isLowTime = remainingSeconds !== null && remainingSeconds < 300; // Less than 5 mins
 
   return (
-    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 md:px-8 shadow-sm">
+    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-app px-4 py-3 md:px-8 shadow-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         {/* Left: Title & Progress */}
         <div className="flex flex-col flex-1 min-w-0">
-          <h1 className="text-lg md:text-xl font-bold font-space-grotesk text-slate-900 truncate">
+          <h1 className="text-lg md:text-xl font-bold font-space-grotesk text-app truncate">
             {quizTitle || "Quiz Attempt"}
           </h1>
           <div className="flex items-center gap-3 mt-1">
-            <span className="text-xs font-semibold text-slate-500">
+            <span className="text-xs font-semibold text-app-muted">
               Question {currentQuestionIndex + 1} of {totalQuestions}
             </span>
-            <div className="h-1.5 flex-1 max-w-[120px] bg-slate-100 rounded-full overflow-hidden hidden sm:block">
+            <div className="h-1.5 flex-1 max-w-[120px] surface-elev rounded-full overflow-hidden hidden sm:block">
               <div
                 className="h-full bg-violet-500 rounded-full transition-all duration-300"
                 style={{ width: `${percentComplete}%` }}
@@ -74,7 +74,7 @@ const QuizHeader = ({
               className={`flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-xl border ${
                 isLowTime
                   ? "bg-red-50 border-red-200 text-red-600"
-                  : "bg-slate-50 border-slate-200 text-slate-700"
+                  : "surface-subtle border-app text-app-2"
               }`}
             >
               <Clock size={16} className={isLowTime ? "animate-pulse" : ""} />
@@ -86,7 +86,7 @@ const QuizHeader = ({
           
           <button
             onClick={onExit}
-            className="flex items-center justify-center w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors font-medium text-sm border border-transparent"
+            className="flex items-center justify-center w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 rounded-xl text-app-muted hover:text-app hover:bg-[var(--bg-elevated)] transition-colors font-medium text-sm border border-transparent"
             aria-label={exitText}
           >
             <X size={18} className="md:mr-1.5" />

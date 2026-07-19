@@ -5,12 +5,8 @@ import {
   Award,
   CalendarDays,
   CheckCircle2,
-  ChevronDown,
   Clock3,
   FileCheck2,
-  Filter,
-  RotateCcw,
-  Search,
   Target,
   Trophy,
   XCircle,
@@ -51,37 +47,16 @@ const StatCard = ({ icon: Icon, label, value, detail, tone }) => (
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
           {label}
         </p>
-        <p className="mt-3 font-space-grotesk text-3xl font-bold text-slate-900">
+        <p className="mt-3 font-space-grotesk text-3xl font-bold text-app">
           {value}
         </p>
-        <p className="mt-1 text-xs font-medium text-slate-500">{detail}</p>
+        <p className="mt-1 text-xs font-medium text-app-muted">{detail}</p>
       </div>
       <div className={`rounded-2xl p-3 ${tone}`}>
         <Icon size={22} />
       </div>
     </div>
   </Card>
-);
-
-const SelectFilter = ({ value, onChange, options }) => (
-  <div className="relative min-w-[150px]">
-    <select
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      aria-label="Filter attempts"
-      className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white pl-4 pr-10 text-sm font-medium text-slate-700 outline-none transition-all duration-200 hover:border-slate-300 focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-    >
-      {options.map((option) => (
-        <option key={option} value={option}>
-          {option}
-        </option>
-      ))}
-    </select>
-    <ChevronDown
-      size={16}
-      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-    />
-  </div>
 );
 
 const ScoreRing = ({ percentage }) => {
@@ -118,7 +93,7 @@ const ScoreRing = ({ percentage }) => {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-space-grotesk text-xl font-bold text-slate-900">
+        <span className="font-space-grotesk text-xl font-bold text-app">
           {percentage}%
         </span>
         <span className="text-[10px] font-semibold text-slate-400">Score</span>
@@ -174,7 +149,7 @@ const AttemptCard = ({ attempt }) => {
           <div className="min-w-0 flex-1">
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div className="min-w-0">
-                <h3 className="truncate font-space-grotesk text-lg font-bold text-slate-900 transition-colors group-hover:text-violet-700">
+                <h3 className="truncate font-space-grotesk text-lg font-bold text-app transition-colors group-hover:text-violet-700">
                   {attempt.quiz_title}
                 </h3>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -201,15 +176,15 @@ const AttemptCard = ({ attempt }) => {
             </div>
 
             <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="flex items-center gap-2 text-sm text-slate-500">
+              <div className="flex items-center gap-2 text-sm text-app-muted">
                 <CalendarDays size={16} className="text-slate-400" />
                 <span>{date}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-slate-500">
+              <div className="flex items-center gap-2 text-sm text-app-muted">
                 <Award size={16} className="text-slate-400" />
                 <span>{score}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-slate-500">
+              <div className="flex items-center gap-2 text-sm text-app-muted">
                 <Clock3 size={16} className="text-slate-400" />
                 <span>{timeTaken}</span>
               </div>
@@ -277,12 +252,11 @@ const EmptyState = () => (
     <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-dashed border-violet-200 bg-violet-50 text-violet-600">
       <FileCheck2 size={34} />
     </div>
-    <h3 className="mt-5 font-space-grotesk text-xl font-bold text-slate-900">
+    <h3 className="mt-5 font-space-grotesk text-xl font-bold text-app">
       No attempts found
     </h3>
-    <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
-      Try a different search or filter, or start a new quiz to build your
-      attempt history.
+    <p className="mt-2 max-w-md text-sm leading-6 text-app-muted">
+      Start a new quiz to build your attempt history.
     </p>
     <Link to="/library" className="mt-6">
       <Button>Explore Quizzes</Button>
@@ -291,8 +265,6 @@ const EmptyState = () => (
 );
 
 const MyAttempts = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All Attempts");
   const [isLoading, setIsLoading] = useState(true);
   const [apiError, setApiError] = useState(null);
   const [attemptsData, setAttemptsData] = useState([]);
@@ -349,27 +321,6 @@ const MyAttempts = () => {
     return { totalAttempts: total, averageScore, bestScore, successRate };
   }, [statsData, attemptsData]);
 
-  const filteredAttempts = useMemo(() => {
-    return attemptsData.filter((attempt) => {
-      const title = attempt.quiz_title || "";
-      const matchesSearch = title
-        .toLowerCase()
-        .includes(searchQuery.trim().toLowerCase());
-      const statusNorm = (attempt.status || "").toLowerCase();
-      const matchesStatus =
-        statusFilter === "All Attempts" ||
-        (statusFilter === "Passed" && statusNorm === "passed") ||
-        (statusFilter === "Failed" && statusNorm === "failed");
-
-      return matchesSearch && matchesStatus;
-    });
-  }, [attemptsData, searchQuery, statusFilter]);
-
-  const resetFilters = () => {
-    setSearchQuery("");
-    setStatusFilter("All Attempts");
-  };
-
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       <motion.div
@@ -379,50 +330,15 @@ const MyAttempts = () => {
         className="flex flex-col gap-5"
       >
         <div className="flex flex-col gap-2">
-          <h1 className="font-space-grotesk text-2xl font-bold text-slate-900">
+          <h1 className="font-space-grotesk text-2xl font-bold text-app">
             My Attempts
           </h1>
-          <p className="max-w-2xl text-sm leading-6 text-slate-500">
+          <p className="max-w-2xl text-sm leading-6 text-app-muted">
             Review your quiz history, compare scores, and jump back into any
             quiz when you want another run.
           </p>
         </div>
 
-        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center">
-          <div className="relative min-w-0 flex-1">
-            <Search
-              size={18}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-            />
-            <input
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              type="text"
-              placeholder="Search attempts..."
-              aria-label="Search attempts"
-              className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-100"
-            />
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-500">
-              <Filter size={16} />
-              Filter
-            </div>
-            <SelectFilter
-              value={statusFilter}
-              onChange={setStatusFilter}
-              options={["All Attempts", "Passed", "Failed"]}
-            />
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-500 transition-all duration-200 hover:border-violet-300 hover:text-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2"
-            >
-              <RotateCcw size={14} />
-              Reset
-            </button>
-          </div>
-        </div>
       </motion.div>
 
       <motion.div
@@ -474,13 +390,13 @@ const MyAttempts = () => {
             <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-dashed border-red-200 bg-red-50 text-red-500">
               <XCircle size={34} />
             </div>
-            <h3 className="mt-5 font-space-grotesk text-xl font-bold text-slate-900">
-              Something went wrong
+            <h3 className="mt-5 font-space-grotesk text-xl font-bold text-app">
+              Failed to load attempts
             </h3>
-            <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">{apiError}</p>
+            <p className="mt-2 max-w-md text-sm leading-6 text-app-muted">{apiError}</p>
           </Card>
-        ) : filteredAttempts.length > 0 ? (
-          filteredAttempts.map((attempt) => (
+        ) : attemptsData.length > 0 ? (
+          attemptsData.map((attempt) => (
             <AttemptCard key={attempt.id} attempt={attempt} />
           ))
         ) : (

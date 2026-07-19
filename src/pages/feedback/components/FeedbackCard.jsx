@@ -34,7 +34,7 @@ const FeedbackCard = ({ feedback }) => {
   const displayTime = isEdited ? `Updated ${timeAgo(updated_at)}` : timeAgo(created_at);
 
   return (
-    <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-4 hover:shadow-md transition-shadow">
+    <div className="surface p-5 rounded-2xl shadow-sm border border-slate-100 mb-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
           <img
@@ -47,7 +47,7 @@ const FeedbackCard = ({ feedback }) => {
             className="w-10 h-10 rounded-full object-cover shadow-sm"
           />
           <div>
-            <h4 className="font-semibold text-slate-900 text-sm">{userName}</h4>
+            <h4 className="font-semibold text-app text-sm">{userName}</h4>
             <div className="text-xs text-slate-400">
               {displayTime}
             </div>

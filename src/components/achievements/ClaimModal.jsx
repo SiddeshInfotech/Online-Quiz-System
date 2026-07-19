@@ -23,7 +23,7 @@ const ClaimModal = ({ isOpen, badge, onClose }) => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8, y: 20 }}
           transition={{ type: "spring", damping: 20, stiffness: 300 }}
-          className="relative bg-white w-full max-w-sm rounded-[32px] p-8 text-center shadow-2xl overflow-hidden"
+          className="relative surface w-full max-w-sm rounded-[32px] p-8 text-center shadow-2xl overflow-hidden"
         >
           {/* Confetti / Glow background effect */}
           <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-violet-500/20 to-transparent pointer-events-none" />
@@ -46,7 +46,7 @@ const ClaimModal = ({ isOpen, badge, onClose }) => {
             <h2 className="text-2xl font-bold font-space-grotesk text-slate-800 mb-2">
               Congratulations!
             </h2>
-            <p className="text-sm text-slate-500 mb-8">
+            <p className="text-sm text-app-muted mb-8">
               You've successfully claimed the <span className="font-bold text-violet-600">{badge.name}</span> badge.
             </p>
 

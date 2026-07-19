@@ -8,7 +8,7 @@ import ProgressBar from "../../components/achievements/ProgressBar";
 import { resolveMediaUrl } from "../../services/api";
 
 const rarityColors = {
-  Common: "bg-slate-100 text-slate-600 border-slate-200",
+  Common: "surface-elev text-slate-600 border-app",
   Rare: "bg-blue-50 text-blue-600 border-blue-200",
   Epic: "bg-fuchsia-50 text-fuchsia-600 border-fuchsia-200",
   Legendary: "bg-amber-50 text-amber-600 border-amber-200",
@@ -77,13 +77,13 @@ const BadgeDetailsPage = () => {
     <div className="w-full max-w-4xl mx-auto pb-12">
       <button 
         onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-slate-500 hover:text-violet-600 font-medium mb-8 transition-colors group"
+        className="flex items-center gap-2 text-app-muted hover:text-violet-600 font-medium mb-8 transition-colors group"
       >
         <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
         Back
       </button>
 
-      <Card className="overflow-hidden bg-white shadow-xl border-slate-100 rounded-3xl">
+      <Card className="overflow-hidden surface shadow-xl border-app rounded-3xl">
         {/* Banner */}
         <div className="h-48 bg-gradient-to-r from-violet-600 to-fuchsia-600 relative overflow-hidden">
           <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] mix-blend-overlay"></div>
@@ -99,7 +99,7 @@ const BadgeDetailsPage = () => {
         <div className="px-8 pb-12 relative">
           {/* Main Badge Icon */}
           <div className="relative -mt-24 mb-6 flex justify-center sm:justify-start">
-            <div className={`w-40 h-40 bg-white rounded-[32px] p-6 shadow-2xl border-4 border-white flex items-center justify-center ${isLocked ? 'grayscale opacity-75' : ''}`}>
+            <div className={`w-40 h-40 surface rounded-[32px] p-6 shadow-2xl border-4 border-app flex items-center justify-center ${isLocked ? 'grayscale opacity-75' : ''}`}>
               {image_url ? (
                 <img 
                   src={image_url} 
@@ -124,7 +124,7 @@ const BadgeDetailsPage = () => {
           <div className="flex flex-col sm:flex-row gap-8">
             {/* Left Content */}
             <div className="flex-1">
-              <h1 className="text-3xl font-bold font-space-grotesk text-slate-900 mb-3">{name}</h1>
+              <h1 className="text-3xl font-bold font-space-grotesk text-app mb-3">{name}</h1>
               <p className="text-slate-600 text-lg leading-relaxed mb-6">{description}</p>
               
               <div className="mb-8">
@@ -143,9 +143,9 @@ const BadgeDetailsPage = () => {
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[1, 2].map(i => (
-                    <div key={i} className="bg-slate-50 rounded-xl p-4 border border-slate-100 hover:border-violet-200 transition-colors cursor-pointer group">
-                      <h4 className="font-semibold text-slate-700 group-hover:text-violet-700 text-sm mb-1">General Knowledge Quiz #{i}</h4>
-                      <p className="text-xs text-slate-500 flex items-center gap-1"><Clock size={12}/> 10 mins • 20 Qs</p>
+                    <div key={i} className="surface-subtle rounded-xl p-4 border border-app hover:border-violet-200 transition-colors cursor-pointer group">
+                      <h4 className="font-semibold text-app-2 group-hover:text-violet-700 text-sm mb-1">General Knowledge Quiz #{i}</h4>
+                      <p className="text-xs text-app-muted flex items-center gap-1"><Clock size={12}/> 10 mins • 20 Qs</p>
                     </div>
                   ))}
                 </div>
@@ -154,27 +154,27 @@ const BadgeDetailsPage = () => {
 
             {/* Right Sidebar Stats */}
             <div className="w-full sm:w-64 shrink-0 flex flex-col gap-4">
-              <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+              <div className="surface-subtle rounded-2xl p-5 border border-app">
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">XP Reward</p>
                 <div className="text-2xl font-bold text-violet-600 flex items-center gap-2">
                   <Sparkles size={20} /> +{xp_reward}
                 </div>
               </div>
 
-              <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+              <div className="surface-subtle rounded-2xl p-5 border border-app">
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Category</p>
-                <div className="text-lg font-bold text-slate-700 flex items-center gap-2">
+                <div className="text-lg font-bold text-app-2 flex items-center gap-2">
                   <Target size={18} className="text-slate-400" /> {category}
                 </div>
               </div>
 
-              <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+              <div className="surface-subtle rounded-2xl p-5 border border-app">
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Requirement</p>
-                <div className="text-sm font-medium text-slate-700">
+                <div className="text-sm font-medium text-app-2">
                   {progress} / {target || 1} completed
                 </div>
                 {(requirement || badge.requirement) && (
-                  <p className="text-xs text-slate-500 mt-2">{requirement || badge.requirement}</p>
+                  <p className="text-xs text-app-muted mt-2">{requirement || badge.requirement}</p>
                 )}
               </div>
             </div>

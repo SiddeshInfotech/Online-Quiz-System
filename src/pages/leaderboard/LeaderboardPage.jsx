@@ -185,14 +185,14 @@ const PodiumBlock = ({ config, entry, isCurrentUser }) => {
       {/* Display name & points */}
       <div className="text-center mb-1.5">
         <p
-          className={`font-semibold text-slate-900 text-xs leading-tight truncate max-w-[80px] ${
+          className={`font-semibold text-app text-xs leading-tight truncate max-w-[80px] ${
             isCurrentUser ? "text-violet-700" : ""
           }`}
           title={entry.fullName || entry.username}
         >
           {entry.fullName || entry.username}
         </p>
-        <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+        <p className="text-[10px] text-app-muted font-medium mt-0.5">
           {formatPoints(entry.points)} pts
         </p>
       </div>
@@ -225,7 +225,7 @@ const Podium = ({ top3, isInTop3 = false, currentUserId }) => {
       <Card className="px-6 pt-5 pb-0 md:px-8 md:pt-6 overflow-hidden">
         <div className="flex items-center gap-2 mb-4">
           <Trophy size={20} className="text-amber-500" />
-          <h2 className="font-space-grotesk text-base font-bold text-slate-900">
+          <h2 className="font-space-grotesk text-base font-bold text-app">
             Top 3 Champions
           </h2>
         </div>
@@ -256,9 +256,9 @@ const Podium = ({ top3, isInTop3 = false, currentUserId }) => {
 
 const rankBadgeStyle = (rank) => {
   if (rank === 1) return "bg-amber-100 text-amber-700 border border-amber-200";
-  if (rank === 2) return "bg-slate-100 text-slate-600 border border-slate-200";
+  if (rank === 2) return "surface-elev text-slate-600 border border-app";
   if (rank === 3) return "bg-orange-100 text-orange-700 border border-orange-200";
-  return "bg-white text-slate-500 border border-slate-200";
+  return "surface text-app-muted border border-app";
 };
 
 const RankBadge = ({ rank }) => {
@@ -268,8 +268,8 @@ const RankBadge = ({ rank }) => {
     </div>
   );
   if (rank === 2) return (
-    <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-slate-100 border border-slate-200">
-      <Medal size={18} className="text-slate-500" fill="currentColor" />
+    <div className="flex items-center justify-center w-9 h-9 rounded-xl surface-elev border border-app">
+      <Medal size={18} className="text-app-muted" fill="currentColor" />
     </div>
   );
   if (rank === 3) return (
@@ -287,8 +287,6 @@ const RankBadge = ({ rank }) => {
 };
 
 const TableRow = ({ id, entry, isCurrentUser, index }) => {
-  const claimedBadges = entry.badges ? entry.badges.filter(b => b.status === "CLAIMED") : [];
-
   return (
   <motion.tr
     id={id}
@@ -321,7 +319,7 @@ const TableRow = ({ id, entry, isCurrentUser, index }) => {
         </div>
         <p
           className={`font-semibold text-sm truncate ${
-            isCurrentUser ? "text-violet-700" : "text-slate-900"
+            isCurrentUser ? "text-violet-700" : "text-app"
           }`}
           title={entry.fullName || entry.username}
         >
@@ -335,33 +333,6 @@ const TableRow = ({ id, entry, isCurrentUser, index }) => {
       </div>
     </td>
 
-    {/* Badges */}
-    <td className="py-3.5 pr-4">
-      <div className="flex items-center gap-2">
-        {claimedBadges.length > 0 ? (
-          <>
-            <div className="flex -space-x-2">
-              {claimedBadges.slice(0, 4).map((badge, i) => (
-                <div key={badge.id || i} className="w-7 h-7 rounded-full bg-slate-50 border border-slate-200 shadow-sm flex items-center justify-center overflow-hidden z-10" style={{ zIndex: 10 - i }}>
-                  {badge.image_url ? (
-                    <img src={badge.image_url} alt={badge.name} className="w-5 h-5 object-contain" />
-                  ) : (
-                    <Trophy size={12} className="text-violet-400" />
-                  )}
-                </div>
-              ))}
-            </div>
-            {claimedBadges.length > 4 && (
-              <span className="text-xs font-semibold text-slate-500 bg-slate-100 rounded-full px-2 py-0.5 cursor-pointer hover:bg-violet-100 hover:text-violet-600 transition-colors">
-                +{claimedBadges.length - 4}
-              </span>
-            )}
-          </>
-        ) : (
-          <span className="text-xs text-slate-400 font-medium italic">No badges claimed yet</span>
-        )}
-      </div>
-    </td>
 
     {/* Points – right-aligned */}
     <td className="py-3.5 pr-4 text-right">
@@ -404,7 +375,7 @@ const LeaderboardSkeleton = () => (
     </div>
 
     {/* Podium */}
-    <div className="animate-pulse rounded-3xl bg-slate-100 h-56" />
+    <div className="animate-pulse rounded-3xl surface-elev h-56" />
 
     {/* Table */}
     <Card className="overflow-hidden">
@@ -418,10 +389,9 @@ const LeaderboardSkeleton = () => (
             <div className="w-10 h-10 bg-slate-200 rounded-full" />
             <div className="flex-1 space-y-2">
               <div className="h-4 w-1/3 bg-slate-200 rounded" />
-              <div className="h-3 w-1/5 bg-slate-100 rounded" />
+              <div className="h-3 w-1/5 surface-elev rounded" />
             </div>
-            <div className="h-4 w-16 bg-slate-200 rounded" />
-            <div className="h-4 w-10 bg-slate-100 rounded" />
+            <div className="h-4 w-10 surface-elev rounded" />
           </div>
         ))}
       </div>
@@ -438,10 +408,10 @@ const EmptyState = () => (
     <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-dashed border-violet-200 bg-violet-50 text-violet-400 mb-5">
       <Users size={36} />
     </div>
-    <h3 className="font-space-grotesk text-xl font-bold text-slate-900 mb-2">
+    <h3 className="font-space-grotesk text-xl font-bold text-app mb-2">
       No rankings yet
     </h3>
-    <p className="text-sm text-slate-500 max-w-sm leading-relaxed">
+    <p className="text-sm text-app-muted max-w-sm leading-relaxed">
       Be the first to complete a quiz and claim the top spot on the leaderboard!
     </p>
   </Card>
@@ -456,10 +426,10 @@ const ErrorState = ({ message, onRetry }) => (
     <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-dashed border-red-200 bg-red-50 text-red-400 mb-5">
       <AlertCircle size={36} />
     </div>
-    <h3 className="font-space-grotesk text-xl font-bold text-slate-900 mb-2">
+    <h3 className="font-space-grotesk text-xl font-bold text-app mb-2">
       Something went wrong
     </h3>
-    <p className="text-sm text-slate-500 max-w-sm leading-relaxed mb-6">{message}</p>
+    <p className="text-sm text-app-muted max-w-sm leading-relaxed mb-6">{message}</p>
     <button
       onClick={onRetry}
       className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-600/20 hover:bg-violet-700 transition-colors"
@@ -613,10 +583,10 @@ const LeaderboardPage = () => {
             <Trophy size={22} className="text-amber-500" />
           </div>
           <div>
-            <h1 className="font-space-grotesk text-2xl font-bold text-slate-900 leading-tight">
+            <h1 className="font-space-grotesk text-2xl font-bold text-app leading-tight">
               Leaderboard
             </h1>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-app-muted">
               Ranked by total points · 1 correct answer = 1 point
             </p>
           </div>
@@ -686,10 +656,10 @@ const LeaderboardPage = () => {
                 <div className="flex items-center px-6 py-4 border-b border-slate-100">
                   <div className="flex items-center gap-2">
                     <Award size={18} className="text-violet-600" />
-                    <h2 className="font-space-grotesk font-bold text-slate-900">
+                    <h2 className="font-space-grotesk font-bold text-app">
                       All Rankings
                     </h2>
-                    <span className="ml-1 text-xs font-medium bg-slate-100 text-slate-500 rounded-full px-2.5 py-0.5">
+                    <span className="ml-1 text-xs font-medium surface-elev text-app-muted rounded-full px-2.5 py-0.5">
                       {entries.length} players
                     </span>
                   </div>
@@ -699,16 +669,14 @@ const LeaderboardPage = () => {
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[420px] border-collapse">
                     <thead>
-                      <tr className="bg-slate-50 text-left">
+                      <tr className="surface-subtle text-left">
                         <th className="py-3 pl-4 pr-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                           Rank
                         </th>
                         <th className="py-3 pr-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                           Player
                         </th>
-                        <th className="py-3 pr-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                          Badges
-                        </th>
+
                         <th className="py-3 pr-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400 text-right">
                           Points
                         </th>

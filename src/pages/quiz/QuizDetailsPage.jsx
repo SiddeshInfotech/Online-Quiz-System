@@ -25,7 +25,7 @@ import attemptsService from "../../services/attemptsService";
 ───────────────────────────────────────────── */
 const Skeleton = ({ className = "" }) => (
   <div
-    className={`animate-pulse bg-slate-200 rounded-lg ${className}`}
+    className={`animate-pulse surface-elev rounded-lg ${className}`}
     aria-hidden="true"
   />
 );
@@ -33,7 +33,7 @@ const Skeleton = ({ className = "" }) => (
 const SkeletonPage = () => (
   <div className="w-full max-w-4xl mx-auto pb-12 pt-8">
     <Skeleton className="h-5 w-32 mb-8" />
-    <div className="rounded-3xl border border-slate-200 bg-white shadow-sm p-8 md:p-10">
+    <div className="rounded-3xl border border-app surface shadow-sm p-8 md:p-10">
       <div className="flex flex-wrap gap-2 mb-4">
         <Skeleton className="h-6 w-24 rounded-full" />
         <Skeleton className="h-6 w-20 rounded-full" />
@@ -42,14 +42,14 @@ const SkeletonPage = () => (
       <Skeleton className="h-10 w-3/4 mb-3 rounded-xl" />
       <Skeleton className="h-5 w-full mb-2 rounded" />
       <Skeleton className="h-5 w-2/3 mb-8 rounded" />
-      <hr className="border-slate-100 mb-8" />
+      <hr className="border-app mb-8" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
         {[...Array(4)].map((_, i) => (
           <Skeleton key={i} className="h-28 rounded-2xl" />
         ))}
       </div>
       <Skeleton className="h-40 rounded-2xl mb-8" />
-      <div className="flex gap-4 justify-end pt-8 border-t border-slate-100">
+      <div className="flex gap-4 justify-end pt-8 border-t border-app">
         <Skeleton className="h-12 w-40 rounded-xl" />
         <Skeleton className="h-12 w-48 rounded-xl" />
       </div>
@@ -77,7 +77,7 @@ const StartQuizModal = ({ quiz, onConfirm, onCancel }) => {
       >
         {/* Backdrop */}
         <motion.div
-          className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -86,7 +86,7 @@ const StartQuizModal = ({ quiz, onConfirm, onCancel }) => {
 
         {/* Modal */}
         <motion.div
-          className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
+          className="relative surface rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
           initial={{ opacity: 0, scale: 0.92, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.92, y: 20 }}
@@ -96,7 +96,7 @@ const StartQuizModal = ({ quiz, onConfirm, onCancel }) => {
           <div className="p-7">
             <button
               onClick={onCancel}
-              className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 transition-colors rounded-lg p-1 hover:bg-slate-100"
+              className="absolute top-5 right-5 text-app-muted hover:text-app-2 transition-colors rounded-lg p-1 hover:bg-[var(--bg-elevated)]"
               aria-label="Close"
             >
               <X size={18} />
@@ -106,12 +106,12 @@ const StartQuizModal = ({ quiz, onConfirm, onCancel }) => {
               <Play size={26} className="text-violet-600 translate-x-0.5" />
             </div>
 
-            <h2 className="text-xl font-bold font-space-grotesk text-slate-900 text-center mb-1">
+            <h2 className="text-xl font-bold font-space-grotesk text-app text-center mb-1">
               Ready to Start?
             </h2>
-            <p className="text-slate-500 text-sm text-center mb-6 leading-relaxed">
+            <p className="text-app-muted text-sm text-center mb-6 leading-relaxed">
               You are about to begin{" "}
-              <span className="font-semibold text-slate-700">
+              <span className="font-semibold text-app-2">
                 {quiz?.title ?? quiz?.quiz_title ?? "this quiz"}
               </span>
               . Once started, the timer cannot be paused.
@@ -120,15 +120,15 @@ const StartQuizModal = ({ quiz, onConfirm, onCancel }) => {
             {(questionCount != null || timeLimit != null) && (
               <div className="flex gap-3 mb-6">
                 {questionCount != null && (
-                  <div className="flex-1 bg-slate-50 border border-slate-100 rounded-xl p-3 text-center">
-                    <div className="text-lg font-bold text-slate-900">{questionCount}</div>
-                    <div className="text-xs text-slate-500 font-medium">Questions</div>
+                  <div className="flex-1 surface-subtle border border-app rounded-xl p-3 text-center">
+                    <div className="text-lg font-bold text-app">{questionCount}</div>
+                    <div className="text-xs text-app-muted font-medium">Questions</div>
                   </div>
                 )}
                 {timeLimit != null && (
-                  <div className="flex-1 bg-slate-50 border border-slate-100 rounded-xl p-3 text-center">
-                    <div className="text-lg font-bold text-slate-900">{timeLimit}m</div>
-                    <div className="text-xs text-slate-500 font-medium">Time Limit</div>
+                  <div className="flex-1 surface-subtle border border-app rounded-xl p-3 text-center">
+                    <div className="text-lg font-bold text-app">{timeLimit}m</div>
+                    <div className="text-xs text-app-muted font-medium">Time Limit</div>
                   </div>
                 )}
               </div>
@@ -161,12 +161,12 @@ const StartQuizModal = ({ quiz, onConfirm, onCancel }) => {
    Difficulty colour helper
 ───────────────────────────────────────────── */
 const difficultyClass = (difficulty) => {
-  if (!difficulty) return "bg-slate-100 text-slate-600";
+  if (!difficulty) return "surface-elev text-app-muted";
   const d = difficulty.toLowerCase();
   if (d === "easy") return "bg-emerald-100 text-emerald-700";
   if (d === "medium") return "bg-amber-100 text-amber-700";
   if (d === "hard") return "bg-red-100 text-red-700";
-  return "bg-slate-100 text-slate-600";
+  return "surface-elev text-app-muted";
 };
 
 /* ─────────────────────────────────────────────
@@ -177,17 +177,17 @@ const StatCard = ({ icon: Icon, iconColor, value, label, delay = 0 }) => (
     initial={{ opacity: 0, y: 12 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay, duration: 0.35, ease: "easeOut" }}
-    className="group flex flex-col items-center justify-center bg-slate-50 hover:bg-white border border-transparent hover:border-slate-200 hover:shadow-md rounded-2xl p-5 text-center transition-all duration-300 cursor-default select-none"
+    className="group flex flex-col items-center justify-center surface-subtle hover:surface border border-transparent hover:border-app hover:shadow-md rounded-2xl p-5 text-center transition-all duration-300 cursor-default select-none"
   >
     <div
       className={`w-10 h-10 flex items-center justify-center rounded-xl mb-3 transition-transform duration-300 group-hover:scale-110 ${iconColor}`}
     >
       <Icon size={20} />
     </div>
-    <span className="text-2xl font-bold font-space-grotesk text-slate-900 leading-none mb-1">
+    <span className="text-2xl font-bold font-space-grotesk text-app leading-none mb-1">
       {value}
     </span>
-    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+    <span className="text-xs font-semibold text-app-muted uppercase tracking-wider">
       {label}
     </span>
   </motion.div>
@@ -247,7 +247,7 @@ const QuizDetailsPage = () => {
   /* ── Error ── */
   if (error || !quiz) {
     return (
-      <div className="w-full h-64 flex flex-col items-center justify-center text-slate-500 gap-4">
+      <div className="w-full h-64 flex flex-col items-center justify-center text-app-muted gap-4">
         <p>{error || "Quiz not found"}</p>
         <Button variant="outline" onClick={() => navigate(-1)}>
           Go Back
@@ -304,15 +304,15 @@ const QuizDetailsPage = () => {
           {/* Back to Library */}
           <button
             onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors mb-6 group"
+            className="inline-flex items-center gap-2 text-sm font-medium text-app-muted hover:text-app transition-colors mb-6 group"
           >
-            <span className="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100 group-hover:bg-violet-100 group-hover:text-violet-600 transition-all duration-200">
+            <span className="w-7 h-7 rounded-lg flex items-center justify-center surface-elev group-hover:bg-violet-100 group-hover:text-violet-600 transition-all duration-200">
               <ArrowLeft size={15} />
             </span>
             Back to Library
           </button>
 
-          <Card className="p-8 md:p-10 relative overflow-hidden shadow-sm border border-slate-200">
+          <Card className="p-8 md:p-10 relative overflow-hidden shadow-sm border border-app">
             {/* Top gradient accent */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-400 rounded-t-3xl" />
 
@@ -324,7 +324,7 @@ const QuizDetailsPage = () => {
               transition={{ delay: 0.08, duration: 0.35 }}
             >
               <div className="flex-1 min-w-0">
-                <h1 className="text-3xl md:text-4xl font-bold font-space-grotesk text-slate-900 mb-3 leading-tight">
+                <h1 className="text-3xl md:text-4xl font-bold font-space-grotesk text-app mb-3 leading-tight">
                   {title ?? "Untitled Quiz"}
                 </h1>
 
@@ -345,14 +345,14 @@ const QuizDetailsPage = () => {
                     </span>
                   )}
                   {questionType && (
-                    <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">
+                    <span className="inline-flex items-center gap-1 surface-elev text-app-2 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">
                       {questionType}
                     </span>
                   )}
                 </div>
 
                 {description && (
-                  <p className="text-slate-600 text-base leading-relaxed max-w-2xl">
+                  <p className="text-app-2 text-base leading-relaxed max-w-2xl">
                     {description}
                   </p>
                 )}
@@ -360,17 +360,17 @@ const QuizDetailsPage = () => {
 
               {passingScore != null && (
                 <div className="flex-shrink-0">
-                  <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex flex-col items-center justify-center min-w-[120px]">
-                    <div className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Passing Score</div>
-                    <div className="text-3xl font-bold font-space-grotesk text-slate-900">
-                      {passingScore}<span className="text-lg text-slate-500">%</span>
+                  <div className="surface-subtle border border-app rounded-2xl p-4 flex flex-col items-center justify-center min-w-[120px]">
+                    <div className="text-app-muted text-xs font-bold uppercase tracking-wider mb-1">Passing Score</div>
+                    <div className="text-3xl font-bold font-space-grotesk text-app">
+                      {passingScore}<span className="text-lg text-app-muted">%</span>
                     </div>
                   </div>
                 </div>
               )}
             </motion.div>
 
-            <hr className="border-slate-100 mb-8" />
+            <hr className="border-app mb-8" />
 
             {/* ── Stats Grid ── */}
             {stats.length > 0 && (
@@ -391,27 +391,27 @@ const QuizDetailsPage = () => {
               >
                 <div className="flex items-center gap-2 mb-4">
                   <Info size={15} className="text-violet-400" />
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  <span className="text-xs font-bold text-app-muted uppercase tracking-widest">
                     Quiz Information
                   </span>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   {description && (
-                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5">
+                    <div className="surface-subtle border border-app rounded-2xl p-5">
                       <div className="flex items-center gap-2 mb-2">
                         <BookOpen size={15} className="text-violet-500" />
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">About this Quiz</span>
+                        <span className="text-xs font-bold text-app-muted uppercase tracking-wider">About this Quiz</span>
                       </div>
-                      <p className="text-slate-700 text-sm leading-relaxed">{description}</p>
+                      <p className="text-app-2 text-sm leading-relaxed">{description}</p>
                     </div>
                   )}
                   {scoringInfo && (
-                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5">
+                    <div className="surface-subtle border border-app rounded-2xl p-5">
                       <div className="flex items-center gap-2 mb-2">
                         <Target size={15} className="text-emerald-500" />
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Scoring</span>
+                        <span className="text-xs font-bold text-app-muted uppercase tracking-wider">Scoring</span>
                       </div>
-                      <p className="text-slate-700 text-sm leading-relaxed">{scoringInfo}</p>
+                      <p className="text-app-2 text-sm leading-relaxed">{scoringInfo}</p>
                     </div>
                   )}
                 </div>
@@ -425,11 +425,11 @@ const QuizDetailsPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.45, duration: 0.35 }}
             >
-              <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <h3 className="font-bold text-app mb-4 flex items-center gap-2">
                 <span className="w-1.5 h-6 bg-violet-500 rounded-full inline-block" />
                 Instructions
               </h3>
-              <ul className="space-y-3 text-slate-600 text-sm">
+              <ul className="space-y-3 text-app-2 text-sm">
                 <li className="flex items-start gap-2.5">
                   <span className="text-violet-400 mt-0.5 font-bold">•</span>
                   The timer will start immediately after clicking "Start Quiz".
@@ -453,7 +453,7 @@ const QuizDetailsPage = () => {
 
             {/* ── Action Buttons ── */}
             <motion.div
-              className="flex flex-col sm:flex-row items-center justify-end gap-4 pt-8 border-t border-slate-100"
+              className="flex flex-col sm:flex-row items-center justify-end gap-4 pt-8 border-t border-app"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.52, duration: 0.35 }}

@@ -14,10 +14,10 @@ const DashboardLayoutInner = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <div className="flex min-h-screen items-center justify-center surface-subtle">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 rounded-full border-4 border-violet-600 border-t-transparent animate-spin" />
-          <p className="text-sm text-slate-500 font-medium">Loading your dashboard…</p>
+          <p className="text-sm text-app-muted font-medium">Loading your dashboard…</p>
         </div>
       </div>
     );
@@ -25,19 +25,19 @@ const DashboardLayoutInner = () => {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <div className="flex min-h-screen items-center justify-center surface-subtle">
         <div className="text-center">
-          <p className="text-slate-700 font-semibold mb-1">Something went wrong</p>
+          <p className="text-app-2 font-semibold mb-1">Something went wrong</p>
           <p className="text-xs text-slate-400">{error}</p>
         </div>
       </div>
     );
   }
 
-  const { user, dailyGoal } = data;
+  const { user, dailyGoal, notifications } = data;
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-inter relative">
+    <div className="flex min-h-screen surface-subtle font-inter relative">
       {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
         <div 
@@ -54,7 +54,7 @@ const DashboardLayoutInner = () => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 lg:ml-64 w-full transition-all duration-300">
         {/* Top Navigation */}
-        <TopNav user={user} onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
+        <TopNav user={user} notifications={notifications} onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
 
         {/* Scrollable Page Content */}
         <main className="flex-1 overflow-x-hidden p-4 md:p-6 lg:p-8">

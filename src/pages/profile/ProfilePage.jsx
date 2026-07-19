@@ -65,8 +65,8 @@ const Toast = ({ toast, onDismiss }) => {
       transition={{ duration: 0.25 }}
       className={`fixed bottom-6 right-6 z-[100] flex items-center gap-3 rounded-2xl px-5 py-4 shadow-xl border text-sm font-medium
         ${isSuccess
-          ? "bg-white border-emerald-200 text-emerald-700"
-          : "bg-white border-red-200 text-red-600"
+          ? "surface border-emerald-200 text-emerald-700"
+          : "surface border-red-200 text-red-600"
         }`}
     >
       {isSuccess
@@ -86,7 +86,7 @@ const ProfileSkeleton = () => (
     {/* Header */}
     <div className="mb-8">
       <div className="h-8 w-48 bg-slate-200 rounded-lg mb-2" />
-      <div className="h-4 w-64 bg-slate-100 rounded-lg" />
+      <div className="h-4 w-64 surface-elev rounded-lg" />
     </div>
 
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -96,7 +96,7 @@ const ProfileSkeleton = () => (
           <div className="w-32 h-32 rounded-full bg-slate-200" />
           <div className="flex flex-col items-center gap-2 w-full">
             <div className="h-6 w-3/4 bg-slate-200 rounded-lg" />
-            <div className="h-4 w-1/2 bg-slate-100 rounded-lg" />
+            <div className="h-4 w-1/2 surface-elev rounded-lg" />
           </div>
           <div className="h-11 w-full bg-slate-200 rounded-xl mt-4" />
         </Card>
@@ -109,8 +109,8 @@ const ProfileSkeleton = () => (
           <div className="flex flex-col gap-6">
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex flex-col gap-2">
-                <div className="h-4 w-24 bg-slate-100 rounded" />
-                <div className="h-6 w-full bg-slate-50 rounded" />
+                <div className="h-4 w-24 surface-elev rounded" />
+                <div className="h-6 w-full surface-subtle rounded" />
               </div>
             ))}
           </div>
@@ -118,8 +118,8 @@ const ProfileSkeleton = () => (
         <Card className="p-8">
           <div className="h-6 w-32 bg-slate-200 rounded-lg mb-6" />
           <div className="flex gap-4">
-            <div className="h-11 flex-1 bg-slate-100 rounded-xl" />
-            <div className="h-11 flex-1 bg-slate-100 rounded-xl" />
+            <div className="h-11 flex-1 surface-elev rounded-xl" />
+            <div className="h-11 flex-1 surface-elev rounded-xl" />
           </div>
         </Card>
       </div>
@@ -327,21 +327,21 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 12 }}
         transition={{ duration: 0.2 }}
-        className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col z-10 max-h-[90vh] overflow-hidden"
+        className="relative w-full max-w-md surface rounded-3xl shadow-2xl border border-app flex flex-col z-10 max-h-[90vh] overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-8 pb-6 border-b border-slate-100 flex-shrink-0">
           <div>
-            <h2 className="text-lg font-bold font-space-grotesk text-slate-900">
+            <h2 className="text-lg font-bold font-space-grotesk text-app">
               Edit Profile
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-app-muted mt-0.5">
               Update your display information
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
+            className="p-2 rounded-xl text-app-muted hover:text-app-2 hover:bg-[var(--bg-elevated)] transition-colors"
           >
             <X size={20} />
           </button>
@@ -352,11 +352,11 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
           {/* Scrollable Body */}
           <div className="flex-1 overflow-y-auto p-8 pt-6 flex flex-col gap-5">
             <div className="flex flex-col items-center gap-3 mb-2">
-              <div className="relative w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center border-2 border-slate-200 overflow-hidden group">
+              <div className="relative w-24 h-24 rounded-full surface-elev flex items-center justify-center border-2 border-app overflow-hidden group">
                 {previewUrl ? (
                   <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
                 ) : (
-                  <User size={32} className="text-slate-400" />
+                  <User size={32} className="text-app-muted" />
                 )}
                 <label className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white">
                   <Camera size={20} className="mb-1" />
@@ -364,7 +364,7 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
                   <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                 </label>
               </div>
-              <p className="text-xs text-slate-500">Profile Picture</p>
+              <p className="text-xs text-app-muted">Profile Picture</p>
             </div>
 
             <Input
@@ -386,7 +386,7 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
             />
 
             <div className="border-t border-slate-100 pt-5 mt-2">
-              <p className="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
+              <p className="text-sm font-semibold text-app mb-4 flex items-center gap-2">
                 <GraduationCap size={16} className="text-violet-600" />
                 Educational Details
               </p>
@@ -448,7 +448,7 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
               readOnly
               disabled
               helperText="Username cannot be changed."
-              className="bg-slate-50 text-slate-400 cursor-not-allowed"
+              className="surface-subtle text-app-muted cursor-not-allowed"
             />
 
             <Input
@@ -460,7 +460,7 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
               readOnly
               disabled
               helperText="Email cannot be changed."
-              className="bg-slate-50 text-slate-400 cursor-not-allowed"
+              className="surface-subtle text-app-muted cursor-not-allowed"
             />
 
           </div>
@@ -562,20 +562,20 @@ const ChangePasswordModal = ({ onClose, onSuccess }) => {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 12 }}
         transition={{ duration: 0.2 }}
-        className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 p-8 z-10"
+        className="relative w-full max-w-md surface rounded-3xl shadow-2xl border border-app p-8 z-10"
       >
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-lg font-bold font-space-grotesk text-slate-900">
+            <h2 className="text-lg font-bold font-space-grotesk text-app">
               Change Password
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-app-muted mt-0.5">
               Update your account password
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
+            className="p-2 rounded-xl text-app-muted hover:text-app-2 hover:bg-[var(--bg-elevated)] transition-colors"
           >
             <X size={20} />
           </button>
@@ -764,10 +764,10 @@ const ProfilePage = () => {
           transition={{ duration: 0.3 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold font-space-grotesk text-slate-900 mb-2">
+          <h1 className="text-3xl font-bold font-space-grotesk text-app mb-2">
             My Profile
           </h1>
-          <p className="text-base text-slate-500">
+          <p className="text-base text-app-muted">
             View and manage your account information and preferences
           </p>
         </motion.div>
@@ -795,7 +795,7 @@ const ProfilePage = () => {
 
                   <div className="w-full bg-white/20 rounded-full h-2.5 backdrop-blur-sm overflow-hidden">
                     <motion.div
-                      className="bg-white h-2.5 rounded-full"
+                      className="surface h-2.5 rounded-full"
                       initial={{ width: 0 }}
                       animate={{ width: `${completionPercentage}%` }}
                       transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
@@ -849,11 +849,11 @@ const ProfilePage = () => {
 
                 {/* Name + username */}
                 <div className="z-10 mb-8 w-full">
-                  <h2 className="text-3xl font-bold font-space-grotesk text-slate-900 mb-1">
+                  <h2 className="text-3xl font-bold font-space-grotesk text-app mb-1">
                     {displayName}
                   </h2>
                   {profile?.username && (
-                    <p className="text-sm font-medium text-slate-500 flex items-center justify-center gap-1">
+                    <p className="text-sm font-medium text-app-muted flex items-center justify-center gap-1">
                       <AtSign size={14} /> {profile.username}
                     </p>
                   )}
@@ -881,10 +881,10 @@ const ProfilePage = () => {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-100">
                   <div>
-                    <h3 className="text-sm font-bold font-space-grotesk text-slate-900 flex items-center gap-1.5">
+                    <h3 className="text-sm font-bold font-space-grotesk text-app flex items-center gap-1.5">
                       🏆 Achievements
                     </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">Your earned badges</p>
+                    <p className="text-xs text-app-muted mt-0.5">Your earned badges</p>
                   </div>
                   {recentBadges.length > 0 && (
                     <Link
@@ -902,7 +902,7 @@ const ProfilePage = () => {
                     {recentBadges.map((badge) => (
                       <div
                         key={badge.id}
-                        className="w-10 h-10 rounded-xl bg-slate-50 border-2 border-white shadow flex items-center justify-center overflow-hidden hover:scale-110 transition-transform cursor-pointer flex-shrink-0"
+                        className="w-10 h-10 rounded-xl surface-subtle border-2 border-white shadow flex items-center justify-center overflow-hidden hover:scale-110 transition-transform cursor-pointer flex-shrink-0"
                         title={badge.name}
                       >
                         {badge.image_url ? (
@@ -924,8 +924,8 @@ const ProfilePage = () => {
                 ) : (
                   <div className="flex flex-col items-center text-center py-3">
                     <span className="text-3xl mb-2">🏅</span>
-                    <p className="text-sm font-semibold text-slate-700 mb-1">No badges claimed yet</p>
-                    <p className="text-[11px] text-slate-400 mb-3">Complete quizzes and claim your first badge.</p>
+                    <p className="text-sm font-semibold text-app-2 mb-1">No badges claimed yet</p>
+                    <p className="text-[11px] text-app-muted mb-3">Complete quizzes and claim your first badge.</p>
                     <Link
                       to="/achievements"
                       className="text-xs font-semibold text-violet-600 hover:text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-100 rounded-lg px-3 py-1.5 transition-colors"
@@ -952,10 +952,10 @@ const ProfilePage = () => {
                     <User className="text-violet-600" size={20} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold font-space-grotesk text-slate-900">
+                    <h3 className="text-lg font-bold font-space-grotesk text-app">
                       Personal Information
                     </h3>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-app-muted">
                       Your essential details
                     </p>
                   </div>
@@ -963,16 +963,16 @@ const ProfilePage = () => {
 
                 <div className="flex flex-col gap-4">
                   {/* Info Row: Full Name */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 px-4 rounded-xl bg-slate-50/50 border border-slate-100 hover:bg-white hover:shadow-sm transition-all duration-300">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 px-4 rounded-xl surface-subtle border border-app hover:bg-[var(--bg-surface)] hover:shadow-sm transition-all duration-300">
                     <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                      <div className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
-                        <User size={16} className="text-slate-400" />
+                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
+                        <User size={16} className="text-app-muted" />
                       </div>
                       <div>
-                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">
+                        <p className="text-[11px] font-semibold text-app-muted uppercase tracking-wider mb-0.5">
                           Full Name
                         </p>
-                        <p className="text-base font-semibold text-slate-900">
+                        <p className="text-base font-semibold text-app">
                           {profile?.full_name || "Not set"}
                         </p>
                       </div>
@@ -980,16 +980,16 @@ const ProfilePage = () => {
                   </div>
 
                   {/* Info Row: Username */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 px-4 rounded-xl bg-slate-50/50 border border-slate-100 hover:bg-white hover:shadow-sm transition-all duration-300">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 px-4 rounded-xl surface-subtle border border-app hover:bg-[var(--bg-surface)] hover:shadow-sm transition-all duration-300">
                     <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                      <div className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
-                        <AtSign size={16} className="text-slate-400" />
+                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
+                        <AtSign size={16} className="text-app-muted" />
                       </div>
                       <div>
-                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">
+                        <p className="text-[11px] font-semibold text-app-muted uppercase tracking-wider mb-0.5">
                           Username
                         </p>
-                        <p className="text-base font-semibold text-slate-900">
+                        <p className="text-base font-semibold text-app">
                           {profile?.username || "Not set"}
                         </p>
                       </div>
@@ -997,16 +997,16 @@ const ProfilePage = () => {
                   </div>
 
                   {/* Info Row: Email */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 px-4 rounded-xl bg-slate-50/50 border border-slate-100 hover:bg-white hover:shadow-sm transition-all duration-300">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 px-4 rounded-xl surface-subtle border border-app hover:bg-[var(--bg-surface)] hover:shadow-sm transition-all duration-300">
                     <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                      <div className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
-                        <Mail size={16} className="text-slate-400" />
+                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
+                        <Mail size={16} className="text-app-muted" />
                       </div>
                       <div>
-                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">
+                        <p className="text-[11px] font-semibold text-app-muted uppercase tracking-wider mb-0.5">
                           Email Address
                         </p>
-                        <p className="text-base font-semibold text-slate-900">
+                        <p className="text-base font-semibold text-app">
                           {profile?.email || "Not set"}
                         </p>
                       </div>
@@ -1014,16 +1014,16 @@ const ProfilePage = () => {
                   </div>
 
                   {/* Info Row: Bio */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 px-4 rounded-xl bg-slate-50/50 border border-slate-100 hover:bg-white hover:shadow-sm transition-all duration-300">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 px-4 rounded-xl surface-subtle border border-app hover:bg-[var(--bg-surface)] hover:shadow-sm transition-all duration-300">
                     <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                      <div className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
-                        <FileText size={16} className="text-slate-400" />
+                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
+                        <FileText size={16} className="text-app-muted" />
                       </div>
                       <div>
-                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">
+                        <p className="text-[11px] font-semibold text-app-muted uppercase tracking-wider mb-0.5">
                           Bio
                         </p>
-                        <p className="text-base font-semibold text-slate-900">
+                        <p className="text-base font-semibold text-app">
                           {profile?.bio || "No bio added yet"}
                         </p>
                       </div>
@@ -1045,10 +1045,10 @@ const ProfilePage = () => {
                       <GraduationCap className="text-emerald-600" size={20} />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold font-space-grotesk text-slate-900">
+                      <h3 className="text-lg font-bold font-space-grotesk text-app">
                         Educational Details
                       </h3>
-                      <p className="text-sm text-slate-500">
+                      <p className="text-sm text-app-muted">
                         Your academic background
                       </p>
                     </div>
@@ -1057,16 +1057,16 @@ const ProfilePage = () => {
 
                 <div className="flex flex-col gap-4">
                   {/* Info Row: School */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 px-4 rounded-xl bg-slate-50/50 border border-slate-100 hover:bg-white hover:shadow-sm transition-all duration-300">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 px-4 rounded-xl surface-subtle border border-app hover:bg-[var(--bg-surface)] hover:shadow-sm transition-all duration-300">
                     <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                      <div className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
-                        <GraduationCap size={16} className="text-slate-400" />
+                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
+                        <GraduationCap size={16} className="text-app-muted" />
                       </div>
                       <div>
-                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">
+                        <p className="text-[11px] font-semibold text-app-muted uppercase tracking-wider mb-0.5">
                           Institution / School
                         </p>
-                        <p className="text-base font-semibold text-slate-900">
+                        <p className="text-base font-semibold text-app">
                           {profile?.school || "Not set"}
                         </p>
                       </div>
@@ -1075,29 +1075,29 @@ const ProfilePage = () => {
 
                   {/* Info Row: Class & Subject (Grid) */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-3 py-3 px-4 rounded-xl bg-slate-50/50 border border-slate-100 hover:bg-white hover:shadow-sm transition-all duration-300">
-                      <div className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
-                        <Target size={16} className="text-slate-400" />
+                    <div className="flex items-center gap-3 py-3 px-4 rounded-xl surface-subtle border border-app hover:bg-[var(--bg-surface)] hover:shadow-sm transition-all duration-300">
+                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
+                        <Target size={16} className="text-app-muted" />
                       </div>
                       <div>
-                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">
+                        <p className="text-[11px] font-semibold text-app-muted uppercase tracking-wider mb-0.5">
                           Class / Year
                         </p>
-                        <p className="text-base font-semibold text-slate-900">
+                        <p className="text-base font-semibold text-app">
                           {profile?.grade || "Not set"}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 py-3 px-4 rounded-xl bg-slate-50/50 border border-slate-100 hover:bg-white hover:shadow-sm transition-all duration-300">
-                      <div className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
-                        <Book size={16} className="text-slate-400" />
+                    <div className="flex items-center gap-3 py-3 px-4 rounded-xl surface-subtle border border-app hover:bg-[var(--bg-surface)] hover:shadow-sm transition-all duration-300">
+                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
+                        <Book size={16} className="text-app-muted" />
                       </div>
                       <div>
-                        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">
+                        <p className="text-[11px] font-semibold text-app-muted uppercase tracking-wider mb-0.5">
                           Subject Interests
                         </p>
-                        <p className="text-base font-semibold text-slate-900 mt-1">
+                        <p className="text-base font-semibold text-app mt-1">
                           {subjectList.length > 0 ? subjectList.join(", ") : "No subjects selected"}
                         </p>
                       </div>
@@ -1120,10 +1120,10 @@ const ProfilePage = () => {
                     <Shield className="text-amber-600" size={20} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold font-space-grotesk text-slate-900">
+                    <h3 className="text-lg font-bold font-space-grotesk text-app">
                       Security & Access
                     </h3>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-app-muted">
                       Manage your password and session
                     </p>
                   </div>

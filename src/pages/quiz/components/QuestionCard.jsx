@@ -15,7 +15,7 @@ const QuestionCard = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-200">
+      <div className="surface rounded-3xl p-6 md:p-8 shadow-sm border border-app">
         <div className="flex justify-between items-start mb-6">
           <div className="animate-pulse bg-slate-200 h-6 w-32 rounded"></div>
           <div className="animate-pulse bg-slate-200 h-8 w-8 rounded-full"></div>
@@ -23,7 +23,7 @@ const QuestionCard = ({
         <div className="animate-pulse bg-slate-200 h-24 w-full rounded-xl mb-8"></div>
         <div className="space-y-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="animate-pulse bg-slate-100 h-16 w-full rounded-2xl"></div>
+            <div key={i} className="animate-pulse surface-elev h-16 w-full rounded-2xl"></div>
           ))}
         </div>
       </div>
@@ -42,7 +42,7 @@ const QuestionCard = ({
 
     if (!isCoding) {
       return (
-        <p className="text-slate-900 text-lg leading-relaxed font-medium">
+        <p className="text-app text-lg leading-relaxed font-medium">
           {rawText}
         </p>
       );
@@ -60,7 +60,7 @@ const QuestionCard = ({
       return (
         <div className="flex flex-col gap-4">
           {description && (
-            <p className="text-slate-900 text-lg leading-relaxed font-medium whitespace-pre-wrap">
+            <p className="text-app text-lg leading-relaxed font-medium whitespace-pre-wrap">
               {description}
             </p>
           )}
@@ -74,19 +74,19 @@ const QuestionCard = ({
     }
 
     return (
-      <p className="text-slate-900 text-lg leading-relaxed font-medium whitespace-pre-wrap">
+      <p className="text-app text-lg leading-relaxed font-medium whitespace-pre-wrap">
         {rawText}
       </p>
     );
   };
 
   return (
-    <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm border border-slate-200 relative overflow-hidden">
+    <div className="surface rounded-3xl p-6 md:p-10 shadow-sm border border-app relative overflow-hidden">
       {/* Top action bar */}
       <div className="flex items-start justify-between mb-6 pb-4 border-b border-slate-100">
         <div className="flex items-center gap-4">
           <h2
-            className="text-lg md:text-xl font-bold text-slate-800"
+            className="text-lg md:text-xl font-bold text-app"
             tabIndex={-1}
             id="question-heading"
           >
@@ -103,7 +103,7 @@ const QuestionCard = ({
             {selectedOptionId && (
               <button
                 onClick={onClearAnswer}
-                className="text-xs font-medium text-slate-500 hover:text-red-600 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                className="text-xs font-medium text-app-muted hover:text-red-600 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
                 title="Clear Answer"
               >
                 <XCircle size={14} />
@@ -114,7 +114,7 @@ const QuestionCard = ({
               onClick={onToggleReview}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-xs font-medium ${isMarkedForReview
                 ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
-                : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                : "text-app-muted hover:bg-[var(--bg-elevated)] hover:text-app"
                 }`}
               title={isMarkedForReview ? "Unmark for Review" : "Mark for Review"}
             >
@@ -142,7 +142,7 @@ const QuestionCard = ({
       {/* Options */}
       <div className="space-y-3">
         {!question.options || question.options.length === 0 ? (
-          <div className="p-6 rounded-2xl border-2 border-dashed border-slate-200 text-center text-slate-500 font-medium">
+          <div className="p-6 rounded-2xl border-2 border-dashed border-app text-center text-app-muted font-medium">
             Waiting for options from the backend...
           </div>
         ) : (
@@ -171,9 +171,9 @@ const QuestionCard = ({
                 indicatorClasses = "border-red-500";
                 indicatorInnerClasses = "bg-red-500";
               } else {
-                containerClasses = "border-slate-100 bg-white opacity-60";
-                circleClasses = "border-slate-200 text-slate-500";
-                textClasses = "text-slate-500";
+                containerClasses = "border-slate-100 surface opacity-60";
+                circleClasses = "border-app text-app-muted";
+                textClasses = "text-app-muted";
                 indicatorClasses = "border-slate-300";
               }
             } else {
@@ -184,9 +184,9 @@ const QuestionCard = ({
                 indicatorClasses = "border-violet-500";
                 indicatorInnerClasses = "bg-violet-500";
               } else {
-                containerClasses = "border-slate-100 bg-white hover:border-violet-200 hover:bg-slate-50";
-                circleClasses = "border-slate-200 text-slate-500";
-                textClasses = "text-slate-700";
+                containerClasses = "border-slate-100 surface hover:border-violet-200 hover:bg-slate-50";
+                circleClasses = "border-app text-app-muted";
+                textClasses = "text-app-2";
                 indicatorClasses = "border-slate-300";
               }
             }

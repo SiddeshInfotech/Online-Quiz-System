@@ -181,10 +181,10 @@ const LibraryPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <h1 className="text-2xl font-bold font-space-grotesk text-slate-900 mb-1">
-            Quiz Library
+          <h1 className="text-2xl font-bold font-space-grotesk text-app mb-1">
+            Library
           </h1>
-          <p className="text-sm text-slate-500 flex items-center gap-1.5">
+          <p className="text-sm text-app-muted flex items-center gap-1.5">
             {metaMessage || `Explore ${allQuizzes.length}+ quizzes across ${categories.length - 1}+ categories`}
             <Sparkles size={14} className="text-amber-400" />
           </p>

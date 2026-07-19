@@ -93,7 +93,7 @@ const OtpVerification = ({ email, onBack }) => {
       initial={{ opacity: 0, y: 25 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45 }}
-      className="relative w-full rounded-3xl border border-slate-200 bg-white p-8 shadow-xl lg:p-10"
+      className="relative w-full rounded-3xl border border-app surface p-8 shadow-xl lg:p-10"
     >
       <div className="absolute right-5 top-5">
 
@@ -104,7 +104,7 @@ const OtpVerification = ({ email, onBack }) => {
         subtitle={
           <>
             We've sent a 6-digit code to <br />
-            <div className="mt-3 inline-flex items-center justify-center rounded-full bg-slate-100 px-4 py-1.5 text-sm font-medium text-slate-900 border border-slate-200 shadow-sm">
+            <div className="mt-3 inline-flex items-center justify-center rounded-full surface-elev px-4 py-1.5 text-sm font-medium text-app border border-app shadow-sm">
               {email}
             </div>
           </>
@@ -140,14 +140,14 @@ const OtpVerification = ({ email, onBack }) => {
       </form>
 
       <div className="mt-8 text-center text-sm">
-        <p className="text-slate-500 mb-2">Didn't receive the code?</p>
+        <p className="text-app-muted mb-2">Didn't receive the code?</p>
         <button
           type="button"
           onClick={handleResend}
           disabled={countdown > 0 || isResending}
           className={`font-semibold transition-colors ${
             countdown > 0 || isResending
-              ? "text-slate-400 cursor-not-allowed"
+              ? "text-app-muted cursor-not-allowed"
               : "text-violet-600 hover:text-violet-700"
           }`}
         >
@@ -166,7 +166,7 @@ const OtpVerification = ({ email, onBack }) => {
       <button
         onClick={onBack}
         type="button"
-        className="mt-6 flex w-full items-center justify-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors"
+        className="mt-6 flex w-full items-center justify-center gap-2 text-sm font-medium text-app-muted hover:text-app-2 transition-colors"
       >
         <ArrowLeft size={16} />
         Back to signup

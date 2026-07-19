@@ -3,23 +3,23 @@ import { motion } from "framer-motion";
 import { BookOpen, AlertTriangle, Hash, Clock, Target, CheckSquare } from "lucide-react";
 
 const InfoRow = ({ icon: Icon, label, value }) => (
-  <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
-    <div className="flex items-center gap-2 text-slate-500">
+  <div className="flex items-center justify-between py-3 border-b border-app last:border-0">
+    <div className="flex items-center gap-2 text-app-muted">
       <Icon size={16} />
       <span className="text-sm font-medium">{label}</span>
     </div>
-    <span className="text-sm font-semibold text-slate-800">{value}</span>
+    <span className="text-sm font-semibold text-app">{value}</span>
   </div>
 );
 
 const QuizInfoCard = ({ result, isLoading }) => {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
-        <div className="animate-pulse bg-slate-200 h-6 w-1/3 rounded mb-6"></div>
+      <div className="surface rounded-3xl p-6 shadow-sm border border-app">
+        <div className="animate-pulse surface-elev h-6 w-1/3 rounded mb-6"></div>
         <div className="space-y-4">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="animate-pulse bg-slate-100 h-6 w-full rounded"></div>
+            <div key={i} className="animate-pulse surface-elev h-6 w-full rounded"></div>
           ))}
         </div>
       </div>
@@ -30,12 +30,12 @@ const QuizInfoCard = ({ result, isLoading }) => {
 
   return (
     <motion.div
-      className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-200"
+      className="surface rounded-3xl p-6 md:p-8 shadow-sm border border-app"
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4, duration: 0.4 }}
     >
-      <h3 className="font-bold text-slate-900 mb-4 font-space-grotesk text-lg">
+      <h3 className="font-bold text-app mb-4 font-space-grotesk text-lg">
         Quiz Details
       </h3>
 

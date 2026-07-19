@@ -13,11 +13,11 @@ const QuestionPalette = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+      <div className="surface rounded-3xl p-6 shadow-sm border border-app">
         <div className="animate-pulse bg-slate-200 h-6 w-32 rounded mb-6"></div>
         <div className="grid grid-cols-5 gap-2">
           {[...Array(15)].map((_, i) => (
-            <div key={i} className="animate-pulse bg-slate-100 h-10 w-10 rounded-xl"></div>
+            <div key={i} className="animate-pulse surface-elev h-10 w-10 rounded-xl"></div>
           ))}
         </div>
       </div>
@@ -35,8 +35,8 @@ const QuestionPalette = ({
   ];
 
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
-      <h3 className="font-bold text-slate-900 mb-6 font-space-grotesk text-lg">
+    <div className="surface rounded-3xl p-6 shadow-sm border border-app">
+      <h3 className="font-bold text-app mb-6 font-space-grotesk text-lg">
         Question Palette
       </h3>
 
@@ -47,7 +47,7 @@ const QuestionPalette = ({
           const isMarked = !!markedForReview[i];
 
           // Determine button style based on states
-          let btnClass = "border-2 border-slate-200 bg-white text-slate-600 hover:border-slate-300";
+          let btnClass = "border-2 border-app surface text-app-2 hover:border-app";
           let showMarked = false;
           
           if (reviewMode) {
@@ -82,7 +82,7 @@ const QuestionPalette = ({
             >
               {i + 1}
               {showMarked && (
-                <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+                <div className="absolute -top-1 -right-1 surface rounded-full p-0.5 shadow-sm">
                   <Bookmark size={10} className="text-amber-500 fill-amber-500" />
                 </div>
               )}

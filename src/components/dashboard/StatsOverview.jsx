@@ -13,18 +13,18 @@ const StatsOverview = ({ user }) => {
       <Card hover className="p-6 flex flex-col justify-between">
         <div className="flex items-center gap-2 mb-4">
           <Flame className="text-orange-500 fill-orange-500" size={20} />
-          <h3 className="font-semibold text-slate-700 text-sm">Daily Streak</h3>
+          <h3 className="font-semibold text-app-2 text-sm">Daily Streak</h3>
         </div>
         
         <div className="mb-6">
           <div className="flex items-baseline gap-1">
-            <span className="text-4xl font-bold font-space-grotesk text-slate-900">{streak}</span>
-            <span className="text-slate-500 text-sm">days</span>
+            <span className="text-4xl font-bold font-space-grotesk text-app">{streak}</span>
+            <span className="text-app-muted text-sm">days</span>
           </div>
           {streak === 0 ? (
-            <p className="text-xs text-slate-400 mt-1">Start a quiz to begin your streak!</p>
+            <p className="text-xs text-app-muted mt-1">Start a quiz to begin your streak!</p>
           ) : (
-            <p className="text-xs text-slate-400 mt-1">Best: {user.maxStreak} days</p>
+            <p className="text-xs text-app-muted mt-1">Best: {user.maxStreak} days</p>
           )}
         </div>
 
@@ -33,10 +33,10 @@ const StatsOverview = ({ user }) => {
             <div key={idx} className="flex flex-col items-center gap-1.5">
               <div 
                 className={`w-3 h-3 rounded-full ${
-                  activeDays[idx] ? "bg-violet-600 shadow-sm shadow-violet-600/30" : "bg-slate-200"
+                  activeDays[idx] ? "bg-violet-600 shadow-sm shadow-violet-600/30" : "bg-[var(--bg-elevated)]"
                 }`} 
               />
-              <span className="text-[10px] font-medium text-slate-400">{day}</span>
+              <span className="text-[10px] font-medium text-app-muted">{day}</span>
             </div>
           ))}
         </div>
@@ -44,7 +44,7 @@ const StatsOverview = ({ user }) => {
 
       {/* Overall Progress Card */}
       <Card hover className="p-6 flex flex-col justify-between items-center text-center">
-        <h3 className="font-semibold text-slate-700 text-sm self-start mb-4">Overall Progress</h3>
+        <h3 className="font-semibold text-app-2 text-sm self-start mb-4">Overall Progress</h3>
         
         {/* Simple SVG Circular Progress */}
         <div className="relative w-28 h-28 flex items-center justify-center my-auto">
@@ -54,7 +54,7 @@ const StatsOverview = ({ user }) => {
               cy="50"
               r="40"
               fill="transparent"
-              stroke="#F1F5F9"
+              stroke="var(--border)"
               strokeWidth="8"
             />
             <circle
@@ -71,17 +71,17 @@ const StatsOverview = ({ user }) => {
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-2xl font-bold font-space-grotesk text-slate-900">{user.progress || 0}%</span>
-            <span className="text-[10px] text-slate-500 font-medium">Completed</span>
+            <span className="text-2xl font-bold font-space-grotesk text-app">{user.progress || 0}%</span>
+            <span className="text-[10px] text-app-muted font-medium">Completed</span>
           </div>
         </div>
 
         {user.completedQuizzes === 0 ? (
-          <p className="text-xs text-slate-400 font-medium mt-4 self-start">
+          <p className="text-xs text-app-muted font-medium mt-4 self-start">
             No quizzes completed yet
           </p>
         ) : (
-          <p className="text-xs text-slate-500 font-medium mt-4 self-start">
+          <p className="text-xs text-app-muted font-medium mt-4 self-start">
             {user.completedQuizzes} of {user.totalQuizzes} quizzes
           </p>
         )}

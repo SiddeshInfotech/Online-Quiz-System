@@ -14,7 +14,7 @@ const getIconConfig = (type) => {
     case "history":
       return { icon: Landmark, bg: "bg-amber-50", color: "text-amber-600" };
     default:
-      return { icon: Beaker, bg: "bg-slate-50", color: "text-slate-600" };
+      return { icon: Beaker, bg: "surface-subtle", color: "text-app-muted" };
   }
 };
 
@@ -28,7 +28,7 @@ const RecentAttempts = ({ attempts, isLoading }) => {
   return (
     <Card className="p-6 flex flex-col h-full">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="font-semibold text-slate-700 text-sm">Recent Quiz Attempts</h3>
+        <h3 className="font-semibold text-app-2 text-sm">Recent Quiz Attempts</h3>
         <Link to="/attempts" className="text-xs font-semibold text-violet-600 hover:text-violet-700">
           View All
         </Link>
@@ -58,14 +58,14 @@ const RecentAttempts = ({ attempts, isLoading }) => {
             const { icon: Icon, bg, color } = getIconConfig(attempt.iconType);
 
             return (
-              <div key={attempt.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 transition-all duration-300 border border-transparent hover:border-slate-100 group cursor-pointer hover:shadow-sm">
+              <div key={attempt.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-[var(--bg-elevated)] transition-all duration-300 border border-transparent hover:border-app group cursor-pointer hover:shadow-sm">
                 <div className="flex items-center gap-4">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${bg} ${color} group-hover:scale-110 transition-transform duration-300`}>
                     <Icon size={20} />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-sm text-slate-900 group-hover:text-violet-700 transition-colors">{attempt.title}</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">{attempt.subject} • {attempt.classLevel}</p>
+                    <h4 className="font-semibold text-sm text-app group-hover:text-violet-700 transition-colors">{attempt.title}</h4>
+                    <p className="text-xs text-app-muted mt-0.5">{attempt.subject} • {attempt.classLevel}</p>
                   </div>
                 </div>
 
@@ -73,7 +73,7 @@ const RecentAttempts = ({ attempts, isLoading }) => {
                   <span className={`block font-bold text-sm font-space-grotesk ${getScoreColor(attempt.score)}`}>
                     {attempt.score}%
                   </span>
-                  <span className="text-[10px] text-slate-400 font-medium">{attempt.date}</span>
+                  <span className="text-[10px] text-app-muted font-medium">{attempt.date}</span>
                 </div>
               </div>
             );
@@ -82,15 +82,15 @@ const RecentAttempts = ({ attempts, isLoading }) => {
       ) : (
         /* Empty State */
         <div className="flex flex-col items-center justify-center flex-1 gap-3 py-8 group">
-          <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-dashed border-slate-200 flex items-center justify-center text-slate-400 group-hover:bg-violet-50 group-hover:text-violet-500 group-hover:border-violet-200 transition-colors duration-300">
+          <div className="w-16 h-16 rounded-2xl surface-subtle border border-dashed border-app flex items-center justify-center text-app-muted group-hover:bg-violet-50 group-hover:text-violet-500 group-hover:border-violet-200 transition-colors duration-300">
             <ClipboardList size={28} className="group-hover:scale-110 transition-transform duration-300" />
           </div>
           <div className="text-center">
-            <p className="text-sm font-semibold text-slate-600 group-hover:text-violet-700 transition-colors">No quiz attempts yet.</p>
-            <p className="text-xs text-slate-400 mt-1 max-w-[200px] leading-relaxed">Take your first quiz to see your detailed results here!</p>
+            <p className="text-sm font-semibold text-app-2 group-hover:text-violet-700 transition-colors">No quiz attempts yet.</p>
+            <p className="text-xs text-app-muted mt-1 max-w-[200px] leading-relaxed">Take your first quiz to see your detailed results here!</p>
           </div>
           <Link to="/library" className="mt-2">
-            <Button variant="outline" size="sm" className="text-xs font-semibold bg-white hover:border-violet-300 hover:text-violet-700 transition-colors">
+            <Button variant="outline" size="sm" className="text-xs font-semibold surface hover:border-violet-300 hover:text-violet-700 transition-colors">
               Explore Quizzes
             </Button>
           </Link>

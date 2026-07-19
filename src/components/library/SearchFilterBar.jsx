@@ -8,8 +8,8 @@ const SelectDropdown = ({ value, options, onChange, label }) => (
       aria-label={label}
       className="
         appearance-none h-11 w-full min-w-[140px] rounded-xl
-        border border-slate-200 bg-white pl-4 pr-10
-        text-sm font-medium text-slate-700
+        border border-app surface pl-4 pr-10
+        text-sm font-medium text-app-2
         outline-none transition-all duration-200
         focus:border-violet-400 focus:ring-4 focus:ring-violet-100
         hover:border-slate-300 cursor-pointer
@@ -43,7 +43,7 @@ const SearchFilterBar = ({
   statusOptions,
 }) => {
   return (
-    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 rounded-2xl bg-white border border-slate-200 p-3 shadow-sm">
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 rounded-2xl surface border border-app p-3 shadow-sm">
       {/* Search Input */}
       <div className="relative flex-1 min-w-0">
         <Search
@@ -57,8 +57,8 @@ const SearchFilterBar = ({
           placeholder="Search quizzes..."
           aria-label="Search quizzes"
           className="
-            h-11 w-full rounded-xl border border-slate-200 bg-slate-50
-            pl-10 pr-4 text-sm text-slate-700
+            h-11 w-full rounded-xl border border-app surface-subtle
+            pl-10 pr-4 text-sm text-app-2
             outline-none transition-all duration-200
             placeholder:text-slate-400
             focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-100
@@ -92,8 +92,8 @@ const SearchFilterBar = ({
           onClick={onReset}
           className="
             inline-flex items-center gap-2 h-11 px-4
-            rounded-xl border border-slate-200 bg-white
-            text-sm font-medium text-slate-500
+            rounded-xl border border-app surface
+            text-sm font-medium text-app-muted
             hover:text-violet-600 hover:border-violet-300
             transition-all duration-200
             focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2

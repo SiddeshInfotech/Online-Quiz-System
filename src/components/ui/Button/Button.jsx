@@ -17,7 +17,7 @@ const variants = {
 
   // On-gradient CTA button (used on colored panels)
   cta:
-    "bg-white text-violet-600 shadow-lg hover:bg-slate-100 hover:shadow-xl dark:bg-[#0A0A0F] dark:text-[#F5C451] dark:hover:bg-[#16161F]",
+    "bg-white text-violet-600 shadow-lg hover:bg-slate-100 hover:shadow-xl dark:bg-[#222838] dark:text-white dark:hover:bg-[#32384A]",
 };
 
 const sizes = {

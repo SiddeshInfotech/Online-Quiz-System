@@ -30,6 +30,7 @@ const PROGRAMMING_SUBJECTS = [
 
 const DIFFICULTY_OPTIONS = ["Easy", "Medium", "Hard"];
 const QUIZ_MODE_OPTIONS = ["Theory", "Coding"];
+const NUM_QUESTIONS_OPTIONS = [5, 10, 15, 20, 25];
 
 const DIFFICULTY_META = {
   Easy: { desc: "Foundational", color: "text-emerald-600" },
@@ -45,7 +46,7 @@ const MODE_META = {
 // ─── Field Label ──────────────────────────────────────────────────────────────
 
 const FieldLabel = ({ label }) => (
-  <label className="block text-sm font-semibold text-slate-700 mb-2.5">
+  <label className="block text-sm font-semibold text-app-2 mb-2.5">
     {label}
   </label>
 );
@@ -114,20 +115,20 @@ const SubjectDropdown = ({ value, onChange, hasError }) => {
         }}
         className={`
           w-full flex items-center justify-between px-4 py-3 rounded-xl border text-sm font-medium
-          bg-white transition-all duration-200 text-left
+          surface transition-all duration-200 text-left
           focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500
           hover:border-violet-300 active:scale-[0.995]
           ${hasError
             ? "border-red-300 bg-red-50/20 focus:border-red-400 focus:ring-red-400/20"
-            : "border-slate-200"
+            : "border-app"
           }
         `}
       >
-        <span className={value ? "text-slate-800" : "text-slate-400"}>
+        <span className={value ? "text-app" : "text-app-muted"}>
           {value || "Select a subject…"}
         </span>
         <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
-          <ChevronDown size={16} className="text-slate-400" />
+          <ChevronDown size={16} className="text-app-muted" />
         </motion.span>
       </button>
 
@@ -140,22 +141,22 @@ const SubjectDropdown = ({ value, onChange, hasError }) => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.18 }}
-            className="absolute z-30 mt-1.5 w-full bg-white border border-slate-200 rounded-2xl shadow-xl shadow-slate-200/60 overflow-hidden"
+            className="absolute z-30 mt-1.5 w-full surface border border-app rounded-2xl shadow-xl shadow-slate-200/60 overflow-hidden"
           >
             {/* Search input */}
-            <div className="p-2 border-b border-slate-100 sticky top-0 bg-white">
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 border border-slate-100">
-                <Search size={13} className="text-slate-400 flex-shrink-0" />
+            <div className="p-2 border-b border-slate-100 sticky top-0 surface">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg surface-subtle border border-slate-100">
+                <Search size={13} className="text-app-muted flex-shrink-0" />
                 <input
                   ref={inputRef}
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search subjects…"
-                  className="flex-1 text-sm bg-transparent focus:outline-none text-slate-700 placeholder:text-slate-400"
+                  className="flex-1 text-sm bg-transparent focus:outline-none text-app-2 placeholder:text-app-muted"
                 />
                 {query && (
-                  <button type="button" onClick={() => setQuery("")} className="text-slate-300 hover:text-slate-500 transition-colors">
+                  <button type="button" onClick={() => setQuery("")} className="text-app-muted hover:text-app-2 transition-colors">
                     <X size={12} />
                   </button>
                 )}
@@ -165,7 +166,7 @@ const SubjectDropdown = ({ value, onChange, hasError }) => {
             {/* Options list */}
             <ul className="max-h-52 overflow-y-auto py-1.5">
               {filtered.length === 0 ? (
-                <li className="px-4 py-3 text-sm text-slate-400 text-center">No subjects found</li>
+                <li className="px-4 py-3 text-sm text-app-muted text-center">No subjects found</li>
               ) : (
                 filtered.map((s) => (
                   <li key={s}>
@@ -176,7 +177,7 @@ const SubjectDropdown = ({ value, onChange, hasError }) => {
                         w-full text-left px-4 py-2.5 text-sm transition-colors duration-150
                         ${s === value
                           ? "bg-violet-600 text-white font-semibold"
-                          : "text-slate-700 hover:bg-violet-50 hover:text-violet-700"
+                          : "text-app-2 hover:bg-violet-50 hover:text-violet-700"
                         }
                       `}
                     >
@@ -197,7 +198,7 @@ const SubjectDropdown = ({ value, onChange, hasError }) => {
 
 const PillSelector = ({ options, value, onChange, metaMap, hasError, fullWidth = false }) => (
   <div
-    className={`flex gap-2.5 p-3 rounded-xl border transition-all duration-200 ${hasError ? "border-red-300 bg-red-50/20" : "border-slate-200 bg-slate-50/50"
+    className={`flex gap-2.5 p-3 rounded-xl border transition-all duration-200 ${hasError ? "border-red-300 bg-red-50/20" : "border-app bg-slate-50/50"}
       } ${fullWidth ? "flex-col sm:flex-row" : ""}`}
   >
     {options.map((opt) => {
@@ -213,11 +214,11 @@ const PillSelector = ({ options, value, onChange, metaMap, hasError, fullWidth =
           className={`
             flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-sm font-semibold border
             transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-violet-400/30
-            ${isDisabled ? "opacity-60 cursor-not-allowed bg-slate-50 text-slate-500 border-slate-200" : "active:scale-95"}
+            ${isDisabled ? "opacity-60 cursor-not-allowed surface-subtle text-app-muted border-app" : "active:scale-95"}
             ${!isDisabled && isSelected
               ? "bg-violet-600 text-white border-violet-600 shadow-lg shadow-violet-600/30 scale-[1.02]"
               : !isDisabled
-              ? "bg-white text-slate-600 border-slate-200 hover:border-violet-300 hover:text-violet-700 hover:bg-violet-50 hover:shadow-sm"
+              ? "surface text-app-2 border-app hover:border-violet-300 hover:text-violet-700 hover:bg-[var(--accent-soft)] hover:shadow-sm"
               : ""
             }
           `}
@@ -225,7 +226,7 @@ const PillSelector = ({ options, value, onChange, metaMap, hasError, fullWidth =
           {meta?.emoji && <span className="text-base leading-none">{meta.emoji}</span>}
           <span>{opt}</span>
           {meta?.badge && (
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider ${isSelected ? 'bg-violet-500 text-white' : 'bg-slate-200 text-slate-600'}`}>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider ${isSelected ? 'bg-violet-500 text-white' : 'surface-elev text-app-2'}`}>
               {meta.badge}
             </span>
           )}
@@ -243,7 +244,7 @@ const GeneratingOverlay = () => (
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
     exit={{ opacity: 0 }}
-    className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm rounded-3xl"
+    className="absolute inset-0 z-20 flex flex-col items-center justify-center backdrop-blur-sm rounded-3xl" style={{ backgroundColor: 'color-mix(in srgb, var(--bg-surface) 80%, transparent)' }}
   >
     <motion.div
       animate={{ rotate: 360 }}
@@ -254,8 +255,8 @@ const GeneratingOverlay = () => (
         <Sparkles size={26} className="text-white" />
       </div>
     </motion.div>
-    <p className="text-base font-bold font-space-grotesk text-slate-800 mb-1">Generating with AI…</p>
-    <p className="text-xs text-slate-500">Crafting your personalized quiz</p>
+    <p className="text-base font-bold font-space-grotesk text-app mb-1">Generating with AI…</p>
+    <p className="text-xs text-app-muted">Crafting your personalized quiz</p>
 
     {/* Animated dots */}
     <div className="flex gap-1.5 mt-4">
@@ -301,11 +302,6 @@ const GenerateQuizPage = () => {
     if (!form.quizMode) e.quizMode = "Please select a quiz mode.";
     if (!form.numQuestions) {
       e.numQuestions = "Please enter the number of questions.";
-    } else {
-      const num = parseInt(form.numQuestions, 10);
-      if (isNaN(num) || num < 1 || num > 25) {
-        e.numQuestions = "Must be between 1 and 25.";
-      }
     }
     return e;
   };
@@ -397,10 +393,10 @@ const GenerateQuizPage = () => {
             </div>
           </div>
           <div>
-            <h1 className="text-3xl font-bold font-space-grotesk text-slate-900 leading-tight">
+            <h1 className="text-3xl font-bold font-space-grotesk text-app leading-tight">
               Generate AI Quiz
             </h1>
-            <p className="text-sm text-slate-500 mt-0.5">
+            <p className="text-sm text-app-muted mt-0.5">
               Create personalized quizzes in seconds using AI.
             </p>
           </div>
@@ -468,7 +464,7 @@ const GenerateQuizPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.05 }}
         >
-          <Card className="p-0 overflow-hidden border border-slate-200 shadow-sm relative">
+          <Card className="p-0 overflow-hidden border border-app shadow-sm relative">
 
             {/* Generating overlay */}
             <AnimatePresence>
@@ -524,26 +520,13 @@ const GenerateQuizPage = () => {
 
                 {/* ── Number of Questions ── */}
                 <motion.div variants={itemVariants}>
-                  <FieldLabel icon={Hash} label="Number of Questions (1-25)" required />
-                  <input
-                    type="number"
-                    min="1"
-                    max="25"
+                  <FieldLabel icon={Hash} label="Number of Questions" required />
+                  <PillSelector
+                    options={NUM_QUESTIONS_OPTIONS}
                     value={form.numQuestions}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setField("numQuestions", val ? parseInt(val, 10) : "");
-                    }}
-                    placeholder="Enter a number (1-25)"
-                    className={`
-                      w-full px-4 py-3 rounded-xl border text-sm font-medium transition-all duration-200
-                      focus:outline-none focus:ring-2
-                      ${
-                        errors.numQuestions
-                          ? "border-red-300 bg-red-50/20 text-red-900 focus:border-red-400 focus:ring-red-400/20 placeholder:text-red-300"
-                          : "border-slate-200 bg-white text-slate-800 focus:border-violet-500 focus:ring-violet-500/20 hover:border-violet-300 placeholder:text-slate-400"
-                      }
-                    `}
+                    onChange={(v) => setField("numQuestions", v)}
+                    hasError={!!errors.numQuestions}
+                    fullWidth
                   />
                   <ErrorMsg msg={errors.numQuestions} />
                 </motion.div>
@@ -559,8 +542,8 @@ const GenerateQuizPage = () => {
                       onChange={(e) => setField("prompt", e.target.value)}
                       placeholder="e.g. 'Focus on recursion and tree traversal' or paste a code snippet…"
                       className="
-                        w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-700
-                        bg-white placeholder:text-slate-400 resize-none
+                        w-full px-4 py-3 rounded-xl border border-app text-sm text-app-2
+                        surface placeholder:text-app-muted resize-none
                         transition-all duration-200
                         focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500
                         hover:border-violet-300

@@ -5,14 +5,14 @@ const WelcomeBanner = ({ user, isNewUser }) => {
   return (
     <Card className="relative overflow-hidden bg-violet-50 border-violet-100 p-8 h-full flex flex-col justify-center">
       <div className="relative z-10 max-w-md">
-        <p className="text-sm font-medium text-slate-500 mb-2">
+        <p className="text-sm font-medium text-app-muted mb-2">
           {isNewUser ? "Welcome," : "Welcome back,"}
         </p>
-        <h2 className="text-3xl font-bold font-space-grotesk text-slate-900 mb-4 flex items-center gap-2">
+        <h2 className="text-3xl font-bold font-space-grotesk text-app mb-4 flex items-center gap-2">
           {user?.full_name || user?.username || "Student"}{" "}
           <span className="text-2xl">{isNewUser ? "🎉" : "👋"}</span>
         </h2>
-        <p className="text-slate-600 mb-8 text-sm leading-relaxed">
+        <p className="text-app-2 mb-8 text-sm leading-relaxed">
           {isNewUser
             ? "You're all set! Start your first quiz to begin your learning journey."
             : "Keep learning, stay consistent and achieve your goals!"}
@@ -30,7 +30,7 @@ const WelcomeBanner = ({ user, isNewUser }) => {
           <div className="absolute inset-0 bg-violet-200 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full border-[16px] border-violet-400 shadow-xl flex items-center justify-center">
             <div className="w-16 h-16 rounded-full border-[12px] border-white bg-violet-600 shadow-inner flex items-center justify-center">
-              <div className="w-4 h-4 rounded-full bg-white"></div>
+              <div className="w-4 h-4 rounded-full surface"></div>
             </div>
           </div>
           {/* Decorative star */}

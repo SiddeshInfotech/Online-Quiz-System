@@ -9,9 +9,9 @@ const ResultActions = ({ onRetry, onReview, onBackToLibrary, isLoading }) => {
   if (isLoading) {
     return (
       <div className="flex flex-col sm:flex-row gap-4 mt-8">
-        <div className="animate-pulse bg-slate-200 h-12 flex-1 rounded-xl"></div>
-        <div className="animate-pulse bg-slate-200 h-12 flex-1 rounded-xl"></div>
-        <div className="animate-pulse bg-slate-200 h-12 flex-1 rounded-xl"></div>
+        <div className="animate-pulse surface-elev h-12 flex-1 rounded-xl"></div>
+        <div className="animate-pulse surface-elev h-12 flex-1 rounded-xl"></div>
+        <div className="animate-pulse surface-elev h-12 flex-1 rounded-xl"></div>
       </div>
     );
   }
@@ -24,7 +24,7 @@ const ResultActions = ({ onRetry, onReview, onBackToLibrary, isLoading }) => {
 
   return (
     <motion.div 
-      className="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t border-slate-200"
+      className="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t border-app"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 0.5, duration: 0.4 }}

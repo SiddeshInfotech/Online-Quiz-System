@@ -15,7 +15,7 @@ const PasswordResetSuccess = () => {
       transition={{ duration: 0.45 }}
       className="w-full"
     >
-      <Card className="relative rounded-3xl border border-slate-200 bg-white p-8 shadow-xl lg:p-10">
+      <Card className="relative rounded-3xl border border-app surface p-8 shadow-xl lg:p-10">
         <div className="absolute right-6 top-6">
 
         </div>
@@ -32,11 +32,11 @@ const PasswordResetSuccess = () => {
         </div>
 
         <div className="mt-8 text-center">
-          <h2 className="font-space-grotesk text-3xl font-bold text-slate-900">
+          <h2 className="font-space-grotesk text-3xl font-bold text-app">
             Password Updated!
           </h2>
 
-          <p className="mt-3 text-sm leading-6 text-slate-500">
+          <p className="mt-3 text-sm leading-6 text-app-muted">
             Your password has been reset successfully.
             <br />
             You can now sign in with your new password.

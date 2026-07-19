@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import RecommendedCard from "./RecommendedCard";
 
 const RecommendedSkeleton = () => (
-  <div className="min-w-[260px] md:min-w-[280px] h-[260px] bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col animate-pulse">
+  <div className="min-w-[260px] md:min-w-[280px] h-[260px] surface rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col animate-pulse">
     <div className="w-full h-32 bg-slate-200 rounded-xl mb-4" />
     <div className="h-4 bg-slate-200 rounded w-3/4 mb-2" />
     <div className="h-3 bg-slate-200 rounded w-1/2 mb-4" />
@@ -46,7 +46,7 @@ const RecommendedSection = ({ quizzes, isLoading }) => {
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
           <Sparkles size={18} className="text-violet-600" />
-          <h2 className="text-lg font-bold font-space-grotesk text-slate-900">
+          <h2 className="text-lg font-bold font-space-grotesk text-app">
             Recommended for You
           </h2>
         </div>
@@ -57,7 +57,7 @@ const RecommendedSection = ({ quizzes, isLoading }) => {
           View All
         </Link>
       </div>
-      <p className="text-xs text-slate-500 mb-5">
+      <p className="text-xs text-app-muted mb-5">
         Quizzes picked based on your learning progress and interests
       </p>
 
@@ -89,7 +89,7 @@ const RecommendedSection = ({ quizzes, isLoading }) => {
             onClick={() => scroll("left")}
             className="
               absolute -left-3 top-1/2 -translate-y-1/2 z-10
-              w-9 h-9 rounded-full bg-white border border-slate-200 shadow-lg
+              w-9 h-9 rounded-full surface border border-app shadow-lg
               flex items-center justify-center
               text-slate-600 hover:text-violet-600 hover:border-violet-300
               transition-all duration-200
@@ -108,7 +108,7 @@ const RecommendedSection = ({ quizzes, isLoading }) => {
             onClick={() => scroll("right")}
             className="
               absolute -right-3 top-1/2 -translate-y-1/2 z-10
-              w-9 h-9 rounded-full bg-white border border-slate-200 shadow-lg
+              w-9 h-9 rounded-full surface border border-app shadow-lg
               flex items-center justify-center
               text-slate-600 hover:text-violet-600 hover:border-violet-300
               transition-all duration-200

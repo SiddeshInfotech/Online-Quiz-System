@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import attemptsService from "../../services/attemptsService";
 import Button from "../../components/ui/Button";
@@ -15,11 +15,12 @@ import ExitModal from "./components/ExitModal";
 const QuizAttemptPage = () => {
   const { attemptId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // State
   const [attempt, setAttempt] = useState(null);
   const [questions, setQuestions] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(location.state?.startIndex || 0);
   const [answers, setAnswers] = useState({}); // { question_id: option_id }
   const [markedForReview, setMarkedForReview] = useState({}); // { question_index: boolean }
   
@@ -93,8 +94,9 @@ const QuizAttemptPage = () => {
       }
 
       // Initialize Timer
-      if (data.remaining_time_seconds != null) {
-        setRemainingSeconds(data.remaining_time_seconds);
+      const finalRemainingTime = data.remaining_time_seconds ?? location.state?.remainingTime;
+      if (finalRemainingTime != null) {
+        setRemainingSeconds(finalRemainingTime);
         setIsTimerRunning(true);
       }
 
@@ -291,7 +293,7 @@ const QuizAttemptPage = () => {
   const hasAnsweredAny = Object.keys(answers).length > 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 font-inter pb-20 lg:pb-8">
+    <div className="min-h-screen surface-subtle font-inter pb-20 lg:pb-8">
       {/* Modals */}
       <SubmitModal
         isOpen={showSubmitModal}
@@ -324,8 +326,8 @@ const QuizAttemptPage = () => {
           {/* Autosave Indicator */}
           <div className="h-6 flex items-center justify-end">
              {autosaveStatus === "saving" && (
-                <span className="text-xs font-medium text-slate-500 flex items-center gap-1.5 animate-pulse">
-                  <div className="w-3 h-3 border-2 border-slate-300 border-t-slate-500 rounded-full animate-spin" />
+                <span className="text-xs font-medium text-app-muted flex items-center gap-1.5 animate-pulse">
+                  <div className="w-3 h-3 border-2 border-app border-t-slate-500 rounded-full animate-spin" />
                   Saving...
                 </span>
              )}

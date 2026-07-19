@@ -103,7 +103,7 @@ const QuizReviewPage = () => {
   const currentQuestion = questions[currentIndex];
 
   return (
-    <div className="min-h-screen bg-slate-50 font-inter pb-20 lg:pb-8">
+    <div className="min-h-screen surface-subtle font-inter pb-20 lg:pb-8">
       <QuizHeader
         quizTitle={attempt?.quiz_title || attempt?.title || "Quiz Review"}
         currentQuestionIndex={currentIndex}
@@ -130,7 +130,7 @@ const QuizReviewPage = () => {
           />
 
           {/* Navigation Buttons */}
-          <div className="flex items-center justify-between pt-4 sticky bottom-16 lg:static lg:bottom-auto bg-slate-50 p-4 lg:p-0 z-30 lg:z-auto border-t border-slate-200 lg:border-none shadow-[0_-10px_15px_-3px_rgba(248,250,252,1)] lg:shadow-none">
+          <div className="flex items-center justify-between pt-4 sticky bottom-16 lg:static lg:bottom-auto surface-subtle p-4 lg:p-0 z-30 lg:z-auto border-t border-app lg:border-none shadow-[0_-10px_15px_-3px_rgba(248,250,252,1)] lg:shadow-none">
             <Button
               variant="secondary"
               onClick={handlePrev}

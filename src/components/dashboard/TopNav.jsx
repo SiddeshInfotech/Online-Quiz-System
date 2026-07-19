@@ -1,15 +1,35 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Search, Plus, Bell, LogOut, Settings, User as UserIcon, Sparkles, Menu } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Search, Plus, Bell, LogOut, Settings, User as UserIcon, Sparkles, Menu, Trophy, Calendar, Star, FileText, Target } from "lucide-react";
 import Button from "../ui/Button/Button";
 import Input from "../ui/Input/Input";
 
-const TopNav = ({ user, onMenuToggle }) => {
+const getNotificationIcon = (type) => {
+  switch (String(type).toLowerCase()) {
+    case "trophy":
+      return { icon: Trophy, bg: "bg-amber-100", color: "text-amber-500" };
+    case "calendar":
+      return { icon: Calendar, bg: "bg-violet-100", color: "text-violet-600" };
+    case "star":
+      return { icon: Star, bg: "bg-orange-100", color: "text-orange-500" };
+    case "document":
+      return { icon: FileText, bg: "bg-cyan-100", color: "text-cyan-500" };
+    case "target":
+      return { icon: Target, bg: "bg-purple-100", color: "text-purple-600" };
+    default:
+      return { icon: Star, bg: "surface-elev", color: "text-app-muted" };
+  }
+};
+
+const TopNav = ({ user, notifications = [], onMenuToggle }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const profileRef = useRef(null);
   const notifRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const showGlobalSearch = location.pathname === "/dashboard" || location.pathname === "/library";
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -26,42 +46,47 @@ const TopNav = ({ user, onMenuToggle }) => {
   }, []);
 
   const isAdmin = user?.role === "admin";
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   return (
-    <header className="sticky top-0 z-30 flex h-20 w-full items-center justify-between bg-white/80 px-4 md:px-8 backdrop-blur-md border-b border-slate-200/50">
+    <header className="sticky top-0 z-30 flex h-20 w-full items-center justify-between px-4 md:px-8 backdrop-blur-md border-b border-app" style={{ backgroundColor: "color-mix(in srgb, var(--bg-surface) 80%, transparent)" }}>
       
       <div className="flex items-center flex-1 gap-2 md:gap-4">
         {/* Mobile Menu Toggle */}
         <button 
           onClick={onMenuToggle}
-          className="lg:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors"
+          className="lg:hidden p-2 rounded-xl text-app-muted hover:bg-[var(--bg-elevated)] transition-colors"
         >
           <Menu size={24} />
         </button>
 
         {/* Search Bar */}
-        <div className="w-full max-w-md hidden sm:block">
-          <div className="relative flex items-center">
-            <Search className="absolute left-4 text-slate-400" size={18} />
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const query = e.target.search.value.trim();
-              if (query) navigate(`/library?search=${encodeURIComponent(query)}`);
-            }} className="w-full">
-              <input
-                type="text"
-                name="search"
-                placeholder="Search for quizzes, subjects, topics..."
-                className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm text-slate-800 outline-none transition-all focus:border-violet-300 focus:bg-white focus:ring-4 focus:ring-violet-100"
-              />
-            </form>
-          </div>
-        </div>
-        
-        {/* Mobile Search Icon */}
-        <button className="sm:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors">
-          <Search size={22} />
-        </button>
+        {showGlobalSearch && (
+          <>
+            <div className="w-full max-w-md hidden sm:block">
+              <div className="relative flex items-center">
+                <Search className="absolute left-4 text-slate-400" size={18} />
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const query = e.target.search.value.trim();
+                  if (query) navigate(`/library?search=${encodeURIComponent(query)}`);
+                }} className="w-full">
+                  <input
+                    type="text"
+                    name="search"
+                    placeholder="Search for quizzes, subjects, topics..."
+                    className="h-11 w-full rounded-xl border border-app surface-subtle pl-11 pr-4 text-sm text-app outline-none transition-all focus:border-[var(--accent)] focus:bg-[var(--bg-surface)] focus:ring-4 focus:ring-[var(--accent-soft)] placeholder:text-app-muted"
+                  />
+                </form>
+              </div>
+            </div>
+            
+            {/* Mobile Search Icon */}
+            <button className="sm:hidden p-2 rounded-xl text-app-muted hover:bg-[var(--bg-elevated)] transition-colors">
+              <Search size={22} />
+            </button>
+          </>
+        )}
       </div>
 
       {/* Right Actions */}
@@ -80,41 +105,43 @@ const TopNav = ({ user, onMenuToggle }) => {
 
         <div className="relative" ref={notifRef}>
           <div 
-            className="relative cursor-pointer text-slate-500 hover:text-violet-600 transition-colors p-2 rounded-full hover:bg-violet-50"
+            className="relative cursor-pointer text-app-muted hover:text-violet-600 transition-colors p-2 rounded-full hover:bg-violet-50"
             onClick={() => setShowNotifications(!showNotifications)}
           >
             <Bell size={22} />
-            <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white border-2 border-white">
-              3
-            </span>
+            {unreadCount > 0 && (
+              <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white border-2 border-[var(--bg-surface)]">
+                {unreadCount}
+              </span>
+            )}
           </div>
 
           {/* Notifications Dropdown */}
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-white p-4 shadow-xl border border-slate-100 z-50 origin-top-right animate-in fade-in slide-in-from-top-4 duration-200">
+            <div className="absolute right-0 mt-2 w-80 rounded-2xl surface p-4 shadow-xl border border-app z-50 origin-top-right animate-in fade-in slide-in-from-top-4 duration-200">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="font-semibold text-slate-700">Notifications</h3>
+                <h3 className="font-semibold text-app-2">Notifications</h3>
                 <span className="text-xs text-violet-600 cursor-pointer hover:underline">Mark all as read</span>
               </div>
-              <div className="flex flex-col gap-3">
-                <div className="flex gap-3 p-2 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer">
-                  <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 flex-shrink-0">
-                    <Bell size={14} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-slate-800">You have a new quiz assigned!</p>
-                    <p className="text-[10px] text-slate-400">2 hours ago</p>
-                  </div>
-                </div>
-                <div className="flex gap-3 p-2 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer">
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 flex-shrink-0">
-                    <Plus size={14} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-slate-800">Your score improved by 15%</p>
-                    <p className="text-[10px] text-slate-400">Yesterday</p>
-                  </div>
-                </div>
+              <div className="flex flex-col gap-3 max-h-96 overflow-y-auto no-scrollbar">
+                {notifications.length > 0 ? (
+                  notifications.map((notif) => {
+                    const { icon: Icon, bg, color } = getNotificationIcon(notif.iconType);
+                    return (
+                      <div key={notif.id} className="flex gap-3 p-2 hover:bg-[var(--bg-elevated)] rounded-xl transition-colors cursor-pointer">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${bg} ${color}`}>
+                          <Icon size={14} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-app whitespace-pre-line">{notif.text}</p>
+                          <p className="text-[10px] text-app-muted mt-1">{notif.time}</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-xs text-app-muted text-center py-4">No new notifications</p>
+                )}
               </div>
             </div>
           )}
@@ -129,21 +156,21 @@ const TopNav = ({ user, onMenuToggle }) => {
               e.target.onerror = null;
               e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || user?.username || "User")}&background=6D5EF9&color=fff`;
             }}
-            className="h-10 w-10 rounded-full object-cover ring-2 ring-transparent hover:ring-violet-200 ring-offset-2 ring-offset-white shadow-sm cursor-pointer transition-all hover:scale-105 active:scale-95"
+            className="h-10 w-10 rounded-full object-cover ring-2 ring-transparent hover:ring-violet-200 ring-offset-2 ring-offset-[var(--bg-surface)] shadow-sm cursor-pointer transition-all hover:scale-105 active:scale-95"
           />
 
           {/* Profile Dropdown */}
           {showProfileMenu && (
-            <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white p-2 shadow-xl border border-slate-100 z-50 origin-top-right animate-in fade-in slide-in-from-top-4 duration-200">
-              <div className="px-3 py-2 border-b border-slate-100 mb-2">
-                <p className="text-sm font-semibold text-slate-800">{user?.name || "Student User"}</p>
-                <p className="text-xs text-slate-500">{user?.email || "student@example.com"}</p>
+            <div className="absolute right-0 mt-2 w-56 rounded-2xl surface p-2 shadow-xl border border-app z-50 origin-top-right animate-in fade-in slide-in-from-top-4 duration-200">
+              <div className="px-3 py-2 border-b border-app mb-2">
+                <p className="text-sm font-semibold text-app">{user?.name || "Student User"}</p>
+                <p className="text-xs text-app-muted">{user?.email || "student@example.com"}</p>
               </div>
               <div className="flex flex-col gap-1">
-                <Link to="/profile" onClick={() => setShowProfileMenu(false)} className="flex items-center gap-3 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-violet-600 rounded-xl transition-colors">
+                <Link to="/profile" onClick={() => setShowProfileMenu(false)} className="flex items-center gap-3 px-3 py-2 text-sm text-app-2 hover:bg-[var(--bg-elevated)] hover:text-violet-500 rounded-xl transition-colors">
                   <UserIcon size={16} /> My Profile
                 </Link>
-                <Link to="/settings" onClick={() => setShowProfileMenu(false)} className="flex items-center gap-3 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-violet-600 rounded-xl transition-colors">
+                <Link to="/settings" onClick={() => setShowProfileMenu(false)} className="flex items-center gap-3 px-3 py-2 text-sm text-app-2 hover:bg-[var(--bg-elevated)] hover:text-violet-500 rounded-xl transition-colors">
                   <Settings size={16} /> Settings
                 </Link>
                 <button 

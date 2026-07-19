@@ -134,17 +134,20 @@ const adaptResponse = (raw = {}) => {
   };
 
   // ── Last Quiz ─────────────────────────────────────────────────────────────
-  const rawLast = raw?.continue_quiz ?? raw?.last_quiz ?? raw?.lastQuiz ?? null;
-  const lastQuiz = rawLast
+  const rawLast = raw?.continue_quiz ?? null;
+  const lastQuiz = (rawLast && rawLast.has_incomplete_quiz)
     ? {
-      title: pick(rawLast.title, rawLast.quiz_title) ?? "Untitled Quiz",
-      subject: pick(rawLast.subject, rawLast.topic) ?? "General",
-      classLevel: pick(rawLast.class_level, rawLast.classLevel, rawLast.grade) ?? "",
-      progress: Number(
-        pick(rawLast.progress, rawLast.completion_percentage) ?? 0
-      ),
-      attempt_id: pick(rawLast.attempt_id, rawLast.id),
-      quiz_id: pick(rawLast.quiz_id, rawLast.quiz),
+      title: rawLast.quiz_title ?? "Untitled Quiz",
+      subject: "Quiz", // Subject/ClassLevel not provided by the new payload
+      classLevel: "", 
+      progress: rawLast.progress_percentage ?? 0,
+      attempt_id: rawLast.attempt_id,
+      quiz_id: rawLast.quiz_id,
+      current_question_index: rawLast.current_question_index ?? 0,
+      remaining_time_seconds: rawLast.remaining_time_seconds ?? null,
+      answered_questions: rawLast.answered_questions ?? 0,
+      total_questions: rawLast.total_questions ?? 0,
+      resume_url: rawLast.resume_url ?? null,
     }
     : null;
 
@@ -218,8 +221,11 @@ const adaptResponse = (raw = {}) => {
   const NOTIF_ICON = {
     achievement: "trophy",
     badge_claimed: "trophy",
+    badge_claimable: "trophy",
     daily_goal: "target",
+    daily_goal_completed: "target",
     quiz_result: "document",
+    quiz_result_ready: "document",
     system: "star",
   };
   const rawNotifs = raw?.notifications ?? [];

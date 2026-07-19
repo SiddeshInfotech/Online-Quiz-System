@@ -4,11 +4,11 @@ import { motion } from "framer-motion";
 const ScoreBreakdown = ({ result, isLoading }) => {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
-        <div className="animate-pulse bg-slate-200 h-6 w-1/3 rounded mb-6"></div>
+      <div className="surface rounded-3xl p-6 shadow-sm border border-app">
+        <div className="animate-pulse surface-elev h-6 w-1/3 rounded mb-6"></div>
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="animate-pulse bg-slate-100 h-12 w-full rounded-xl"></div>
+            <div key={i} className="animate-pulse surface-elev h-12 w-full rounded-xl"></div>
           ))}
         </div>
       </div>
@@ -23,19 +23,19 @@ const ScoreBreakdown = ({ result, isLoading }) => {
   const unanswered = result.unanswered ?? result.unanswered_questions ?? 0;
 
   const bars = [
-    { label: "Correct", value: correct, color: "bg-emerald-500", text: "text-emerald-700", bg: "bg-emerald-50" },
-    { label: "Incorrect", value: incorrect, color: "bg-red-500", text: "text-red-700", bg: "bg-red-50" },
-    { label: "Unanswered", value: unanswered, color: "bg-amber-500", text: "text-amber-700", bg: "bg-amber-50" },
+    { label: "Correct", value: correct, color: "bg-emerald-500", text: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
+    { label: "Incorrect", value: incorrect, color: "bg-red-500", text: "text-red-700 dark:text-red-400", bg: "bg-red-50 dark:bg-red-500/10" },
+    { label: "Unanswered", value: unanswered, color: "bg-amber-500", text: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-500/10" },
   ];
 
   return (
     <motion.div 
-      className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-200"
+      className="surface rounded-3xl p-6 md:p-8 shadow-sm border border-app"
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3, duration: 0.4 }}
     >
-      <h3 className="font-bold text-slate-900 mb-6 font-space-grotesk text-lg">
+      <h3 className="font-bold text-app mb-6 font-space-grotesk text-lg">
         Score Breakdown
       </h3>
 
@@ -46,7 +46,7 @@ const ScoreBreakdown = ({ result, isLoading }) => {
             <div key={bar.label}>
               <div className="flex justify-between text-sm font-semibold mb-2">
                 <span className={bar.text}>{bar.label}</span>
-                <span className="text-slate-600">{bar.value} ({percent}%)</span>
+                <span className="text-app-2">{bar.value} ({percent}%)</span>
               </div>
               <div className={`h-2.5 w-full rounded-full overflow-hidden ${bar.bg}`}>
                 <motion.div

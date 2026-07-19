@@ -4,7 +4,7 @@ import Button from "../ui/Button/Button";
 
 const SidebarFilterSelect = ({ label, value, options, onChange }) => (
   <div>
-    <label className="block text-sm font-semibold text-slate-700 mb-2">
+    <label className="block text-sm font-semibold text-app-2 mb-2">
       {label}
     </label>
     <div className="relative">
@@ -13,8 +13,8 @@ const SidebarFilterSelect = ({ label, value, options, onChange }) => (
         onChange={(e) => onChange(e.target.value)}
         className="
           appearance-none w-full h-11 rounded-xl
-          border border-slate-200 bg-white pl-4 pr-10
-          text-sm font-medium text-slate-700
+          border border-app surface pl-4 pr-10
+          text-sm font-medium text-app-2
           outline-none transition-all duration-200
           focus:border-violet-400 focus:ring-4 focus:ring-violet-100
           hover:border-slate-300 cursor-pointer

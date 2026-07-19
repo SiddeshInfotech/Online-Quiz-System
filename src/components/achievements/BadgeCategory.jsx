@@ -19,7 +19,7 @@ const BadgeCategory = ({ category, badges, onClaim }) => {
           <h2 className="text-xl font-bold font-space-grotesk text-slate-800 group-hover:text-violet-600 transition-colors">
             {category}
           </h2>
-          <span className="text-sm font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+          <span className="text-sm font-medium text-slate-400 surface-elev px-2 py-0.5 rounded-md">
             {badges.length}
           </span>
         </div>

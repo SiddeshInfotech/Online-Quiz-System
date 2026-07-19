@@ -16,6 +16,11 @@ const feedbackService = {
     return response.data;
   },
 
+  updateFeedback: async (id, data) => {
+    const response = await api.put(`/feedback/${id}/`, data);
+    return response.data;
+  },
+
   getMyFeedback: async () => {
     const response = await api.get("/feedback/me/");
     return response.data;

@@ -5,18 +5,18 @@ import { Award, Clock, Calendar, AlertCircle } from "lucide-react";
 const ResultHero = ({ result, isLoading }) => {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-slate-200">
+      <div className="surface rounded-3xl p-8 md:p-10 shadow-sm border border-app">
         <div className="flex flex-col md:flex-row gap-8 items-center md:items-start justify-between">
           <div className="flex-1 space-y-4 w-full">
-            <div className="animate-pulse bg-slate-200 h-10 w-3/4 rounded-xl"></div>
-            <div className="animate-pulse bg-slate-200 h-6 w-1/4 rounded-lg"></div>
+            <div className="animate-pulse surface-elev h-10 w-3/4 rounded-xl"></div>
+            <div className="animate-pulse surface-elev h-6 w-1/4 rounded-lg"></div>
             <div className="flex gap-4 mt-6">
-              <div className="animate-pulse bg-slate-100 h-10 w-32 rounded-lg"></div>
-              <div className="animate-pulse bg-slate-100 h-10 w-32 rounded-lg"></div>
+              <div className="animate-pulse surface-elev h-10 w-32 rounded-lg"></div>
+              <div className="animate-pulse surface-elev h-10 w-32 rounded-lg"></div>
             </div>
           </div>
           <div className="w-40 h-40 shrink-0">
-            <div className="animate-pulse bg-slate-200 w-full h-full rounded-full"></div>
+            <div className="animate-pulse surface-elev w-full h-full rounded-full"></div>
           </div>
         </div>
       </div>
@@ -44,7 +44,7 @@ const ResultHero = ({ result, isLoading }) => {
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
   return (
-    <div className="bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-slate-200 relative overflow-hidden">
+    <div className="surface rounded-3xl p-8 md:p-10 shadow-sm border border-app relative overflow-hidden">
       {/* Top Accent Line */}
       <div className={`absolute top-0 left-0 right-0 h-1.5 ${isPass ? 'bg-gradient-to-r from-emerald-400 to-emerald-500' : 'bg-gradient-to-r from-red-400 to-red-500'}`} />
 
@@ -59,8 +59,8 @@ const ResultHero = ({ result, isLoading }) => {
           >
             <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase mb-4 border ${
               isPass 
-                ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
-                : "bg-red-50 text-red-700 border-red-200"
+                ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20" 
+                : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20"
             }`}>
               {isPass ? (
                 <><Award size={14} /> Passed</>
@@ -69,22 +69,22 @@ const ResultHero = ({ result, isLoading }) => {
               )}
             </div>
             
-            <h1 className="text-3xl md:text-4xl font-bold font-space-grotesk text-slate-900 mb-2 leading-tight">
+            <h1 className="text-3xl md:text-4xl font-bold font-space-grotesk text-app mb-2 leading-tight">
               {result.quiz_title || result.quiz?.title || "Quiz Results"}
             </h1>
             
-            <p className="text-slate-500 text-lg mb-6">
-              Final Score: <span className="font-bold text-slate-800">{score} / {totalScore}</span>
+            <p className="text-app-muted text-lg mb-6">
+              Final Score: <span className="font-bold text-app">{score} / {totalScore}</span>
             </p>
 
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 text-sm text-slate-600">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 text-sm text-app-2">
               <div className="flex items-center gap-2">
-                <Calendar size={16} className="text-slate-400" />
+                <Calendar size={16} className="text-app-muted" />
                 <span>{dateStr}</span>
               </div>
               <div className="flex items-center gap-2">
-                <Clock size={16} className="text-slate-400" />
-                <span>Time Taken: <span className="font-semibold text-slate-800">{timeTakenStr}</span></span>
+                <Clock size={16} className="text-app-muted" />
+                <span>Time Taken: <span className="font-semibold text-app">{timeTakenStr}</span></span>
               </div>
             </div>
           </motion.div>
@@ -106,7 +106,7 @@ const ResultHero = ({ result, isLoading }) => {
               fill="transparent"
               stroke="currentColor"
               strokeWidth="12"
-              className="text-slate-100"
+              className="text-slate-100 dark:text-slate-800"
             />
             {/* Progress Circle */}
             <motion.circle
@@ -126,10 +126,10 @@ const ResultHero = ({ result, isLoading }) => {
           </svg>
           {/* Center Text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-3xl font-bold font-space-grotesk text-slate-900 leading-none">
+            <span className="text-3xl font-bold font-space-grotesk text-app leading-none">
               {percentage}%
             </span>
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest mt-1">
+            <span className="text-xs font-semibold text-app-muted uppercase tracking-widest mt-1">
               Score
             </span>
           </div>

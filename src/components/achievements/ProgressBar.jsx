@@ -14,12 +14,12 @@ const ProgressBar = ({ current, total, color = "violet" }) => {
   return (
     <div className="w-full">
       <div className="flex justify-between items-center text-xs font-medium mb-1.5">
-        <span className="text-slate-500">Progress</span>
-        <span className="text-slate-700">
+        <span className="text-app-muted">Progress</span>
+        <span className="text-app-2">
           {current} / {total}
         </span>
       </div>
-      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+      <div className="h-2 w-full surface-elev rounded-full overflow-hidden">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${percentage}%` }}

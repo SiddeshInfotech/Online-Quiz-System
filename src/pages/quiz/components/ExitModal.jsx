@@ -15,7 +15,7 @@ const ExitModal = ({ isOpen, onClose, onConfirm, hasAnsweredAny }) => {
         exit={{ opacity: 0 }}
       >
         <motion.div
-          className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -23,20 +23,20 @@ const ExitModal = ({ isOpen, onClose, onConfirm, hasAnsweredAny }) => {
         />
 
         <motion.div
-          className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
+          className="relative surface rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
         >
           <div className="p-7 text-center">
-            <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4 text-red-500">
+            <div className="w-14 h-14 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center mx-auto mb-4 text-red-500">
               <AlertTriangle size={24} />
             </div>
 
-            <h2 className="text-xl font-bold font-space-grotesk text-slate-900 mb-2">
+            <h2 className="text-xl font-bold font-space-grotesk text-app mb-2">
               Exit Quiz?
             </h2>
-            <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+            <p className="text-sm text-app-muted mb-6 leading-relaxed">
               {hasAnsweredAny
                 ? "Your progress has been automatically saved, but the quiz is not yet submitted. You can resume it later from your attempts dashboard."
                 : "Are you sure you want to exit? You haven't answered any questions yet."}
@@ -48,7 +48,7 @@ const ExitModal = ({ isOpen, onClose, onConfirm, hasAnsweredAny }) => {
               </Button>
               <Button
                 variant="outline"
-                className="flex-1 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                className="flex-1 text-red-600 border-red-200 dark:border-red-500/20 hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-300 dark:hover:border-red-500/30"
                 onClick={onConfirm}
               >
                 Exit Anyway

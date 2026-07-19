@@ -145,7 +145,7 @@ const SignupForm = ({ onSuccess }) => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="relative w-full rounded-3xl border border-slate-200 bg-white p-8 shadow-xl lg:p-10"
+            className="relative w-full rounded-3xl border border-app surface p-8 shadow-xl lg:p-10"
         >
             {/* Theme Toggle */}
             <div className="absolute right-5 top-5">
@@ -226,7 +226,7 @@ const SignupForm = ({ onSuccess }) => {
                 />
 
                 {/* Checkbox */}
-                <label className="flex cursor-pointer items-start gap-3 text-sm text-slate-600">
+                <label className="flex cursor-pointer items-start gap-3 text-sm text-app-2">
                     <input
                         type="checkbox"
                         className="mt-1 h-4 w-4 rounded accent-violet-600"

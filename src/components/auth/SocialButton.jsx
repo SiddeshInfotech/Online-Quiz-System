@@ -44,7 +44,7 @@ const SocialButton = ({ provider, onSuccess }) => {
     <button
       type="button"
       onClick={handleClick}
-      className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 font-medium text-slate-700 transition hover:border-violet-300 hover:bg-violet-50"
+      className="flex w-full items-center justify-center gap-3 rounded-xl border border-app surface px-4 py-3 font-medium text-app-2 transition hover:border-violet-300 hover:bg-violet-50"
     >
       <Icon size={18} />
       {labels[provider]}

@@ -42,7 +42,7 @@ const BrandPanel = () => {
             Create Smarter
             <br />
             Quizzes{" "}
-            <span className="bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">
               with AI
             </span>
           </h1>
@@ -170,7 +170,7 @@ const Activity = ({ text, pending }) => (
     <CheckCircle2
       size={18}
       className={
-        pending ? "text-slate-500" : "text-emerald-400"
+        pending ? "text-app-muted" : "text-emerald-400"
       }
     />
 

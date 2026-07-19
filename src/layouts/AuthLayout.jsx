@@ -3,7 +3,7 @@ import BrandPanel from "../components/auth/BrandPanel";
 
 const AuthLayout = () => {
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen surface-subtle">
       <div className="grid min-h-screen lg:grid-cols-2">
         {/* Left Branding Section */}
         <BrandPanel />

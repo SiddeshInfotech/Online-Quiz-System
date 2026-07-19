@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search } from "lucide-react";
 import achievementService from "../../services/achievementService";
 import BadgeStats from "../../components/achievements/BadgeStats";
 import BadgeCategory from "../../components/achievements/BadgeCategory";
@@ -11,7 +10,6 @@ import SkeletonBadge from "../../components/achievements/SkeletonBadge";
 import EmptyState from "../../components/achievements/EmptyState";
 import BadgeCard from "../../components/achievements/BadgeCard";
 import BadgeGrid from "../../components/achievements/BadgeGrid";
-import Input from "../../components/ui/Input/Input";
 import { resolveMediaUrl } from "../../services/api";
 
 const FILTERS = ["All", "Claimed", "Claimable", "Locked", "Common", "Rare", "Epic", "Legendary"];
@@ -23,7 +21,6 @@ const AchievementPage = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [activeSort, setActiveSort] = useState("Newest");
 
@@ -111,9 +108,6 @@ const AchievementPage = () => {
 
   // Filtering & Sorting Logic
   const filteredBadges = badges.filter(badge => {
-    // Search
-    if (searchQuery && !badge.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-
     // Filter
     if (activeFilter === "All") return true;
     if (activeFilter === "Claimed") return badge.status === "CLAIMED";
@@ -161,16 +155,16 @@ const AchievementPage = () => {
       )}
 
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="mb-8">
-        <h1 className="text-3xl font-bold font-space-grotesk text-slate-900 mb-2">🏆 Achievements</h1>
-        <p className="text-base text-slate-500">Complete challenges, earn badges, collect XP, and level up your learning journey.</p>
+        <h1 className="text-3xl font-bold font-space-grotesk text-app mb-2">🏆 Achievements</h1>
+        <p className="text-base text-app-muted">Complete challenges, earn badges, collect XP, and level up your learning journey.</p>
       </motion.div>
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-          {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-28 bg-slate-100 rounded-[20px] animate-pulse" />)}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-28 surface-elev rounded-[20px] animate-pulse" />)}
         </div>
       ) : (
-        <BadgeStats stats={stats} totalBadges={badges.length} />
+        <BadgeStats stats={stats} />
       )}
 
       {/* Claimable Section */}
@@ -194,23 +188,13 @@ const AchievementPage = () => {
       )}
 
       {/* Controls */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-        <div className="w-full md:w-72">
-          <Input
-            name="search"
-            placeholder="Search badges..."
-            leftIcon={Search}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="mb-0 border-slate-200 bg-slate-50"
-          />
-        </div>
+      <div className="flex justify-end items-center mb-8 surface p-4 rounded-2xl shadow-sm border border-app">
         <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-          <span className="text-sm font-medium text-slate-500 shrink-0">Sort by:</span>
+          <span className="text-sm font-medium text-app-muted shrink-0">Sort by:</span>
           <select
             value={activeSort}
             onChange={(e) => setActiveSort(e.target.value)}
-            className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-violet-500 focus:border-violet-500 block p-2.5 outline-none cursor-pointer"
+            className="surface-subtle border border-app text-app-2 text-sm rounded-xl focus:ring-violet-500 focus:border-violet-500 block p-2.5 outline-none cursor-pointer"
           >
             {SORT_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
           </select>
@@ -242,7 +226,7 @@ const AchievementPage = () => {
           })()}
         </div>
       ) : (
-        <EmptyState message={`No badges found for "${searchQuery}" or selected filters.`} />
+        <EmptyState message="No badges found for selected filters." />
       )}
 
       <ClaimModal isOpen={showClaimModal} badge={selectedBadge} onClose={handleModalClose} />

@@ -13,14 +13,14 @@ const RatingDistribution = ({ summary }) => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row items-center gap-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+    <div className="flex flex-col md:flex-row items-center gap-8 surface p-6 rounded-2xl shadow-sm border border-slate-100">
       {/* Average Rating Block */}
       <div className="flex flex-col items-center justify-center min-w-[150px]">
-        <div className="text-5xl font-bold text-slate-900 mb-2">
+        <div className="text-5xl font-bold text-app mb-2">
           {average_rating?.toFixed(1) || "0.0"}
         </div>
         <StarRating rating={Math.round(average_rating || 0)} readOnly size={20} />
-        <div className="text-sm text-slate-500 mt-2">
+        <div className="text-sm text-app-muted mt-2">
           {total_reviews} {total_reviews === 1 ? 'review' : 'reviews'}
         </div>
       </div>
@@ -34,13 +34,13 @@ const RatingDistribution = ({ summary }) => {
               <div className="flex items-center gap-1 w-12 text-sm font-medium text-slate-600">
                 {stars} <span className="text-amber-400">★</span>
               </div>
-              <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
+              <div className="flex-1 h-3 surface-elev rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-amber-400 rounded-full transition-all duration-1000 ease-out"
                   style={{ width: `${percentage}%` }}
                 />
               </div>
-              <div className="w-10 text-right text-xs text-slate-500">
+              <div className="w-10 text-right text-xs text-app-muted">
                 {percentage}%
               </div>
             </div>

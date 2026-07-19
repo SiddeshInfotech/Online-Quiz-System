@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, MessageSquarePlus, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, MessageSquarePlus, CheckCircle2, Edit2, PlusCircle } from 'lucide-react';
 import feedbackService from '../../services/feedbackService';
 import achievementService from '../../services/achievementService';
 import RatingDistribution from './components/RatingDistribution';
@@ -20,7 +20,10 @@ const FeedbackPage = () => {
   const [submitError, setSubmitError] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
+  const [myFeedbacks, setMyFeedbacks] = useState([]);
+  const [maxAllowed, setMaxAllowed] = useState(2);
 
   useEffect(() => {
     fetchData();
@@ -37,12 +40,37 @@ const FeedbackPage = () => {
       ]);
 
       setSummary(summaryRes);
-      setFeedbacks(Array.isArray(feedbackRes) ? feedbackRes : feedbackRes.results || []); 6
+      setFeedbacks(Array.isArray(feedbackRes) ? feedbackRes : feedbackRes.results || []);
 
-      if (myFeedbackRes) {
-        setRating(myFeedbackRes.rating || 0);
-        setMessage(myFeedbackRes.message || '');
-        setIsEditing(true);
+      if (myFeedbackRes && Array.isArray(myFeedbackRes.results)) {
+        setMyFeedbacks(myFeedbackRes.results);
+        setMaxAllowed(myFeedbackRes.max_allowed || 2);
+        
+        // Preserve edit mode if currently editing
+        let currentlyEditing = null;
+        setEditingId((prevId) => {
+          currentlyEditing = myFeedbackRes.results.find(f => f.id === prevId);
+          return currentlyEditing ? prevId : null;
+        });
+        
+        if (currentlyEditing) {
+          setRating(currentlyEditing.rating || 0);
+          setMessage(currentlyEditing.message || '');
+          setIsEditing(true);
+        } else if (myFeedbackRes.results.length >= (myFeedbackRes.max_allowed || 2)) {
+          // If max reached and not already editing one, default to editing the first one
+          const firstFb = myFeedbackRes.results[0];
+          setEditingId(firstFb.id);
+          setRating(firstFb.rating || 0);
+          setMessage(firstFb.message || '');
+          setIsEditing(true);
+        } else {
+          // If < max allowed and not currently editing, default to new
+          setEditingId(null);
+          setRating(0);
+          setMessage('');
+          setIsEditing(false);
+        }
       }
     } catch (err) {
       console.error("Failed to fetch feedback data:", err);
@@ -50,6 +78,24 @@ const FeedbackPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEditClick = (fb) => {
+    setEditingId(fb.id);
+    setRating(fb.rating || 0);
+    setMessage(fb.message || '');
+    setIsEditing(true);
+    setSubmitError(null);
+    setSubmitSuccess(false);
+  };
+
+  const handleWriteNewClick = () => {
+    setEditingId(null);
+    setRating(0);
+    setMessage('');
+    setIsEditing(false);
+    setSubmitError(null);
+    setSubmitSuccess(false);
   };
 
   const handleSubmit = async (e) => {
@@ -74,15 +120,18 @@ const FeedbackPage = () => {
 
     setIsSubmitting(true);
     try {
-      const res = await feedbackService.submitFeedback({ rating, message });
+      let res;
+      if (isEditing && editingId) {
+        res = await feedbackService.updateFeedback(editingId, { rating, message });
+      } else {
+        res = await feedbackService.submitFeedback({ rating, message });
+      }
       setSubmitSuccess(true);
       
-      if (res.updated) {
+      if (res.updated || (isEditing && editingId)) {
         setSuccessMessage("Feedback updated successfully.");
-        setIsEditing(true);
-      } else if (res.created) {
+      } else if (res.created || !isEditing) {
         setSuccessMessage("Feedback submitted successfully.");
-        setIsEditing(true);
       } else {
         setSuccessMessage(isEditing ? "Feedback updated successfully." : "Feedback submitted successfully.");
       }
@@ -102,7 +151,11 @@ const FeedbackPage = () => {
       }, 3000);
     } catch (err) {
       console.error("Submit feedback error:", err);
-      setSubmitError(err.response?.data?.message || "Failed to submit feedback. Please try again.");
+      if (err.response?.status === 403) {
+        setSubmitError("You have reached the maximum of 2 feedbacks. Please edit an existing feedback.");
+      } else {
+        setSubmitError(err.response?.data?.message || "Failed to submit feedback. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -127,7 +180,7 @@ const FeedbackPage = () => {
       <div className="p-6 max-w-5xl mx-auto flex flex-col items-center justify-center py-20 text-center">
         <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
         <h2 className="text-xl font-semibold text-slate-800 mb-2">Oops! Something went wrong</h2>
-        <p className="text-slate-500">{error}</p>
+        <p className="text-app-muted">{error}</p>
         <Button onClick={fetchData} className="mt-6">Try Again</Button>
       </div>
     );
@@ -137,8 +190,8 @@ const FeedbackPage = () => {
     <div className="p-6 max-w-5xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Community Feedback</h1>
-        <p className="text-slate-500">
+        <h1 className="text-3xl font-bold text-app mb-2">Community Feedback</h1>
+        <p className="text-app-muted">
           See how learners rate QuizGen AI and share your own experience.
         </p>
       </div>
@@ -151,7 +204,7 @@ const FeedbackPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Section 2: Recent Community Feedback */}
         <div className="lg:col-span-7">
-          <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <h2 className="text-xl font-bold text-app mb-4 flex items-center gap-2">
             <MessageSquarePlus className="text-violet-600" size={24} />
             Recent Feedback
           </h2>
@@ -162,8 +215,8 @@ const FeedbackPage = () => {
                 <FeedbackCard key={fb.id} feedback={fb} />
               ))
             ) : (
-              <div className="bg-slate-50 rounded-2xl p-8 text-center border border-slate-100">
-                <p className="text-slate-500">No feedback available yet. Be the first to share yours!</p>
+              <div className="surface-subtle rounded-2xl p-8 text-center border border-slate-100">
+                <p className="text-app-muted">No feedback available yet. Be the first to share yours!</p>
               </div>
             )}
           </div>
@@ -171,8 +224,45 @@ const FeedbackPage = () => {
 
         {/* Section 3: Submit Your Feedback */}
         <div className="lg:col-span-5">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 sticky top-6">
-            <h2 className="text-xl font-bold text-slate-900 mb-4">Share Your Feedback</h2>
+          <div className="surface p-6 rounded-2xl shadow-sm border border-slate-100 sticky top-6">
+            <h2 className="text-xl font-bold text-app mb-4">Share Your Feedback</h2>
+
+            {myFeedbacks.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-app-2 mb-3">Your Feedbacks</h3>
+                <div className="space-y-3">
+                  {myFeedbacks.map(fb => (
+                    <div key={fb.id} className={`p-4 rounded-xl border transition-all ${editingId === fb.id ? 'border-violet-500 bg-violet-50/10 shadow-sm' : 'border-app surface-subtle'}`}>
+                      <div className="flex justify-between items-start mb-2">
+                        <StarRating rating={fb.rating} size={16} readOnly />
+                        <span className="text-[11px] text-app-muted font-medium">
+                          {fb.created_at === fb.updated_at ? "Posted" : "Edited"} {new Date(fb.updated_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
+                      <p className="text-sm text-app-2 line-clamp-2 mb-3">{fb.message}</p>
+                      <Button
+                        variant={editingId === fb.id ? "primary" : "secondary"}
+                        size="sm"
+                        className="w-full text-xs h-8"
+                        onClick={() => handleEditClick(fb)}
+                      >
+                        {editingId === fb.id ? "Currently Editing" : "Edit"}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                {myFeedbacks.length < maxAllowed && (
+                  <Button
+                    variant={editingId === null ? "primary" : "secondary"}
+                    className="w-full mt-3 text-sm"
+                    onClick={handleWriteNewClick}
+                  >
+                    Write New Feedback
+                  </Button>
+                )}
+                <div className="h-px w-full bg-slate-100 my-6" />
+              </div>
+            )}
 
             {submitSuccess && (
               <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-xl flex items-center gap-2 text-sm">
@@ -190,7 +280,7 @@ const FeedbackPage = () => {
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-app-2 mb-2">
                   Your Rating <span className="text-red-500">*</span>
                 </label>
                 <StarRating
@@ -201,11 +291,11 @@ const FeedbackPage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-app-2 mb-2">
                   Your Experience <span className="text-red-500">*</span>
                 </label>
                 <textarea
-                  className="w-full rounded-xl border border-slate-200 p-4 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 outline-none transition-all resize-none bg-slate-50 focus:bg-white"
+                  className="w-full rounded-xl border border-app p-4 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 outline-none transition-all resize-none surface-subtle focus:surface"
                   rows={5}
                   placeholder="Tell us what you liked, what can be improved, or report an issue..."
                   value={message}

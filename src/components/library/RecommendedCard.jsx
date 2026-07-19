@@ -14,7 +14,7 @@ const RecommendedCard = ({ quiz: rawQuiz }) => {
     >
       <Link
         to={`/quiz/${quiz.id}`}
-        className="block rounded-2xl overflow-hidden bg-white border border-slate-200 shadow-sm hover:shadow-lg hover:border-violet-200 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2"
+        className="block rounded-2xl overflow-hidden surface border border-app shadow-sm hover:shadow-lg hover:border-violet-200 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2"
       >
         {/* Thumbnail */}
         <div className="relative h-[140px] overflow-hidden">
@@ -34,10 +34,10 @@ const RecommendedCard = ({ quiz: rawQuiz }) => {
 
         {/* Content */}
         <div className="p-4">
-          <h4 className="font-semibold text-sm text-slate-900 truncate mb-1">
+          <h4 className="font-semibold text-sm text-app truncate mb-1">
             {quiz.title}
           </h4>
-          <p className="text-xs text-slate-500 mb-3">
+          <p className="text-xs text-app-muted mb-3">
             {quiz.subject} • {quiz.classLevel}
           </p>
 
@@ -55,13 +55,13 @@ const RecommendedCard = ({ quiz: rawQuiz }) => {
 
           {/* Progress */}
           <div>
-            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-1.5 w-full surface-elev rounded-full overflow-hidden">
               <div
                 className="h-full bg-violet-600 rounded-full transition-all duration-500"
                 style={{ width: progressWidth }}
               />
             </div>
-            <p className="text-[10px] font-medium text-slate-500 mt-1.5">
+            <p className="text-[10px] font-medium text-app-muted mt-1.5">
               {quiz.progress}% Completed
             </p>
           </div>

@@ -6,7 +6,7 @@ import ProgressBar from "./ProgressBar";
 import { Link } from "react-router-dom";
 
 const rarityColors = {
-  Common: "bg-slate-100 text-slate-600 border-slate-200",
+  Common: "surface-elev text-slate-600 border-app",
   Rare: "bg-blue-50 text-blue-600 border-blue-200",
   Epic: "bg-fuchsia-50 text-fuchsia-600 border-fuchsia-200",
   Legendary: "bg-amber-50 text-amber-600 border-amber-200",
@@ -33,7 +33,7 @@ const BadgeCard = ({ badge, onClaim, className = "" }) => {
   // Card styles
   const cardStyle = isClaimable
     ? "ring-2 ring-violet-400 ring-offset-2 shadow-lg shadow-violet-200/50"
-    : "border-slate-200";
+    : "border-app";
 
   return (
     <Link to={`/badges/${id}`} className={`block h-full ${className}`}>
@@ -58,14 +58,14 @@ const BadgeCard = ({ badge, onClaim, className = "" }) => {
                 <img
                   src={image_url}
                   alt={name}
-                  className={`w-16 h-16 object-cover rounded-2xl border border-slate-200 shadow-sm ${isLocked ? "grayscale-[0.6] opacity-80" : ""}`}
+                  className={`w-16 h-16 object-cover rounded-2xl border border-app shadow-sm ${isLocked ? "grayscale-[0.6] opacity-80" : ""}`}
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${name}&backgroundColor=6D5EF9`;
                   }}
                 />
               ) : (
-                <div className={`w-16 h-16 bg-slate-200 rounded-2xl border border-slate-200 shadow-sm ${isLocked ? "grayscale-[0.6] opacity-80" : ""}`} />
+                <div className={`w-16 h-16 bg-slate-200 rounded-2xl border border-app shadow-sm ${isLocked ? "grayscale-[0.6] opacity-80" : ""}`} />
               )}
               
               {/* Status Icons */}
@@ -75,14 +75,14 @@ const BadgeCard = ({ badge, onClaim, className = "" }) => {
                 </div>
               )}
               {isLocked && (
-                <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-slate-200 text-slate-500 rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-slate-200 text-app-muted rounded-full flex items-center justify-center shadow-md border-2 border-app">
                   <Lock size={12} strokeWidth={2.5} />
                 </div>
               )}
             </div>
 
             <div className="flex flex-col pt-1">
-              <h3 className="font-bold text-slate-900 group-hover:text-violet-700 transition-colors line-clamp-2 leading-snug">
+              <h3 className="font-bold text-app group-hover:text-violet-700 transition-colors line-clamp-2 leading-snug">
                 {name}
               </h3>
               <div className="text-xs font-medium text-violet-600 mt-1.5 flex items-center gap-1">
@@ -94,7 +94,7 @@ const BadgeCard = ({ badge, onClaim, className = "" }) => {
 
           {/* Description */}
           <div className="mt-4">
-            <p className="text-sm text-slate-500 line-clamp-2">
+            <p className="text-sm text-app-muted line-clamp-2">
               {description}
             </p>
           </div>

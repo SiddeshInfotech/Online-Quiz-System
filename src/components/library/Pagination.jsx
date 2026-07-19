@@ -34,7 +34,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         disabled={currentPage === 1}
         className="
           inline-flex items-center gap-1 h-9 px-3
-          rounded-lg text-xs font-medium text-slate-500
+          rounded-lg text-xs font-medium text-app-muted
           hover:text-violet-600 hover:bg-violet-50
           disabled:opacity-40 disabled:pointer-events-none
           transition-colors duration-200
@@ -83,7 +83,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         disabled={currentPage === totalPages}
         className="
           inline-flex items-center gap-1 h-9 px-3
-          rounded-lg text-xs font-medium text-slate-500
+          rounded-lg text-xs font-medium text-app-muted
           hover:text-violet-600 hover:bg-violet-50
           disabled:opacity-40 disabled:pointer-events-none
           transition-colors duration-200

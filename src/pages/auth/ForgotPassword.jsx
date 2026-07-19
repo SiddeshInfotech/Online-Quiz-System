@@ -85,7 +85,7 @@ const ForgotPassword = () => {
       transition={{ duration: 0.45 }}
       className="w-full"
     >
-      <Card className="relative rounded-3xl border border-slate-200 bg-white p-8 shadow-xl lg:p-10">
+      <Card className="relative rounded-3xl border border-app surface p-8 shadow-xl lg:p-10">
         {/* Theme Toggle */}
         <div className="absolute right-6 top-6">
 
@@ -147,7 +147,7 @@ const ForgotPassword = () => {
           <AuthDivider />
         </div>
 
-        <p className="text-center text-sm text-slate-500">
+        <p className="text-center text-sm text-app-muted">
           Remember your password?{" "}
           <Link
             to="/login"

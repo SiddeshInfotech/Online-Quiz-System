@@ -33,7 +33,7 @@ const Sidebar = ({ user, dailyGoal, onMenuClose }) => {
   ];
 
   return (
-    <aside className="h-full w-full flex flex-col bg-white border-r border-slate-200 shadow-xl lg:shadow-none">
+    <aside className="h-full w-full flex flex-col surface border-r border-app shadow-xl lg:shadow-none">
       {/* Logo Area */}
       <div className="flex h-20 items-center justify-between px-6 border-b border-transparent">
         <Logo />
@@ -41,7 +41,7 @@ const Sidebar = ({ user, dailyGoal, onMenuClose }) => {
         {/* Mobile Close Button */}
         <button 
           onClick={onMenuClose}
-          className="lg:hidden p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
+          className="lg:hidden p-2 rounded-lg text-app-muted hover:text-app-2 hover:bg-[var(--bg-elevated)] transition-colors"
         >
           <X size={20} />
         </button>
@@ -60,7 +60,7 @@ const Sidebar = ({ user, dailyGoal, onMenuClose }) => {
                 `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
                   isActive
                     ? "bg-violet-600 text-white shadow-md shadow-violet-600/20"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-violet-600"
+                    : "text-app-2 hover:bg-[var(--bg-elevated)] hover:text-violet-500"
                 }`
               }
             >
@@ -92,22 +92,22 @@ const Sidebar = ({ user, dailyGoal, onMenuClose }) => {
         
         {/* Today's Goal */}
         <div className="mt-auto">
-          <div className="rounded-2xl bg-slate-50 p-5 border border-slate-100 hover:border-violet-100 transition-colors shadow-sm">
+          <div className="rounded-2xl surface-subtle p-5 border border-app hover:border-[var(--accent-hover)] transition-colors shadow-sm">
             <div className="flex items-center gap-2 text-violet-600 mb-2">
               <Target size={20} className="text-violet-600" />
               <span className="font-semibold text-sm">Today's Goal</span>
             </div>
-            <p className="text-xs text-slate-500 mb-3 leading-relaxed">
+            <p className="text-xs text-app-muted mb-3 leading-relaxed">
               Complete {dailyGoal?.total || 3} quizzes today.
             </p>
             
             {/* Progress Bar */}
             <div className="mb-4">
               <div className="flex justify-between text-xs font-medium mb-1.5">
-                <span className="text-slate-600">Progress</span>
+                <span className="text-app-2">Progress</span>
                 <span className="text-violet-600">{dailyGoal?.completed || 0}/{dailyGoal?.total || 3}</span>
               </div>
-              <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+              <div className="h-1.5 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-violet-600 rounded-full transition-all duration-1000 ease-out" 
                   style={{ width: `${Math.min(((dailyGoal?.completed || 0) / (dailyGoal?.total || 3)) * 100, 100)}%` }} 
@@ -126,8 +126,8 @@ const Sidebar = ({ user, dailyGoal, onMenuClose }) => {
       </div>
 
       {/* User Profile */}
-      <div className="mt-auto border-t border-slate-100 p-4">
-        <Link to="/profile" className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-slate-50 cursor-pointer group">
+      <div className="mt-auto border-t border-app p-4">
+        <Link to="/profile" className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-[var(--bg-elevated)] cursor-pointer group">
           <img
             src={user?.profile_picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || user?.username || "User")}&background=6D5EF9&color=fff`}
             alt={user?.full_name || user?.username || "User"}
@@ -138,12 +138,12 @@ const Sidebar = ({ user, dailyGoal, onMenuClose }) => {
             className="h-10 w-10 rounded-full object-cover shadow-sm group-hover:ring-2 ring-violet-100 transition-all"
           />
           <div className="flex-1 overflow-hidden">
-            <h4 className="truncate text-sm font-semibold text-slate-900 group-hover:text-violet-700 transition-colors">
+            <h4 className="truncate text-sm font-semibold text-app group-hover:text-violet-700 transition-colors">
               {user?.full_name || user?.username || "Student User"}
             </h4>
-            <p className="truncate text-[10px] text-slate-500">View Profile</p>
+            <p className="truncate text-[10px] text-app-muted">View Profile</p>
           </div>
-          <ChevronDown size={16} className="text-slate-400 group-hover:text-violet-500 transition-colors" />
+          <ChevronDown size={16} className="text-app-muted group-hover:text-violet-500 transition-colors" />
         </Link>
       </div>
     </aside>

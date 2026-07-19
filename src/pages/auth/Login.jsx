@@ -155,7 +155,7 @@ const Login = () => {
       transition={{ duration: 0.45 }}
       className="w-full"
     >
-      <Card className="relative rounded-3xl border border-slate-200 bg-white p-8 shadow-xl lg:p-10">
+      <Card className="relative rounded-3xl border border-app surface p-8 shadow-xl lg:p-10">
 
         {/* Theme Toggle */}
 
@@ -199,14 +199,14 @@ const Login = () => {
           />
 
           <div className="flex items-center justify-between text-sm">
-            <label className="flex cursor-pointer items-center gap-2 text-slate-600">
+            <label className="flex cursor-pointer items-center gap-2 text-app-2">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={() =>
                   setRememberMe(!rememberMe)
                 }
-                className="rounded border-slate-300 accent-violet-600"
+                className="rounded border-app accent-violet-600"
               />
 
               Remember Me
@@ -251,7 +251,7 @@ const Login = () => {
           <SocialButton provider="google" onSuccess={handleGoogleSuccess} />
         </div>
 
-        <p className="mt-8 text-center text-sm text-slate-500">
+        <p className="mt-8 text-center text-sm text-app-muted">
           Don't have an account?{" "}
 
           <Link

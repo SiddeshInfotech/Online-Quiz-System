@@ -53,9 +53,9 @@ const MobileDrawer = ({
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto lg:hidden"
+            className="fixed bottom-0 left-0 right-0 z-50 surface rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto lg:hidden"
           >
-            <div className="sticky top-0 bg-white/90 backdrop-blur-sm pt-4 pb-2 flex justify-center border-b border-slate-100 z-10">
+            <div className="sticky top-0 bg-white/90 backdrop-blur-sm pt-4 pb-2 flex justify-center border-b border-app z-10">
               <div className="w-12 h-1.5 bg-slate-200 rounded-full" />
             </div>
             

@@ -79,8 +79,8 @@ const OTPInput = ({ length = 6, value, onChange, error }) => {
             onChange={(e) => handleChange(index, e)}
             onKeyDown={(e) => handleKeyDown(index, e)}
             onPaste={handlePaste}
-            className={`h-12 w-12 sm:h-14 sm:w-14 rounded-xl border bg-white text-center text-xl font-semibold text-slate-900 shadow-sm outline-none transition-all duration-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-100 ${
-              error ? "border-red-500 focus:border-red-500 focus:ring-red-100" : "border-slate-200 hover:border-slate-300"
+            className={`h-12 w-12 sm:h-14 sm:w-14 rounded-xl border surface text-center text-xl font-semibold text-app shadow-sm outline-none transition-all duration-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-100 ${
+              error ? "border-red-500 focus:border-red-500 focus:ring-red-100" : "border-app hover:border-slate-300"
             }`}
           />
         ))}

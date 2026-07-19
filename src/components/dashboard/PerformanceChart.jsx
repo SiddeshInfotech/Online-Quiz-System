@@ -9,8 +9,8 @@ const PerformanceChart = ({ stats, chartData, isLoading }) => {
   return (
     <Card className="p-6 flex flex-col h-full">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="font-semibold text-slate-700 text-sm">Performance Overview</h3>
-        <button className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-700 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200 transition-colors">
+        <h3 className="font-semibold text-app-2 text-sm">Performance Overview</h3>
+        <button className="flex items-center gap-1 text-xs font-medium text-app-muted hover:text-app-2 surface-subtle px-2.5 py-1.5 rounded-lg border border-app transition-colors">
           This Week <ChevronDown size={14} />
         </button>
       </div>
@@ -27,20 +27,20 @@ const PerformanceChart = ({ stats, chartData, isLoading }) => {
       ) : (
         <div className="grid grid-cols-4 gap-4 mb-8">
           <div>
-            <p className="text-[10px] text-slate-400 font-medium mb-1">Quizzes Attempted</p>
-            <p className="text-xl font-bold font-space-grotesk text-slate-900">{stats?.quizzesAttempted ?? 0}</p>
+            <p className="text-[10px] text-app-muted font-medium mb-1">Quizzes Attempted</p>
+            <p className="text-xl font-bold font-space-grotesk text-app">{stats?.quizzesAttempted ?? 0}</p>
           </div>
           <div>
-            <p className="text-[10px] text-slate-400 font-medium mb-1">Average Score</p>
-            <p className="text-xl font-bold font-space-grotesk text-slate-900">{stats?.averageScore ?? 0}%</p>
+            <p className="text-[10px] text-app-muted font-medium mb-1">Average Score</p>
+            <p className="text-xl font-bold font-space-grotesk text-app">{stats?.averageScore ?? 0}%</p>
           </div>
           <div>
-            <p className="text-[10px] text-slate-400 font-medium mb-1">Accuracy</p>
-            <p className="text-xl font-bold font-space-grotesk text-slate-900">{stats?.accuracy ?? 0}%</p>
+            <p className="text-[10px] text-app-muted font-medium mb-1">Accuracy</p>
+            <p className="text-xl font-bold font-space-grotesk text-app">{stats?.accuracy ?? 0}%</p>
           </div>
           <div>
-            <p className="text-[10px] text-slate-400 font-medium mb-1">Time Spent</p>
-            <p className="text-xl font-bold font-space-grotesk text-slate-900">{stats?.timeSpent ?? "0h 0m"}</p>
+            <p className="text-[10px] text-app-muted font-medium mb-1">Time Spent</p>
+            <p className="text-xl font-bold font-space-grotesk text-app">{stats?.timeSpent ?? "0h 0m"}</p>
           </div>
         </div>
       )}
@@ -68,8 +68,8 @@ const PerformanceChart = ({ stats, chartData, isLoading }) => {
           <div className="absolute inset-0 flex flex-col justify-between pt-2 pb-6 z-0">
             {[100, 75, 50, 25, 0].map((val) => (
               <div key={val} className="flex items-center gap-2 w-full">
-                <span className="text-[9px] text-slate-400 w-6 text-right">{val}%</span>
-                <div className="flex-1 h-px bg-slate-100"></div>
+                <span className="text-[9px] text-app-muted w-6 text-right">{val}%</span>
+                <div className="flex-1 h-px bg-[var(--border)]"></div>
               </div>
             ))}
           </div>
@@ -77,7 +77,7 @@ const PerformanceChart = ({ stats, chartData, isLoading }) => {
           {/* X Axis Labels */}
           <div className="absolute bottom-0 left-8 right-0 flex justify-between px-4 z-0">
             {chartData.map((d, i) => (
-              <span key={i} className="text-[9px] text-slate-400">{d.day}</span>
+              <span key={i} className="text-[9px] text-app-muted">{d.day}</span>
             ))}
           </div>
 
@@ -112,8 +112,8 @@ const PerformanceChart = ({ stats, chartData, isLoading }) => {
                   cx={pt.x}
                   cy={pt.y}
                   r="3.5"
-                  fill="white"
-                  stroke="#6D5EF9"
+                  fill="var(--bg-surface)"
+                  stroke="var(--primary)"
                   strokeWidth="2"
                   vectorEffect="non-scaling-stroke"
                   className="hover:r-[5px] transition-all cursor-pointer shadow-sm"
@@ -124,18 +124,18 @@ const PerformanceChart = ({ stats, chartData, isLoading }) => {
         </div>
       ) : (
         /* Empty State */
-        <div className="flex-1 min-h-[160px] flex flex-col items-center justify-center gap-3 rounded-xl bg-slate-50 border border-dashed border-slate-200 group relative overflow-hidden transition-colors hover:border-violet-200 hover:bg-violet-50/50">
+        <div className="flex-1 min-h-[160px] flex flex-col items-center justify-center gap-3 rounded-xl surface-subtle border border-dashed border-app group relative overflow-hidden transition-colors hover:border-violet-200">
           <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-violet-600 via-transparent to-transparent pointer-events-none"></div>
           
-          <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 shadow-sm group-hover:scale-110 group-hover:text-violet-500 group-hover:border-violet-200 transition-all duration-300 z-10">
+          <div className="w-14 h-14 rounded-2xl surface border border-app flex items-center justify-center text-app-muted shadow-sm group-hover:scale-110 group-hover:text-violet-500 group-hover:border-violet-200 transition-all duration-300 z-10">
             <Activity size={26} className="group-hover:animate-pulse" />
           </div>
           <div className="text-center z-10">
-            <p className="text-sm font-semibold text-slate-600 group-hover:text-violet-700 transition-colors">No performance data yet.</p>
-            <p className="text-xs text-slate-400 mt-1 max-w-[220px] leading-relaxed">Complete quizzes to unlock your personalized analytics chart here!</p>
+            <p className="text-sm font-semibold text-app-2 group-hover:text-violet-700 transition-colors">No performance data yet.</p>
+            <p className="text-xs text-app-muted mt-1 max-w-[220px] leading-relaxed">Complete quizzes to unlock your personalized analytics chart here!</p>
           </div>
           <Link to="/library" className="mt-2 z-10">
-            <Button variant="outline" size="sm" className="text-xs font-semibold bg-white hover:border-violet-300 hover:text-violet-700 transition-colors shadow-sm">
+            <Button variant="outline" size="sm" className="text-xs font-semibold surface hover:border-violet-300 hover:text-violet-700 transition-colors shadow-sm">
               Take a Quiz
             </Button>
           </Link>

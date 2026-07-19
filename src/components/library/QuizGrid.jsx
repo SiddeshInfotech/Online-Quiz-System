@@ -6,7 +6,7 @@ import Pagination from "./Pagination";
 const QuizCardSkeleton = ({ viewMode }) => {
   if (viewMode === "list") {
     return (
-      <div className="flex items-center gap-5 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm animate-pulse">
+      <div className="flex items-center gap-5 p-4 rounded-2xl surface border border-slate-100 shadow-sm animate-pulse">
         <div className="w-24 h-20 rounded-xl bg-slate-200 flex-shrink-0" />
         <div className="flex-1">
           <div className="h-5 bg-slate-200 rounded w-1/3 mb-2" />
@@ -21,7 +21,7 @@ const QuizCardSkeleton = ({ viewMode }) => {
   }
 
   return (
-    <div className="rounded-2xl bg-white border border-slate-100 shadow-sm h-[340px] flex flex-col animate-pulse">
+    <div className="rounded-2xl surface border border-slate-100 shadow-sm h-[340px] flex flex-col animate-pulse">
       <div className="h-[180px] bg-slate-200 rounded-t-2xl" />
       <div className="p-5 flex-1 flex flex-col">
         <div className="h-5 bg-slate-200 rounded w-3/4 mb-2" />
@@ -56,7 +56,7 @@ const QuizGrid = ({
     <section aria-label="All quizzes">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-bold font-space-grotesk text-slate-900">
+        <h2 className="text-lg font-bold font-space-grotesk text-app">
           All Quizzes
         </h2>
 
@@ -66,14 +66,14 @@ const QuizGrid = ({
             onClick={onOpenFilters}
             className="
               inline-flex items-center gap-2 h-9 px-4
-              rounded-lg border border-slate-200 bg-white
-              text-xs font-semibold text-slate-700
+              rounded-lg border border-app surface
+              text-xs font-semibold text-app-2
               hover:bg-slate-50 hover:border-slate-300 transition-all
               focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2
             "
             aria-label="Open filters"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-app-muted"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
             Filters
           </button>
 
@@ -83,7 +83,7 @@ const QuizGrid = ({
               onClick={() => setSortOpen(!sortOpen)}
               className="
                 inline-flex items-center gap-2 h-9 px-3
-                rounded-lg border border-slate-200 bg-white
+                rounded-lg border border-app surface
                 text-xs font-medium text-slate-600
                 hover:border-slate-300 transition-all
                 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2
@@ -92,7 +92,7 @@ const QuizGrid = ({
               aria-expanded={sortOpen}
             >
               <span className="text-slate-400">Sort by:</span>
-              <span className="font-semibold text-slate-700">{currentSort}</span>
+              <span className="font-semibold text-app-2">{currentSort}</span>
               <ChevronDown
                 size={14}
                 className={`text-slate-400 transition-transform duration-200 ${
@@ -102,7 +102,7 @@ const QuizGrid = ({
             </button>
 
             {sortOpen && (
-              <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl border border-slate-200 shadow-xl z-20 py-1 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="absolute right-0 top-full mt-1 w-44 surface rounded-xl border border-app shadow-xl z-20 py-1 animate-in fade-in slide-in-from-top-2 duration-150">
                 {sortOptions.map((opt) => (
                   <button
                     key={opt}
@@ -127,7 +127,7 @@ const QuizGrid = ({
           </div>
 
           {/* View Toggle */}
-          <div className="flex items-center rounded-lg border border-slate-200 overflow-hidden">
+          <div className="flex items-center rounded-lg border border-app overflow-hidden">
             <button
               onClick={() => setViewMode("grid")}
               className={`
@@ -136,7 +136,7 @@ const QuizGrid = ({
                 ${
                   viewMode === "grid"
                     ? "bg-violet-600 text-white"
-                    : "bg-white text-slate-400 hover:text-slate-600"
+                    : "surface text-slate-400 hover:text-slate-600"
                 }
               `}
               aria-label="Grid view"
@@ -152,7 +152,7 @@ const QuizGrid = ({
                 ${
                   viewMode === "list"
                     ? "bg-violet-600 text-white"
-                    : "bg-white text-slate-400 hover:text-slate-600"
+                    : "surface text-slate-400 hover:text-slate-600"
                 }
               `}
               aria-label="List view"
@@ -191,11 +191,11 @@ const QuizGrid = ({
         </div>
       ) : (
         /* Empty State */
-        <div className="flex flex-col items-center justify-center py-16 gap-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
-          <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400">
+        <div className="flex flex-col items-center justify-center py-16 gap-3 surface rounded-2xl border border-slate-100 shadow-sm">
+          <div className="w-14 h-14 rounded-2xl surface-subtle flex items-center justify-center text-slate-400">
             <LayoutGrid size={26} />
           </div>
-          <p className="text-sm font-semibold text-slate-500">
+          <p className="text-sm font-semibold text-app-muted">
             No quizzes found.
           </p>
           <p className="text-xs text-slate-400">

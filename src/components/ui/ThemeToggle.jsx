@@ -21,7 +21,7 @@ function ThemeToggle({ className = "" }) {
         relative inline-flex h-10 w-10 items-center justify-center rounded-xl
         border transition-colors duration-300
         ${isDark
-                    ? "border-[#33333F] bg-[#16161F] text-[#F5C451] hover:border-[#F5C451]/50"
+                    ? "border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--accent)] hover:border-[var(--accent-hover)]"
                     : "border-slate-200 bg-white text-slate-700 hover:border-violet-300 hover:text-violet-600"}
         ${className}
       `}

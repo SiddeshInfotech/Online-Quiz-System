@@ -14,7 +14,7 @@ const getNotificationIcon = (type) => {
     case "target":
       return { icon: Target, bg: "bg-purple-100", color: "text-purple-600" };
     default:
-      return { icon: Star, bg: "bg-slate-100", color: "text-slate-600" };
+      return { icon: Star, bg: "surface-elev", color: "text-app-muted" };
   }
 };
 
@@ -25,7 +25,7 @@ const RightSidebar = ({ notifications }) => {
       {/* Notifications */}
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold text-slate-700 text-sm">Notifications</h3>
+          <h3 className="font-semibold text-app-2 text-sm">Notifications</h3>
           <button className="text-xs font-semibold text-violet-600 hover:text-violet-700">
             View All
           </button>
@@ -40,10 +40,10 @@ const RightSidebar = ({ notifications }) => {
                   <Icon size={14} />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-700 leading-relaxed font-medium whitespace-pre-line">
+                  <p className="text-xs text-app-2 leading-relaxed font-medium whitespace-pre-line">
                     {notif.text}
                   </p>
-                  <p className="text-[10px] text-slate-400 mt-1">{notif.time}</p>
+                  <p className="text-[10px] text-app-muted mt-1">{notif.time}</p>
                 </div>
               </div>
             );

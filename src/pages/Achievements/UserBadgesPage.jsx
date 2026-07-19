@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import achievementService from "../../services/achievementService";
 import BadgeCard from "../../components/achievements/BadgeCard";
@@ -7,7 +7,6 @@ import BadgeGrid from "../../components/achievements/BadgeGrid";
 import BadgeFilters from "../../components/achievements/BadgeFilters";
 import EmptyState from "../../components/achievements/EmptyState";
 import SkeletonBadge from "../../components/achievements/SkeletonBadge";
-import Input from "../../components/ui/Input/Input";
 import { resolveMediaUrl } from "../../services/api";
 
 const FILTERS = ["All", "Common", "Rare", "Epic", "Legendary"];
@@ -18,7 +17,6 @@ const UserBadgesPage = () => {
   const [badges, setBadges] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [activeSort, setActiveSort] = useState("Newest");
 
@@ -41,7 +39,6 @@ const UserBadgesPage = () => {
   }, []);
 
   const filteredBadges = badges.filter(badge => {
-    if (searchQuery && !badge.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (activeFilter === "All") return true;
     return badge.rarity === activeFilter;
   });
@@ -68,36 +65,26 @@ const UserBadgesPage = () => {
     <div className="w-full max-w-7xl mx-auto pb-12">
       <button 
         onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-slate-500 hover:text-violet-600 font-medium mb-8 transition-colors group"
+        className="flex items-center gap-2 text-app-muted hover:text-violet-600 font-medium mb-8 transition-colors group"
       >
         <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
         Back to Profile
       </button>
 
       <div className="mb-8">
-        <h1 className="text-3xl font-bold font-space-grotesk text-slate-900 mb-2">My Badges</h1>
-        <p className="text-base text-slate-500">
+        <h1 className="text-3xl font-bold font-space-grotesk text-app mb-2">My Badges</h1>
+        <p className="text-base text-app-muted">
           You have claimed <span className="font-bold text-violet-600">{badges.length}</span> badges so far.
         </p>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-        <div className="w-full md:w-72">
-          <Input 
-            name="search"
-            placeholder="Search badges..." 
-            leftIcon={Search} 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="mb-0 border-slate-200 bg-slate-50"
-          />
-        </div>
+      <div className="flex justify-end items-center mb-8 surface p-4 rounded-2xl shadow-sm border border-app">
         <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-          <span className="text-sm font-medium text-slate-500 shrink-0">Sort by:</span>
+          <span className="text-sm font-medium text-app-muted shrink-0">Sort by:</span>
           <select 
             value={activeSort}
             onChange={(e) => setActiveSort(e.target.value)}
-            className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-violet-500 focus:border-violet-500 block p-2.5 outline-none cursor-pointer"
+            className="surface-subtle border border-app text-app-2 text-sm rounded-xl focus:ring-violet-500 focus:border-violet-500 block p-2.5 outline-none cursor-pointer"
           >
             {SORT_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
           </select>
@@ -117,7 +104,7 @@ const UserBadgesPage = () => {
           ))}
         </BadgeGrid>
       ) : (
-        <EmptyState message={`No claimed badges found for "${searchQuery}" or selected filters.`} />
+        <EmptyState message="No claimed badges found for selected filters." />
       )}
     </div>
   );

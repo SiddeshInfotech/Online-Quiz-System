@@ -47,39 +47,37 @@
 }
 
 .dark {
-  /* Surfaces  near-black base */
-  --bg-app: #08080C;
-  --bg-surface: #101018;
-  --bg-elevated: #16161F;
-  --bg-subtle: #1B1B26;
+  /* Surfaces */
+  --bg-app: #0F1117;
+  --bg-surface: #1A1F2B;
+  --bg-elevated: #222838;
+  --bg-subtle: #131722;
 
   /* Text */
-  --text-primary: #F5F5FA;
-  --text-secondary: #C7C9D9;
-  --text-muted: #8B8DA3;
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
 
-  /* Borders  low-contrast on black */
-  --border: #24242F;
-  --border-strong: #33333F;
+  /* Borders */
+  --border: #32384A;
+  --border-strong: #32384A;
 
-  /* Interactive accent leans blue in dark, with gold as the premium pop */
-  --accent: #F5C451;
-  /* gold */
-  --accent-hover: #FFD873;
-  --accent-soft: rgba(245, 196, 81, 0.12);
-  --accent-contrast: #0A0A0F;
+  /* Primary accent: purple (consistent with light mode) */
+  --accent: #7C3AED;
+  --accent-hover: #8B5CF6;
+  --accent-soft: rgba(124, 58, 237, 0.15);
+  --accent-contrast: #FFFFFF;
 
-  /* The two signature gradients requested: gold-black & blue-black */
-  --grad-gold: linear-gradient(135deg, #F5C451 0%, #8A6A1F 45%, #0A0A0F 100%);
-  --grad-blue: linear-gradient(135deg, #3B82F6 0%, #1E3A8A 45%, #0A0A0F 100%);
-  --grad-primary: linear-gradient(135deg, #F5C451 0%, #3B82F6 120%);
+  /* Purple gradient for buttons/CTAs */
+  --grad-primary: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
 
-  --hero-glow-1: rgba(245, 196, 81, 0.16);
-  /* gold glow */
-  --hero-glow-2: rgba(59, 130, 246, 0.18);
-  /* blue glow */
+  --hero-glow-1: rgba(124, 58, 237, 0.18);
+  --hero-glow-2: rgba(109, 40, 217, 0.14);
 
-  --ring: #F5C451;
+  /* Gold — reserved for achievements, XP, trophies only */
+  --gold: #FBBF24;
+
+  --ring: #7C3AED;
   --shadow-color: 0 0 0;
   color-scheme: dark;
 }
@@ -138,17 +136,9 @@ button {
   border-color: var(--border);
 }
 
-/* Signature gradient helpers (dark mode only meaningfully) */
+/* Signature gradient helper */
 .grad-primary {
   background: var(--grad-primary);
-}
-
-.grad-gold {
-  background: var(--grad-gold, var(--grad-primary));
-}
-
-.grad-blue {
-  background: var(--grad-blue, var(--grad-primary));
 }
 
 /* Interactive dark-mode sheen for cards/buttons */
@@ -163,7 +153,7 @@ button {
   inset: -1px;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, rgba(245, 196, 81, 0.5), rgba(59, 130, 246, 0.5));
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.5), rgba(139, 92, 246, 0.5));
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   mask: linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);

@@ -32,7 +32,7 @@ const QuizCard = ({ quiz: rawQuiz, viewMode = "grid" }) => {
       >
         <Link
           to={`/quiz/${quiz.id}`}
-          className="flex items-center gap-5 p-4 rounded-2xl bg-white border border-slate-200 hover:shadow-lg hover:border-violet-300 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2"
+          className="flex items-center gap-5 p-4 rounded-2xl surface border border-app hover:shadow-lg hover:border-violet-300 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2"
         >
           {/* Thumbnail */}
           <div className="w-24 h-20 rounded-xl overflow-hidden flex-shrink-0">
@@ -46,10 +46,10 @@ const QuizCard = ({ quiz: rawQuiz, viewMode = "grid" }) => {
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <h4 className="font-bold text-base text-slate-900 truncate group-hover:text-violet-700 transition-colors">
+            <h4 className="font-bold text-base text-app truncate group-hover:text-violet-700 transition-colors">
               {quiz.title}
             </h4>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-app-muted mt-1">
               {quiz.classLevel}
             </p>
           </div>
@@ -101,7 +101,7 @@ const QuizCard = ({ quiz: rawQuiz, viewMode = "grid" }) => {
       whileHover={{ y: -6 }}
       className="group h-full"
     >
-      <div className="rounded-2xl overflow-hidden bg-white border border-slate-200 shadow-sm hover:shadow-xl hover:border-violet-300 transition-all duration-300 h-full flex flex-col focus-within:ring-2 focus-within:ring-violet-400">
+      <div className="rounded-2xl overflow-hidden surface border border-app shadow-sm hover:shadow-xl hover:border-violet-300 transition-all duration-300 h-full flex flex-col focus-within:ring-2 focus-within:ring-violet-400">
         {/* Thumbnail */}
         <div className="relative h-[180px] overflow-hidden">
           <Link to={`/quiz/${quiz.id}`} className="block w-full h-full focus:outline-none">
@@ -156,10 +156,10 @@ const QuizCard = ({ quiz: rawQuiz, viewMode = "grid" }) => {
             to={`/quiz/${quiz.id}`}
             className="block focus:outline-none mb-3"
           >
-            <h4 className="font-bold text-base text-slate-900 line-clamp-1 group-hover:text-violet-700 transition-colors">
+            <h4 className="font-bold text-base text-app line-clamp-1 group-hover:text-violet-700 transition-colors">
               {quiz.title}
             </h4>
-            <p className="text-xs text-slate-500 mt-1">{quiz.classLevel}</p>
+            <p className="text-xs text-app-muted mt-1">{quiz.classLevel}</p>
           </Link>
 
           {/* Meta */}
