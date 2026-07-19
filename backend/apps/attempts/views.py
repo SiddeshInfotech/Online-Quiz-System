@@ -291,8 +291,26 @@ class UserAttemptsHistoryView(APIView):
         passed_count = attempts_qs.filter(percentage__gte=50).count()
         success_rate = round((passed_count / total_attempts * 100), 2) if total_attempts > 0 else 0
 
+        # Implement limit-offset pagination
+        try:
+            limit = int(request.query_params.get('limit', 20))
+        except (ValueError, TypeError):
+            limit = 20
+
+        try:
+            offset = int(request.query_params.get('offset', 0))
+        except (ValueError, TypeError):
+            offset = 0
+
+        # Ensure pagination parameters are reasonable
+        limit = max(1, min(limit, 100))
+        offset = max(0, offset)
+
+        # Optimization: Fetch only the requested page of attempts and join related models in a single query
+        paginated_qs = attempts_qs.select_related('quiz', 'quiz__category', 'result')[offset:offset + limit]
+
         history_list = []
-        for attempt in attempts_qs:
+        for attempt in paginated_qs:
             result = getattr(attempt, 'result', None)
             correct_answers = result.correct_answers if result else 0
             wrong_answers = result.wrong_answers if result else 0
@@ -320,7 +338,14 @@ class UserAttemptsHistoryView(APIView):
                 "best_score": round(best_score, 2),
                 "success_rate": success_rate
             },
-            "attempts": history_list
+            "attempts": history_list,
+            "pagination": {
+                "total": total_attempts,
+                "limit": limit,
+                "offset": offset,
+                "has_next": offset + limit < total_attempts,
+                "has_prev": offset > 0
+            }
         })
 
 class AttemptDetailView(generics.RetrieveAPIView):
