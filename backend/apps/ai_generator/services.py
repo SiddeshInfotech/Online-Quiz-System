@@ -37,6 +37,10 @@ You are an expert quiz generator. Generate exactly {num_questions} theory questi
 Difficulty: {difficulty}
 Focus: {prompt_topic if prompt_topic else 'General'}
 
+TITLE GENERATION RULE:
+Generate a short, catchy, and highly unique title for this quiz by combining the Subject ("{subject}") and the Focus/Topic ("{prompt_topic if prompt_topic else 'General'}").
+Ensure the title is unique and creative (e.g., "Python OOP Mastery: Class Combat", "Python Basics: Loop Ninja").
+
 QUESTION TYPES (mix them evenly):
 1. MCQ (Multiple Choice) - 4 options, one correct.
 2. True/False - exactly 4 options where:
@@ -51,21 +55,24 @@ IMPORTANT:
 - For True/False: A and B are fixed; C and D must be meaningful and related to the statement.
 - For Fill in the Blank: the correct answer must be one of the 4 options.
 
-OUTPUT - Return a JSON array:
-[
-  {{
-    "question_type": "MCQ",
-    "question_text": "Question text",
-    "options": ["A", "B", "C", "D"],
-    "correct_answer": "A"
-  }},
-  {{
-    "question_type": "True/False",
-    "question_text": "C# is used for web development.",
-    "options": ["True", "False", "True, but only with ASP.NET", "False, it is mostly for desktop apps"],
-    "correct_answer": "True"
-  }}
-]
+OUTPUT - Return a JSON object with two fields: "quiz_title" (the unique catchy title generated) and "questions" (the array of exactly {num_questions} questions):
+{{
+  "quiz_title": "Python Basics: Loop Ninja",
+  "questions": [
+    {{
+      "question_type": "MCQ",
+      "question_text": "Question text",
+      "options": ["A", "B", "C", "D"],
+      "correct_answer": "A"
+    }},
+    {{
+      "question_type": "True/False",
+      "question_text": "C# is used for web development.",
+      "options": ["True", "False", "True, but only with ASP.NET", "False, it is mostly for desktop apps"],
+      "correct_answer": "True"
+    }}
+  ]
+}}
 
 Return ONLY valid JSON. No extra text.
 """
@@ -77,6 +84,10 @@ You are an expert programming logic question generator. Generate {num_questions}
 
 Difficulty: {difficulty}
 Focus: {prompt_topic if prompt_topic else 'General'}
+
+TITLE GENERATION RULE:
+Generate a short, catchy, and highly unique title for this quiz by combining the Subject ("{subject}") and the Focus/Topic ("{prompt_topic if prompt_topic else 'General'}").
+Ensure the title is unique and creative (e.g., "Python OOP Mastery: Class Combat", "Python Basics: Loop Ninja").
 
 QUESTION TYPES (mix them):
 1. Predict the output - Show a code snippet, ask what it prints.
@@ -92,19 +103,22 @@ FORMAT:
 - Exactly 4 options, one correct.
 - The correct_answer must be the actual text of the correct option.
 
-OUTPUT - Return a JSON array:
-[
-  {{
-    "question_type": "Coding",
-    "question_text": "What is the output of the following C++ code?\n\n```cpp\n#include <iostream>\n\nint main() {{\n    std::cout << 10 / 3;\n    return 0;\n}}\n```",
-    "options": ["3", "3.33", "3.0", "Error"],
-    "correct_answer": "3"
-  }}
-]
+OUTPUT - Return a JSON object with two fields: "quiz_title" (the unique catchy title generated) and "questions" (the array of exactly {num_questions} questions):
+{{
+  "quiz_title": "Python OOP Mastery: Class Combat",
+  "questions": [
+    {{
+      "question_type": "Coding",
+      "question_text": "What is the output of the following C++ code?\\n\\n```cpp\\n#include <iostream>\\n\\nint main() {{\\n    std::cout << 10 / 3;\\n    return 0;\\n}}\\n```",
+      "options": ["3", "3.33", "3.0", "Error"],
+      "correct_answer": "3"
+    }}
+  ]
+}}
 
 IMPORTANT:
 - The question_text MUST contain a markdown code block with proper syntax highlighting.
-- Use real newlines (\n) in the question_text string for formatting.
+- Use real newlines (\\n) in the question_text string for formatting.
 - Return ONLY valid JSON. No extra text.
 """
         return self._call_openrouter(prompt, num_questions)
@@ -152,7 +166,10 @@ IMPORTANT:
                         if unicodedata.category(ch)[0] != 'C' or ch in '\n\r\t'
                     )
 
-                    json_match = re.search(r'\[\s*\{.*\}\s*\]', raw_text, re.DOTALL)
+                    json_match = re.search(r'\{.*\}', raw_text, re.DOTALL)
+                    if not json_match:
+                        json_match = re.search(r'\[.*\]', raw_text, re.DOTALL)
+
                     if json_match:
                         json_str = json_match.group(0)
                     else:
@@ -162,14 +179,21 @@ IMPORTANT:
                     json_str = re.sub(r',\s*]', ']', json_str)
 
                     try:
-                        questions = json.loads(json_str, strict=False)
+                        parsed_data = json.loads(json_str, strict=False)
                     except json.JSONDecodeError:
                         try:
-                            questions = ast.literal_eval(json_str)
+                            parsed_data = ast.literal_eval(json_str)
                         except Exception:
                             cleaned = re.sub(r'^[^{[]*', '', json_str)
                             cleaned = re.sub(r'[^{[]*$', '', cleaned)
-                            questions = json.loads(cleaned, strict=False)
+                            parsed_data = json.loads(cleaned, strict=False)
+
+                    quiz_title = ""
+                    if isinstance(parsed_data, dict):
+                        quiz_title = parsed_data.get('quiz_title', '').strip()
+                        questions = parsed_data.get('questions', [])
+                    else:
+                        questions = parsed_data
 
                     if not isinstance(questions, list):
                         raise ValueError("Response is not a list")
@@ -222,7 +246,10 @@ IMPORTANT:
                                 else:
                                     q['correct_answer'] = options[0] if options else ""
 
-                    return questions
+                    return {
+                        "quiz_title": quiz_title,
+                        "questions": questions
+                    }
                 else:
                     last_error = f"{model} failed with status {response.status_code}: {response.text}"
 

@@ -35,13 +35,15 @@ class GenerateAIQuizView(APIView):
 
         try:
             ai_service = AIService()
-            questions_data = ai_service.generate_quiz(
+            generation_result = ai_service.generate_quiz(
                 subject=subject,
                 difficulty=difficulty,
                 num_questions=num_questions,
                 prompt_topic=prompt_topic,
                 quiz_mode=quiz_mode
             )
+            quiz_title = generation_result.get("quiz_title", "").strip()
+            questions_data = generation_result.get("questions", [])
         except ValueError as e:
             return Response({
                 "error": str(e)
@@ -61,13 +63,16 @@ class GenerateAIQuizView(APIView):
                 category_name=subject
             )
 
-        quiz_title = f"{subject}: {prompt_topic if prompt_topic else 'AI Generated Quiz'}"
+        if not quiz_title:
+            quiz_title = f"{subject}: {prompt_topic if prompt_topic else 'AI Generated Quiz'}"
+            
         quiz_description = f"AI-generated {quiz_mode} quiz on {subject} - {difficulty} difficulty"
 
         quiz = Quiz.objects.create(
             title=quiz_title,
             description=quiz_description,
             subject=subject,
+            topic=prompt_topic,
             difficulty=difficulty,
             question_type='MCQ' if quiz_mode == 'Theory' else 'Coding',
             visibility='Public',

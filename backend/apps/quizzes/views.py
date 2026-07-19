@@ -133,3 +133,41 @@ class QuizStartView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+from django.db.models import Q
+
+class QuizSearchView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        query = request.query_params.get('q', '').strip()
+        if not query:
+            return Response({
+                "status": "success",
+                "results_count": 0,
+                "data": []
+            }, status=status.HTTP_200_OK)
+
+        quizzes = Quiz.objects.filter(
+            Q(title__icontains=query) |
+            Q(subject__icontains=query) |
+            Q(topic__icontains=query),
+            status='published'
+        )
+
+        results = []
+        for quiz in quizzes:
+            results.append({
+                "quiz_id": quiz.id,
+                "title": quiz.title,
+                "subject": quiz.subject or "",
+                "topic": quiz.topic or "",
+                "start_page_url": f"/quiz/start/{quiz.id}/"
+            })
+
+        return Response({
+            "status": "success",
+            "results_count": len(results),
+            "data": results
+        }, status=status.HTTP_200_OK)
+
+
