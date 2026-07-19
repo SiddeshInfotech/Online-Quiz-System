@@ -1,21 +1,12 @@
 import { Link } from "react-router-dom";
-import { Beaker, Leaf, Calculator, Landmark, ClipboardList } from "lucide-react";
+import { Calculator, Landmark, ClipboardList } from "lucide-react";
 import Card from "../ui/Card/Card";
 import Button from "../ui/Button";
+import { getLanguageIcon } from "../../utils/languageIcons";
 
-const getIconConfig = (type) => {
-  switch (type) {
-    case "chemistry":
-      return { icon: Beaker, bg: "bg-indigo-50", color: "text-indigo-600" };
-    case "biology":
-      return { icon: Leaf, bg: "bg-emerald-50", color: "text-emerald-600" };
-    case "math":
-      return { icon: Calculator, bg: "bg-sky-50", color: "text-sky-600" };
-    case "history":
-      return { icon: Landmark, bg: "bg-amber-50", color: "text-amber-600" };
-    default:
-      return { icon: Beaker, bg: "surface-subtle", color: "text-app-muted" };
-  }
+const getIconConfig = (attempt) => {
+  const { icon: LangIcon } = getLanguageIcon(attempt.subject || attempt.category);
+  return { icon: LangIcon, bg: "bg-[var(--bg-elevated)]" };
 };
 
 const getScoreColor = (score) => {
@@ -55,12 +46,12 @@ const RecentAttempts = ({ attempts, isLoading }) => {
       ) : attempts && attempts.length > 0 ? (
         <div className="flex flex-col gap-4 flex-1 mt-2">
           {attempts.map((attempt) => {
-            const { icon: Icon, bg, color } = getIconConfig(attempt.iconType);
+            const { icon: Icon, bg } = getIconConfig(attempt);
 
             return (
               <div key={attempt.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-[var(--bg-elevated)] transition-all duration-300 border border-transparent hover:border-app group cursor-pointer hover:shadow-sm">
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${bg} ${color} group-hover:scale-110 transition-transform duration-300`}>
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${bg} group-hover:scale-110 transition-transform duration-300`}>
                     <Icon size={20} />
                   </div>
                   <div>

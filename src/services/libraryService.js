@@ -14,6 +14,12 @@ const libraryService = {
     return response.data;
   },
 
+  // Global search API
+  searchQuizzes: async (query) => {
+    const response = await api.get("/quizzes/search/", { params: { q: query } });
+    return response.data;
+  },
+
 
   // Fetch library meta (e.g. dynamic message)
   getLibraryMeta: async () => {

@@ -3,9 +3,12 @@ import { motion } from "framer-motion";
 import { FileText, Clock } from "lucide-react";
 import { enrichQuiz } from "../../utils/quizHelpers";
 
+import { getLanguageIcon } from "../../utils/languageIcons";
+
 const RecommendedCard = ({ quiz: rawQuiz }) => {
   const quiz = enrichQuiz(rawQuiz);
   const progressWidth = `${quiz.progress}%`;
+  const { icon: LanguageIcon } = getLanguageIcon(quiz.subject);
 
   return (
     <motion.div
@@ -17,13 +20,20 @@ const RecommendedCard = ({ quiz: rawQuiz }) => {
         className="block rounded-2xl overflow-hidden surface border border-app shadow-sm hover:shadow-lg hover:border-violet-200 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2"
       >
         {/* Thumbnail */}
-        <div className="relative h-[140px] overflow-hidden">
-          <img
-            src={quiz.thumbnail}
-            alt={quiz.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            loading="lazy"
-          />
+        <div className="relative h-[140px] overflow-hidden bg-slate-50 flex items-center justify-center">
+          {quiz.isDynamicThumbnail ? (
+            <div className="w-full h-full flex flex-col items-center justify-center opacity-90 group-hover:scale-105 transition-transform duration-500 bg-gradient-to-br from-slate-100 to-slate-200">
+              <LanguageIcon size={48} className="mb-2 drop-shadow-sm" />
+              <span className="text-slate-700 font-black text-lg tracking-widest uppercase">{quiz.subject || "Code"}</span>
+            </div>
+          ) : (
+            <img
+              src={quiz.thumbnail}
+              alt={quiz.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+            />
+          )}
           {/* Recommended Badge */}
           <div className="absolute top-3 left-3">
             <span className="inline-flex items-center gap-1 bg-violet-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-md">

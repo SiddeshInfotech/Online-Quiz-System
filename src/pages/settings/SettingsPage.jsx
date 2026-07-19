@@ -162,9 +162,6 @@ const SettingsPage = () => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const [emailNotifs, setEmailNotifs] = useState(true);
-  const [pushNotifs, setPushNotifs] = useState(false);
-
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -221,40 +218,6 @@ const SettingsPage = () => {
                       </div>
                     </div>
                     <Toggle checked={theme === 'dark'} onChange={() => setTheme(theme === 'dark' ? 'light' : 'dark')} />
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-
-          {/* Notifications Section */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.1 }}>
-            <Card className="p-0 overflow-hidden hover:shadow-xl transition-shadow duration-300">
-              <div className="p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-app">
-                  <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-                    <Bell className="text-green-600" size={20} />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold font-space-grotesk text-app">Notifications</h3>
-                    <p className="text-sm text-app-muted">Manage how we contact you.</p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center justify-between p-4 rounded-xl surface-subtle border border-app">
-                    <div>
-                      <p className="font-semibold text-app">Email Notifications</p>
-                      <p className="text-sm text-app-muted">Receive updates and reminders via email.</p>
-                    </div>
-                    <Toggle checked={emailNotifs} onChange={() => setEmailNotifs(!emailNotifs)} />
-                  </div>
-                  <div className="flex items-center justify-between p-4 rounded-xl surface-subtle border border-app">
-                    <div>
-                      <p className="font-semibold text-app">Push Notifications</p>
-                      <p className="text-sm text-app-muted">Get notified on your device when a new quiz is ready.</p>
-                    </div>
-                    <Toggle checked={pushNotifs} onChange={() => setPushNotifs(!pushNotifs)} />
                   </div>
                 </div>
               </div>

@@ -203,6 +203,13 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const fileToBase64 = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.full_name.trim()) {
@@ -244,26 +251,32 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
         };
       }
 
-      const updated = await authService.updateProfile(payload);
+      let updated;
+      try {
+        updated = await authService.updateProfile(payload);
+      } catch (err) {
+        if (profilePicture && err.response) {
+            console.warn("Multipart upload failed, attempting Base64 fallback...");
+            const base64Image = await fileToBase64(profilePicture);
+            const base64Payload = {
+              full_name: form.full_name.trim(),
+              bio: form.bio.trim(),
+              school: form.school.trim(),
+              grade: form.grade.trim(),
+              subject_interests: currentSubjects,
+              profile_picture: base64Image
+            };
+            updated = await authService.updateProfile(base64Payload);
+        } else {
+            throw err;
+        }
+      }
 
+      console.log("[TRACE] 1. PUT /api/auth/profile/ successful");
+      console.log("[TRACE] 2. Exact response.user returned:", updated?.user);
       console.log("PUT Response:", updated);
 
-      const updatedUser = updated?.user ?? updated;
-
-      const merged = {
-        ...profile,
-        ...updatedUser,
-        full_name: updatedUser.full_name ?? form.full_name.trim(),
-        bio: updatedUser.bio ?? form.bio.trim(),
-        school: updatedUser.school ?? form.school.trim(),
-        grade: updatedUser.grade ?? form.grade.trim(),
-        subject_interests:
-          updatedUser.subject_interests ?? currentSubjects,
-        profile_picture:
-          updatedUser.profile_picture ?? profile.profile_picture,
-      };
-
-      onSaved(merged);
+      onSaved({ returnedProfile: updated?.user, oldProfilePicture: profile?.profile_picture });
     } catch (err) {
       console.error("PUT /api/auth/profile/ error:", err);
       if (err.response) {
@@ -650,6 +663,7 @@ const ChangePasswordModal = ({ onClose, onSuccess }) => {
 
 const ProfilePage = () => {
   const { currentUser, logout, updateUser, fetchProfile } = useContext(AuthContext);
+  console.log("[TRACE] 8. ProfilePage rendering with currentUser:", currentUser);
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(!currentUser);
@@ -701,8 +715,35 @@ const ProfilePage = () => {
     }
   }, [currentUser?.badge_count]);
 
-  const handleSaved = async (updated) => {
-    updateUser(updated); // keep AuthContext in sync
+  const handleSaved = async ({ returnedProfile, oldProfilePicture } = {}) => {
+    console.log("[TRACE] 3. ProfilePage.handleSaved called, triggering fetchProfile()");
+    const freshProfile = await fetchProfile();
+    
+    if (returnedProfile && returnedProfile.profile_picture) {
+      // If the backend returns the exact same URL after an upload, log it as a backend issue
+      // We do NOT mask it with frontend workarounds anymore.
+      if (oldProfilePicture && returnedProfile.profile_picture === oldProfilePicture) {
+         console.warn("[BACKEND ISSUE] PUT /api/auth/profile/ returned the same old profile_picture URL despite upload!", {
+           oldProfilePicture,
+           putResponse: returnedProfile.profile_picture
+         });
+      }
+
+      // If the GET request diverges from the PUT response, log it
+      if (freshProfile?.profile_picture !== returnedProfile.profile_picture) {
+         console.warn("[BACKEND ISSUE] GET /api/auth/profile/ returned a different profile_picture than the PUT response!", {
+           putResponse: returnedProfile.profile_picture,
+           getResponse: freshProfile?.profile_picture
+         });
+      }
+      
+      // Enforce the PUT response URL as the single source of truth
+      updateUser({
+        ...freshProfile,
+        profile_picture: returnedProfile.profile_picture
+      });
+    }
+
     setShowModal(false);
     showToast("Profile updated successfully!");
   };
@@ -901,7 +942,7 @@ const ProfilePage = () => {
                   <div className="flex items-center gap-2 flex-wrap">
                     {recentBadges.map((badge) => (
                       <div
-                        key={badge.id}
+                        key={badge.id || badge.badge_id || badge.name}
                         className="w-10 h-10 rounded-xl surface-subtle border-2 border-white shadow flex items-center justify-center overflow-hidden hover:scale-110 transition-transform cursor-pointer flex-shrink-0"
                         title={badge.name}
                       >

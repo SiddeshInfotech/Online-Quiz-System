@@ -1,8 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, Plus, Bell, LogOut, Settings, User as UserIcon, Sparkles, Menu, Trophy, Calendar, Star, FileText, Target } from "lucide-react";
+import { Search, Plus, Bell, LogOut, Settings, User as UserIcon, Sparkles, Menu, Trophy, Calendar, Star, FileText, Target, Loader2 } from "lucide-react";
 import Button from "../ui/Button/Button";
-import Input from "../ui/Input/Input";
+import { useDashboardContext } from "../../context/DashboardContext";
+import notificationService from "../../services/notificationService";
+import libraryService from "../../services/libraryService";
+import useDebounce from "../../hooks/useDebounce";
+import { getLanguageIcon } from "../../utils/languageIcons";
 
 const getNotificationIcon = (type) => {
   switch (String(type).toLowerCase()) {
@@ -24,10 +28,115 @@ const getNotificationIcon = (type) => {
 const TopNav = ({ user, notifications = [], onMenuToggle }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [serverUnreadCount, setServerUnreadCount] = useState(0);
   const profileRef = useRef(null);
   const notifRef = useRef(null);
+  const searchContainerRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { setData } = useDashboardContext();
+
+  // Search State
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 400);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState(false);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+
+  useEffect(() => {
+    notificationService.getUnreadCount()
+      .then(res => setServerUnreadCount(res.unread_count || 0))
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    if (debouncedSearchQuery.length >= 2) {
+      setIsSearching(true);
+      setSearchError(false);
+      libraryService.searchQuizzes(debouncedSearchQuery)
+        .then(res => {
+          if (res.status === "success" && Array.isArray(res.data)) {
+            setSearchResults(res.data);
+          } else {
+            setSearchResults([]);
+          }
+        })
+        .catch(err => {
+          console.error("Search error:", err);
+          setSearchError(true);
+          setSearchResults([]);
+        })
+        .finally(() => {
+          setIsSearching(false);
+        });
+    } else {
+      setSearchResults([]);
+      setIsSearching(false);
+      setSearchError(false);
+    }
+  }, [debouncedSearchQuery]);
+
+  const handleNotificationClick = async (notif) => {
+    if (notif.isRead) return;
+
+    // Optimistic UI update
+    setData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        notifications: prev.notifications.map((n) =>
+          n.id === notif.id ? { ...n, isRead: true } : n
+        ),
+      };
+    });
+
+    try {
+      const res = await notificationService.markAsRead(notif.id);
+      if (res && res.unread_count !== undefined) {
+        setServerUnreadCount(res.unread_count);
+      } else {
+        setServerUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error("Failed to mark notification as read", error);
+      // Revert optimistic update
+      setData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          notifications: prev.notifications.map((n) =>
+            n.id === notif.id ? { ...n, isRead: false } : n
+          ),
+        };
+      });
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    const hasUnread = notifications.some((n) => !n.isRead);
+    if (!hasUnread) return;
+
+    // Optimistic UI update
+    setData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        notifications: prev.notifications.map((n) => ({ ...n, isRead: true })),
+      };
+    });
+
+    try {
+      const res = await notificationService.markAllAsRead();
+      if (res && res.unread_count !== undefined) {
+        setServerUnreadCount(res.unread_count);
+      } else {
+        setServerUnreadCount(0);
+      }
+    } catch (error) {
+      console.error("Failed to mark all as read", error);
+    }
+  };
 
   const showGlobalSearch = location.pathname === "/dashboard" || location.pathname === "/library";
 
@@ -40,13 +149,16 @@ const TopNav = ({ user, notifications = [], onMenuToggle }) => {
       if (notifRef.current && !notifRef.current.contains(event.target)) {
         setShowNotifications(false);
       }
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setShowSearchDropdown(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const isAdmin = user?.role === "admin";
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = serverUnreadCount;
 
   return (
     <header className="sticky top-0 z-30 flex h-20 w-full items-center justify-between px-4 md:px-8 backdrop-blur-md border-b border-app" style={{ backgroundColor: "color-mix(in srgb, var(--bg-surface) 80%, transparent)" }}>
@@ -63,22 +175,70 @@ const TopNav = ({ user, notifications = [], onMenuToggle }) => {
         {/* Search Bar */}
         {showGlobalSearch && (
           <>
-            <div className="w-full max-w-md hidden sm:block">
+            <div className="w-full max-w-md hidden sm:block relative" ref={searchContainerRef}>
               <div className="relative flex items-center">
                 <Search className="absolute left-4 text-slate-400" size={18} />
-                <form onSubmit={(e) => {
-                  e.preventDefault();
-                  const query = e.target.search.value.trim();
-                  if (query) navigate(`/library?search=${encodeURIComponent(query)}`);
-                }} className="w-full">
-                  <input
-                    type="text"
-                    name="search"
-                    placeholder="Search for quizzes, subjects, topics..."
-                    className="h-11 w-full rounded-xl border border-app surface-subtle pl-11 pr-4 text-sm text-app outline-none transition-all focus:border-[var(--accent)] focus:bg-[var(--bg-surface)] focus:ring-4 focus:ring-[var(--accent-soft)] placeholder:text-app-muted"
-                  />
-                </form>
+                <input
+                  type="text"
+                  name="search"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    if (!showSearchDropdown) setShowSearchDropdown(true);
+                  }}
+                  onFocus={() => setShowSearchDropdown(true)}
+                  placeholder="Search for quizzes, subjects, topics..."
+                  className="h-11 w-full rounded-xl border border-app surface-subtle pl-11 pr-4 text-sm text-app outline-none transition-all focus:border-[var(--accent)] focus:bg-[var(--bg-surface)] focus:ring-4 focus:ring-[var(--accent-soft)] placeholder:text-app-muted"
+                />
               </div>
+
+              {/* Search Dropdown */}
+              {showSearchDropdown && searchQuery.length >= 2 && (
+                <div className="absolute top-full mt-2 w-full max-h-96 overflow-y-auto rounded-2xl surface shadow-xl border border-app z-50 p-2 animate-in fade-in slide-in-from-top-4 duration-200">
+                  {isSearching ? (
+                    <div className="flex items-center justify-center p-4 text-app-muted gap-2">
+                      <Loader2 className="animate-spin" size={18} />
+                      <span className="text-sm">Searching...</span>
+                    </div>
+                  ) : searchError ? (
+                    <div className="p-4 text-center text-sm text-red-500">
+                      Unable to search quizzes
+                    </div>
+                  ) : searchResults.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-app-muted">
+                      No quizzes found
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-1">
+                      {searchResults.map((result) => {
+                        const { icon: LanguageIcon } = getLanguageIcon(result.subject);
+                        return (
+                          <div
+                            key={result.quiz_id}
+                            className="flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--bg-elevated)] cursor-pointer transition-colors"
+                            onClick={() => {
+                              setShowSearchDropdown(false);
+                              navigate(`/quiz/${result.quiz_id}`);
+                            }}
+                          >
+                            <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 surface-subtle">
+                              <LanguageIcon size={20} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-semibold text-app truncate mb-0.5">
+                                {result.title}
+                              </h4>
+                              <p className="text-xs text-app-muted truncate">
+                                {result.subject} {result.topic && `• ${result.topic}`}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             
             {/* Mobile Search Icon */}
@@ -121,14 +281,23 @@ const TopNav = ({ user, notifications = [], onMenuToggle }) => {
             <div className="absolute right-0 mt-2 w-80 rounded-2xl surface p-4 shadow-xl border border-app z-50 origin-top-right animate-in fade-in slide-in-from-top-4 duration-200">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-semibold text-app-2">Notifications</h3>
-                <span className="text-xs text-violet-600 cursor-pointer hover:underline">Mark all as read</span>
+                <span 
+                  className="text-xs text-violet-600 cursor-pointer hover:underline"
+                  onClick={handleMarkAllRead}
+                >
+                  Mark all as read
+                </span>
               </div>
               <div className="flex flex-col gap-3 max-h-96 overflow-y-auto no-scrollbar">
                 {notifications.length > 0 ? (
                   notifications.map((notif) => {
                     const { icon: Icon, bg, color } = getNotificationIcon(notif.iconType);
                     return (
-                      <div key={notif.id} className="flex gap-3 p-2 hover:bg-[var(--bg-elevated)] rounded-xl transition-colors cursor-pointer">
+                      <div 
+                        key={notif.id} 
+                        className={`flex gap-3 p-2 hover:bg-[var(--bg-elevated)] rounded-xl transition-colors cursor-pointer ${!notif.isRead ? 'bg-violet-50/50' : ''}`}
+                        onClick={() => handleNotificationClick(notif)}
+                      >
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${bg} ${color}`}>
                           <Icon size={14} />
                         </div>

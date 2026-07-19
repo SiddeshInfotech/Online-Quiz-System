@@ -115,7 +115,7 @@ export const getSubjectThumbnail = (subject) => {
 
 export const enrichQuiz = (quiz) => {
   if (!quiz) return quiz;
-  const genericPlaceholders = ["placeholder", "unsplash", "ui-avatars", "default"];
+  const genericPlaceholders = ["placeholder", "unsplash", "ui-avatars", "default", "data:image/svg+xml"];
 
   let useDynamicThumbnail = true;
   if (quiz.thumbnail) {
@@ -124,9 +124,13 @@ export const enrichQuiz = (quiz) => {
     }
   }
 
+  // Use quiz_title if provided, otherwise fallback to existing title resolution
+  const resolvedTitle = quiz.quiz_title ? quiz.quiz_title : getDynamicQuizTitle(quiz.title, quiz.subject || quiz.category, quiz.topic);
+
   return {
     ...quiz,
-    title: getDynamicQuizTitle(quiz.title || quiz.quiz_title, quiz.subject || quiz.category, quiz.topic),
+    title: resolvedTitle,
     thumbnail: useDynamicThumbnail ? getSubjectThumbnail(quiz.subject || quiz.category || quiz.topic) : quiz.thumbnail,
+    isDynamicThumbnail: useDynamicThumbnail,
   };
 };

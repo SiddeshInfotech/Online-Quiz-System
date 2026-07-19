@@ -16,6 +16,7 @@ import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import attemptsService from "../../services/attemptsService";
+import { getLanguageIcon } from "../../utils/languageIcons";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -124,6 +125,8 @@ const AttemptCard = ({ attempt }) => {
     navigate(`/results/${attempt.id}`);
   };
 
+  const { icon: LangIcon, color: iconColor } = getLanguageIcon(attempt.category || attempt.subject);
+
   const handleRetry = async () => {
     try {
       setIsRetrying(true);
@@ -142,8 +145,10 @@ const AttemptCard = ({ attempt }) => {
     <Card hover className="group overflow-hidden p-5">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 flex-1 gap-4">
-          <div className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-violet-600 transition-transform duration-300 group-hover:scale-110 sm:flex">
-            <FileCheck2 size={24} />
+          <div 
+            className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 sm:flex bg-[var(--bg-elevated)]"
+          >
+            <LangIcon size={24} />
           </div>
 
           <div className="min-w-0 flex-1">

@@ -16,9 +16,10 @@ import {
   Target,
 } from "lucide-react";
 import Button from "../../components/ui/Button";
-import Card from "../../components/ui/Card";
 import libraryService from "../../services/libraryService";
 import attemptsService from "../../services/attemptsService";
+import { getLanguageIcon } from "../../utils/languageIcons";
+import Card from "../../components/ui/Card/Card";
 
 /* ─────────────────────────────────────────────
    Skeleton helpers
@@ -272,6 +273,8 @@ const QuizDetailsPage = () => {
   const scoringInfo = quiz.scoring_info ?? quiz.scoring;
   const additionalInstructions = quiz.instructions;
 
+  const { icon: LangIcon, color: iconColor } = getLanguageIcon(subject);
+
   /* ── Stats — only cards with real data ── */
   const stats = [
     { icon: FileText, iconColor: "bg-violet-100 text-violet-600", value: questionCount != null ? questionCount : null, label: "Questions" },
@@ -335,7 +338,8 @@ const QuizDetailsPage = () => {
                     AI Generated
                   </span>
                   {subject && (
-                    <span className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 border border-indigo-100 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">
+                    <span className="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">
+                      <LangIcon size={12} />
                       {subject}
                     </span>
                   )}

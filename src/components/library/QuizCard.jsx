@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Bookmark, FileText, Clock, Play } from "lucide-react";
 import { useState } from "react";
 import Button from "../ui/Button/Button";
+import { getLanguageIcon } from "../../utils/languageIcons";
 
 import { enrichQuiz } from "../../utils/quizHelpers";
 
@@ -21,6 +22,7 @@ const progressColor = (progress) => {
 const QuizCard = ({ quiz: rawQuiz, viewMode = "grid" }) => {
   const [bookmarked, setBookmarked] = useState(false);
   const quiz = enrichQuiz(rawQuiz);
+  const { icon: LanguageIcon, color: iconColor } = getLanguageIcon(quiz.subject);
 
   if (viewMode === "list") {
     return (
@@ -35,18 +37,25 @@ const QuizCard = ({ quiz: rawQuiz, viewMode = "grid" }) => {
           className="flex items-center gap-5 p-4 rounded-2xl surface border border-app hover:shadow-lg hover:border-violet-300 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2"
         >
           {/* Thumbnail */}
-          <div className="w-24 h-20 rounded-xl overflow-hidden flex-shrink-0">
-            <img
-              src={quiz.thumbnail}
-              alt={quiz.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              loading="lazy"
-            />
+          <div className="w-24 h-20 rounded-xl overflow-hidden flex-shrink-0 relative bg-slate-50 flex items-center justify-center">
+            {quiz.isDynamicThumbnail ? (
+              <div className="w-full h-full flex items-center justify-center opacity-90 group-hover:scale-105 transition-transform duration-500 bg-gradient-to-br from-slate-100 to-slate-200">
+                <LanguageIcon size={40} className="drop-shadow-sm" />
+              </div>
+            ) : (
+              <img
+                src={quiz.thumbnail}
+                alt={quiz.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                loading="lazy"
+              />
+            )}
           </div>
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <h4 className="font-bold text-base text-app truncate group-hover:text-violet-700 transition-colors">
+            <h4 className="font-bold text-base text-app truncate group-hover:text-violet-700 transition-colors flex items-center gap-2">
+              <LanguageIcon size={18} className="flex-shrink-0" />
               {quiz.title}
             </h4>
             <p className="text-xs text-app-muted mt-1">
@@ -103,16 +112,23 @@ const QuizCard = ({ quiz: rawQuiz, viewMode = "grid" }) => {
     >
       <div className="rounded-2xl overflow-hidden surface border border-app shadow-sm hover:shadow-xl hover:border-violet-300 transition-all duration-300 h-full flex flex-col focus-within:ring-2 focus-within:ring-violet-400">
         {/* Thumbnail */}
-        <div className="relative h-[180px] overflow-hidden">
+        <div className="relative h-[180px] overflow-hidden bg-slate-50 flex items-center justify-center">
           <Link to={`/quiz/${quiz.id}`} className="block w-full h-full focus:outline-none">
-            <img
-              src={quiz.thumbnail}
-              alt={quiz.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-              loading="lazy"
-            />
+            {quiz.isDynamicThumbnail ? (
+              <div className="w-full h-full flex flex-col items-center justify-center opacity-90 group-hover:scale-105 transition-transform duration-700 bg-gradient-to-br from-slate-100 to-slate-200">
+                 <LanguageIcon size={72} className="mb-3 drop-shadow-sm" />
+                 <span className="text-slate-700 font-black text-xl tracking-widest uppercase">{quiz.subject || "Code"}</span>
+              </div>
+            ) : (
+              <img
+                src={quiz.thumbnail}
+                alt={quiz.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                loading="lazy"
+              />
+            )}
             {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
           </Link>
 
           {/* Bookmark */}
@@ -143,8 +159,9 @@ const QuizCard = ({ quiz: rawQuiz, viewMode = "grid" }) => {
           {/* Subject Badge */}
           <div className="absolute bottom-3 left-3 z-10">
             <span
-              className={`inline-flex text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm ${quiz.subjectColor}`}
+              className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm ${quiz.subjectColor}`}
             >
+              <LanguageIcon size={12} className="bg-white/80 rounded-sm p-0.5" />
               {quiz.subject}
             </span>
           </div>

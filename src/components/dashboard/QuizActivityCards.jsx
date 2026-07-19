@@ -2,8 +2,10 @@ import { Link } from "react-router-dom";
 import { ClipboardList, BookOpen } from "lucide-react";
 import Card from "../ui/Card/Card";
 import Button from "../ui/Button/Button";
+import { getLanguageIcon } from "../../utils/languageIcons";
 
 const QuizActivityCards = ({ lastQuiz, availableQuizzesCount, isLoading }) => {
+  const { icon: LangIcon, color: iconColor } = getLanguageIcon(lastQuiz?.subject);
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       
@@ -31,12 +33,10 @@ const QuizActivityCards = ({ lastQuiz, availableQuizzesCount, isLoading }) => {
         ) : lastQuiz ? (
           <>
             <div className="flex items-center gap-4 mb-4">
-              {/* Placeholder for Planet 3D Icon */}
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-700 flex items-center justify-center shadow-inner relative overflow-hidden flex-shrink-0 transition-transform group-hover:scale-105">
-                 <div className="absolute w-16 h-4 border-2 border-white/20 rounded-[50%] -rotate-12"></div>
-                 <div className="w-6 h-6 rounded-full bg-indigo-300 shadow-[inset_-2px_-2px_4px_rgba(0,0,0,0.3)] z-10"></div>
-                 <div className="absolute top-2 left-2 w-1 h-1 surface rounded-full"></div>
-                 <div className="absolute bottom-3 right-3 w-1.5 h-1.5 bg-indigo-200 rounded-full"></div>
+              <div 
+                className="w-14 h-14 rounded-xl flex items-center justify-center shadow-inner relative overflow-hidden flex-shrink-0 transition-transform group-hover:scale-105 bg-[var(--bg-elevated)]"
+              >
+                 <LangIcon size={30} />
               </div>
               <div className="flex-1 overflow-hidden">
                 <h4 className="font-semibold text-app truncate group-hover:text-violet-700 transition-colors">{lastQuiz.title}</h4>
