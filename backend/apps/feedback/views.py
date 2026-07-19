@@ -52,35 +52,34 @@ class FeedbackCreateView(APIView):
         print(f"🔍 [FeedbackCreate] Sending admin notification for {user.username}")
         
         try:
-            admin_email = getattr(settings, 'ADMIN_EMAIL', None) or getattr(settings, 'FROM_EMAIL', None)
-            print(f"📧 [FeedbackCreate] Admin email: {admin_email}")
+            import os
+            from sendgrid import SendGridAPIClient
+            from sendgrid.helpers.mail import Mail
             
-            if not admin_email:
-                print("❌ [FeedbackCreate] Admin email not configured!")
-                logger.warning("Admin email not configured, skipping notification.")
-                return
-
+            admin_email = getattr(settings, 'ADMIN_EMAIL', None) or getattr(settings, 'FROM_EMAIL', None) or 'zeeshanansari1081015@gmail.com'
+            from_email = 'zeeshanansari1081015@gmail.com'
+            
             subject = f"[Feedback] {'New' if is_new else 'Updated'} feedback from {user.username}"
-            message = f"""
-Feedback {'submitted' if is_new else 'updated'} by:
-
-User Name: {user.full_name or 'Not set'}
-Username: {user.username}
-Email: {user.email}
-Rating: {feedback.rating}★
-Message: {feedback.message}
-Time: {feedback.updated_at.strftime('%Y-%m-%d %H:%M:%S')}
-Status: {'New Feedback' if is_new else 'Updated Feedback'}
+            html_content = f"""
+            <h3>Feedback {'submitted' if is_new else 'updated'} by:</h3>
+            <p><b>User Name:</b> {user.full_name or 'Not set'}</p>
+            <p><b>Username:</b> {user.username}</p>
+            <p><b>Email:</b> {user.email}</p>
+            <p><b>Rating:</b> {feedback.rating}★</p>
+            <p><b>Message:</b> {feedback.message}</p>
+            <p><b>Time:</b> {feedback.updated_at.strftime('%Y-%m-%d %H:%M:%S')}</p>
+            <p><b>Status:</b> {'New Feedback' if is_new else 'Updated Feedback'}</p>
             """
 
-            send_mail(
-                subject,
-                message.strip(),
-                settings.DEFAULT_FROM_EMAIL,
-                [admin_email],
-                fail_silently=False,  # ✅ Changed to False so errors show
+            message = Mail(
+                from_email=from_email,
+                to_emails=admin_email,
+                subject=subject,
+                html_content=html_content
             )
-            print(f"✅ [FeedbackCreate] Email sent to {admin_email}")
+            sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+            response = sg.send(message)
+            print(f"✅ [FeedbackCreate] SendGrid email sent to {admin_email}, status: {response.status_code}")
 
         except Exception as e:
             print(f"❌ [FeedbackCreate] Email error: {e}")
@@ -160,40 +159,39 @@ class MyFeedbackDetailView(APIView):
                         status=status.HTTP_204_NO_CONTENT)
 
     def _send_admin_notification(self, user, feedback, is_new):
-        """Send email to admin when feedback is created or updated."""
-        print(f"🔍 [FeedbackUpdate] Sending admin notification for {user.username}")
+        """Send email to admin when feedback is created or updated using SendGrid."""
+        print(f"📧 [FeedbackUpdate] Sending admin notification for {user.username} via SendGrid")
         
         try:
-            admin_email = getattr(settings, 'ADMIN_EMAIL', None) or getattr(settings, 'FROM_EMAIL', None)
-            print(f"📧 [FeedbackUpdate] Admin email: {admin_email}")
+            import os
+            from sendgrid import SendGridAPIClient
+            from sendgrid.helpers.mail import Mail
             
-            if not admin_email:
-                print("❌ [FeedbackUpdate] Admin email not configured!")
-                logger.warning("Admin email not configured, skipping notification.")
-                return
-
+            admin_email = getattr(settings, 'ADMIN_EMAIL', None) or getattr(settings, 'FROM_EMAIL', None) or 'zeeshanansari1081015@gmail.com'
+            from_email = 'zeeshanansari1081015@gmail.com'
+            
             subject = f"[Feedback] {'New' if is_new else 'Updated'} feedback from {user.username}"
-            message = f"""
-Feedback {'submitted' if is_new else 'updated'} by:
-
-User Name: {user.full_name or 'Not set'}
-Username: {user.username}
-Email: {user.email}
-Rating: {feedback.rating}★
-Message: {feedback.message}
-Time: {feedback.updated_at.strftime('%Y-%m-%d %H:%M:%S')}
-Status: {'New Feedback' if is_new else 'Updated Feedback'}
+            html_content = f"""
+            <h3>Feedback {'submitted' if is_new else 'updated'} by:</h3>
+            <p><b>User Name:</b> {user.full_name or 'Not set'}</p>
+            <p><b>Username:</b> {user.username}</p>
+            <p><b>Email:</b> {user.email}</p>
+            <p><b>Rating:</b> {feedback.rating}★</p>
+            <p><b>Message:</b> {feedback.message}</p>
+            <p><b>Time:</b> {feedback.updated_at.strftime('%Y-%m-%d %H:%M:%S')}</p>
+            <p><b>Status:</b> {'New Feedback' if is_new else 'Updated Feedback'}</p>
             """
 
-            send_mail(
-                subject,
-                message.strip(),
-                settings.DEFAULT_FROM_EMAIL,
-                [admin_email],
-                fail_silently=False,  # ✅ Changed to False so errors show
+            message = Mail(
+                from_email=from_email,
+                to_emails=admin_email,
+                subject=subject,
+                html_content=html_content
             )
-            print(f"✅ [FeedbackUpdate] Email sent to {admin_email}")
+            sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+            response = sg.send(message)
+            print(f"✅ [FeedbackUpdate] SendGrid email sent to {admin_email}, status: {response.status_code}")
 
         except Exception as e:
-            print(f"❌ [FeedbackUpdate] Email error: {e}")
-            logger.error(f"Failed to send feedback notification: {e}")
+            print(f"❌ [FeedbackUpdate] SendGrid email error: {e}")
+            logger.error(f"Failed to send feedback notification via SendGrid: {e}")

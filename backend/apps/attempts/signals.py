@@ -14,55 +14,9 @@ def update_user_stats(sender, instance, created, **kwargs):
     if not instance.submitted_at:
         return
 
-    user = instance.user
-
-    # Existing stats update
-    try:
-        result = Result.objects.get(attempt=instance)
-        points = result.total_score or instance.score or 0
-    except Result.DoesNotExist:
-        points = instance.score or 0
-
-    # Sum of quiz scores across all completed attempts
-    quiz_score_total = QuizAttempt.objects.filter(
-        user=user, submitted_at__isnull=False
-    ).aggregate(total=Sum('score'))['total'] or 0
-
-    quizzes_completed = QuizAttempt.objects.filter(
-        user=user, submitted_at__isnull=False
-    ).count()
-
-    # BUGFIX: previously total_points was overwritten with ONLY the quiz-score
-    # sum on every submit, which wiped out XP awarded when a user claimed a
-    # badge (ClaimBadgeView does user.total_points += xp_reward). That made the
-    # leaderboard understate points and made claimed-badge XP vanish on the next
-    # quiz. total_points must be quiz score sum + claimed-badge XP.
-    from apps.users.models import UserBadge
-    badge_xp = UserBadge.objects.filter(
-        user=user, status='CLAIMED'
-    ).aggregate(total=Sum('badge__xp_reward'))['total'] or 0
-
-    User.objects.filter(id=user.id).update(
-        total_points=quiz_score_total + badge_xp,
-        quizzes_completed=quizzes_completed
-    )
-
-    # Auto-unlock badges
-    _unlock_badges_for_user(user)
-
-    # #7: notify once/day when the user completes their daily quiz goal.
-    try:
-        from django.db.models import Q
-        from apps.notifications.services import notify_daily_goal_complete
-        target = getattr(user, 'daily_quiz_goal', 3) or 3
-        today = timezone.localdate()
-        completed_today = QuizAttempt.objects.filter(
-            user=user, submitted_at__date=today
-        ).exclude(submitted_at__isnull=True).count()
-        if completed_today >= target:
-            notify_daily_goal_complete(user, completed_today, target)
-    except Exception as e:
-        print(f"[daily-goal-notify] skipped: {e}")
+    # Trigger stats computation, badge checks and notifications asynchronously in background thread
+    from .tasks import process_quiz_submission_background
+    process_quiz_submission_background(instance.user.id, instance.id)
 
 
 # ✅ NEW: Check badges on every login (covers existing users)

@@ -9,6 +9,8 @@ class NotificationListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        from .services import trigger_proactive_notifications
+        trigger_proactive_notifications(self.request.user)
         return Notification.objects.filter(user=self.request.user).order_by('-created_at')
 
 class NotificationCreateView(generics.CreateAPIView):

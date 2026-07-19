@@ -83,37 +83,52 @@ class GlobalLeaderboardView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        ranked_users = User.objects.filter(
-            deactivated_at__isnull=True,
-            is_active=True
-        ).annotate(
-            calculated_rank=Window(
-                expression=Rank(),
-                order_by=F('total_points').desc()
-            )
-        ).order_by('calculated_rank')
+        from django.core.cache import cache
 
-        all_rankings = []
-        for user in ranked_users:
-            profile_picture_url = None
-            if user.profile_picture:
-                profile_picture_url = user.profile_picture.url
+        all_rankings = cache.get("leaderboard_all_rankings")
+        if not all_rankings:
+            ranked_users = User.objects.filter(
+                deactivated_at__isnull=True,
+                is_active=True
+            ).annotate(
+                calculated_rank=Window(
+                    expression=Rank(),
+                    order_by=F('total_points').desc()
+                )
+            ).order_by('calculated_rank')
 
-            badge_count = UserBadge.objects.filter(
-                user=user, 
-                status='CLAIMED'
-            ).count()
+            # Pre-aggregate claimed badge counts in ONE query to avoid N+1 queries
+            badge_counts = {
+                item['user_id']: item['count']
+                for item in UserBadge.objects.filter(status='CLAIMED')
+                .values('user_id')
+                .annotate(count=Count('id'))
+            }
 
-            all_rankings.append({
-                "rank": user.calculated_rank,
-                "full_name": user.full_name or user.username,
-                "username": user.username,
-                "points": user.total_points,
-                "quizzes_count": user.quizzes_completed,
-                "profile_picture": profile_picture_url,
-                "user_id": user.id,
-                "badge_count": badge_count,  # ✅ Keep only badge_count
-            })
+            all_rankings = []
+            for user in ranked_users:
+                profile_picture_url = None
+                if user.profile_picture:
+                    try:
+                        profile_picture_url = user.profile_picture.url
+                    except Exception:
+                        profile_picture_url = None
+
+                badge_count = badge_counts.get(user.id, 0)
+
+                all_rankings.append({
+                    "rank": user.calculated_rank,
+                    "full_name": user.full_name or user.username,
+                    "username": user.username,
+                    "points": user.total_points,
+                    "quizzes_count": user.quizzes_completed,
+                    "profile_picture": profile_picture_url,
+                    "user_id": user.id,
+                    "badge_count": badge_count,
+                })
+
+            # Cache rankings list for 30 seconds
+            cache.set("leaderboard_all_rankings", all_rankings, 30)
 
         top_3 = all_rankings[:3] if len(all_rankings) >= 3 else all_rankings
 
@@ -124,7 +139,10 @@ class GlobalLeaderboardView(APIView):
 
         current_user_profile_pic = None
         if request.user.profile_picture:
-            current_user_profile_pic = request.user.profile_picture.url
+            try:
+                current_user_profile_pic = request.user.profile_picture.url
+            except Exception:
+                current_user_profile_pic = None
 
         current_user_badge_count = UserBadge.objects.filter(
             user=request.user, 

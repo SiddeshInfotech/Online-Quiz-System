@@ -68,3 +68,59 @@ def notify_daily_goal_complete(user, completed, target):
     except Exception as e:
         print(f"[notify] daily_goal skipped: {e}")
         return None
+
+
+def trigger_proactive_notifications(user):
+    """
+    Trigger proactive alerts for the user:
+    1. Daily Goal Warning: Alert if Today's Goal is active but incomplete as the day progresses.
+    2. Unclaimed Badges Reminder: Alert if user has unclaimed/CLAIMABLE badges waiting.
+    """
+    try:
+        from django.utils import timezone
+        from apps.attempts.models import QuizAttempt
+        from apps.users.models import UserBadge
+        from apps.notifications.models import Notification
+
+        today = timezone.localdate()
+        
+        # 1. Daily Goal Warning
+        completed_today = QuizAttempt.objects.filter(
+            user=user, submitted_at__date=today
+        ).exclude(submitted_at__isnull=True).count()
+        target = getattr(user, 'daily_quiz_goal', 3) or 3
+        
+        if completed_today < target:
+            warning_exists = Notification.objects.filter(
+                user=user,
+                type='daily_goal',
+                title__icontains="warning",
+                created_at__date=today
+            ).exists()
+            if not warning_exists:
+                Notification.objects.create(
+                    user=user,
+                    type='daily_goal',
+                    title="Daily goal warning",
+                    message=f"You have only completed {completed_today} of your {target} quiz goal for today. Keep going to maintain your streak!",
+                )
+
+        # 2. Unclaimed Badges Reminder
+        claimable_badges = UserBadge.objects.filter(user=user, status='CLAIMABLE')
+        for ub in claimable_badges:
+            reminder_exists = Notification.objects.filter(
+                user=user,
+                type='achievement',
+                title__icontains="unclaimed",
+                reference_id=ub.badge.badge_id
+            ).exists()
+            if not reminder_exists:
+                Notification.objects.create(
+                    user=user,
+                    type='achievement',
+                    reference_id=ub.badge.badge_id,
+                    title=f"Unclaimed Badge: {ub.badge.name}",
+                    message=f"You have an unclaimed '{ub.badge.name}' badge waiting for you! Claim it now to collect your +{ub.badge.xp_reward or 10} XP reward.",
+                )
+    except Exception as e:
+        print(f"[proactive-notify] skipped: {e}")

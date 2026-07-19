@@ -27,30 +27,49 @@ class BadgeProgressHelper:
         print(f"⏳ [PROGRESS CACHE MISS] user={user.id}, computing...")
         start = time.time()
         
-        # --- Full computation (existing logic) ---
-        attempts = QuizAttempt.objects.filter(
+        # --- Optimized Pass: Fetch attempts into list to avoid repetitive queries ---
+        attempts_list = list(QuizAttempt.objects.filter(
             user=user, submitted_at__isnull=False
-        ).select_related('quiz').order_by('-submitted_at')
+        ).select_related('quiz').order_by('-submitted_at'))
         
-        answers = UserAnswer.objects.filter(attempt__user=user)
+        # Single query for UserAnswer statistics
+        answer_stats = UserAnswer.objects.filter(attempt__user=user).aggregate(
+            total_correct=Count('id', filter=Q(is_correct=True)),
+            reviewed_count=Count('id', filter=Q(reviewed=True))
+        )
+        total_correct = answer_stats['total_correct'] or 0
+        reviewed_count = answer_stats['reviewed_count'] or 0
         
-        # --- Pre-aggregate data ---
-        total_attempts = attempts.count()
-        total_correct = answers.filter(is_correct=True).count()
-        reviewed_count = answers.filter(reviewed=True).count()
-        perfect_count = attempts.filter(percentage=100).count()
+        # Pre-aggregate data in-memory
+        total_attempts = len(attempts_list)
+        perfect_count = sum(1 for a in attempts_list if a.percentage == 100)
         streak = getattr(user, 'current_streak', 0)
         
         # Question counts per quiz (single query)
-        quiz_ids = list(attempts.values_list('quiz_id', flat=True))
+        quiz_ids = [a.quiz_id for a in attempts_list]
         question_counts = {}
         if quiz_ids:
             q_counts = Question.objects.filter(quiz_id__in=quiz_ids).values('quiz_id').annotate(count=Count('id'))
             question_counts = {item['quiz_id']: item['count'] for item in q_counts}
         
-        # Subject stats
+        # Precompute QuizAttempt counts per quiz to avoid N+1 for hidden_gem
+        quiz_attempts_counts = {
+            item['quiz_id']: item['count']
+            for item in QuizAttempt.objects.filter(submitted_at__isnull=False)
+            .values('quiz_id')
+            .annotate(count=Count('id'))
+        }
+        
+        # Precompute UserAnswer mistake flags for all user's attempts in one query
+        attempts_with_mistakes = set(
+            UserAnswer.objects.filter(attempt__user=user, is_correct=False)
+            .values_list('attempt_id', flat=True)
+            .distinct()
+        )
+        
+        # Subject stats in memory
         subject_data = {}
-        for att in attempts:
+        for att in attempts_list:
             subj = att.quiz.subject or 'Uncategorized'
             if subj not in subject_data:
                 subject_data[subj] = {'count': 0, 'scores': []}
@@ -60,12 +79,6 @@ class BadgeProgressHelper:
         subject_avg = {}
         for subj, data in subject_data.items():
             subject_avg[subj] = sum(data['scores']) / len(data['scores']) if data['scores'] else 0
-        
-        # Mastered subjects (>=80% avg and at least 5 quizzes)
-        mastered_subjects = {
-            subj for subj, avg in subject_avg.items() 
-            if subject_data[subj]['count'] >= 5 and avg >= 80
-        }
         
         # Distinct subjects
         subjects_count = len(subject_data)
@@ -84,8 +97,26 @@ class BadgeProgressHelper:
         no_mistake_streak = 0
         perfect_consecutive = 0
         
-        for att in attempts:
+        # Group attempts by quiz in memory
+        attempts_by_quiz = {}
+        # Group attempts by date in memory
+        attempts_by_date = {}
+        
+        for att in attempts_list:
+            # Grouping by quiz
             qid = att.quiz_id
+            if qid not in attempts_by_quiz:
+                attempts_by_quiz[qid] = []
+            attempts_by_quiz[qid].append(att)
+            
+            # Grouping by date (local time)
+            local_dt = timezone.localtime(att.submitted_at)
+            day = local_dt.date()
+            if day not in attempts_by_date:
+                attempts_by_date[day] = []
+            attempts_by_date[day].append(att)
+            
+            # Process attempt
             q_count = question_counts.get(qid, 0)
             
             # Sharp Shooter / Peak Performer
@@ -122,15 +153,14 @@ class BadgeProgressHelper:
             if time_limit > 0 and time_taken < time_limit / 2:
                 speed_run = True
             
-            # Hidden gem (<=2 attempts)
+            # Hidden gem (<=2 attempts globally)
             if not hidden_gem:
-                total_quiz_attempts = QuizAttempt.objects.filter(quiz=att.quiz, submitted_at__isnull=False).count()
+                total_quiz_attempts = quiz_attempts_counts.get(qid, 0)
                 if total_quiz_attempts <= 2:
                     hidden_gem = True
             
             # No mistake streak
-            user_answers = UserAnswer.objects.filter(attempt=att)
-            if user_answers.filter(is_correct=False).exists():
+            if att.id in attempts_with_mistakes:
                 no_mistake_streak = 0
             else:
                 no_mistake_streak += 1
@@ -143,31 +173,40 @@ class BadgeProgressHelper:
         
         # Today's data
         today = timezone.localtime(timezone.now()).date()
-        today_attempts = attempts.filter(submitted_at__date=today)
-        today_questions = UserAnswer.objects.filter(attempt__user=user, attempt__submitted_at__date=today).count()
-        today_quiz_count = today_attempts.count()
+        today_attempts = attempts_by_date.get(today, [])
+        today_quiz_count = len(today_attempts)
+        
+        # today_questions is the number of user answers for attempts submitted today.
+        today_attempt_ids = [a.id for a in today_attempts]
+        if today_attempt_ids:
+            today_questions = UserAnswer.objects.filter(attempt_id__in=today_attempt_ids).count()
+        else:
+            today_questions = 0
         
         # Consecutive days (for badge 34)
         consecutive_days = 0
         for i in range(7):
             day = today - timedelta(days=i)
-            if attempts.filter(submitted_at__date=day).exists():
+            if day in attempts_by_date:
                 consecutive_days += 1
             else:
                 break
         
         # Max time spent in a day (minutes)
         max_day_minutes = 0
-        for day in [today - timedelta(days=i) for i in range(30)]:
-            total_sec = attempts.filter(submitted_at__date=day).aggregate(Sum('time_spent_seconds'))['time_spent_seconds__sum'] or 0
+        for i in range(30):
+            day = today - timedelta(days=i)
+            day_attempts = attempts_by_date.get(day, [])
+            total_sec = sum(a.time_spent_seconds or 0 for a in day_attempts)
             if total_sec // 60 > max_day_minutes:
                 max_day_minutes = total_sec // 60
         
         # Goal achieved days
         daily_goal = getattr(user, 'daily_quiz_goal', 3)
         goal_days = 0
-        for day in [today - timedelta(days=i) for i in range(30)]:
-            day_count = attempts.filter(submitted_at__date=day).count()
+        for i in range(30):
+            day = today - timedelta(days=i)
+            day_count = len(attempts_by_date.get(day, []))
             if day_count >= daily_goal:
                 goal_days += 1
             else:
@@ -176,7 +215,7 @@ class BadgeProgressHelper:
         # Early bird / Night owl
         early_bird = False
         night_owl = False
-        for att in attempts:
+        for att in attempts_list:
             local_time = timezone.localtime(att.submitted_at)
             if local_time.hour < 9:
                 early_bird = True
@@ -187,19 +226,18 @@ class BadgeProgressHelper:
         
         # Redemption (100% on previously failed quiz)
         redemption = 0
-        quiz_ids_distinct = attempts.values_list('quiz_id', flat=True).distinct()
-        for qid in quiz_ids_distinct:
-            q_attempts = attempts.filter(quiz_id=qid).order_by('submitted_at')
-            if q_attempts.count() >= 2:
-                first = q_attempts.first()
-                last = q_attempts.last()
+        for qid, q_atts in attempts_by_quiz.items():
+            if len(q_atts) >= 2:
+                # attempts_list is ordered by -submitted_at, so first is last, last is first.
+                first = q_atts[-1]
+                last = q_atts[0]
                 if first.percentage < 60 and last.percentage == 100:
                     redemption = 1
                     break
         
         # Weekly warrior (20 quizzes in last 7 days)
         week_ago = timezone.now() - timedelta(days=7)
-        weekly_count = attempts.filter(submitted_at__gte=week_ago).count()
+        weekly_count = sum(1 for a in attempts_list if a.submitted_at >= week_ago)
         
         # --- Build progress map ---
         progress_map = {
@@ -210,7 +248,7 @@ class BadgeProgressHelper:
             17: 1 if sharp_shooter else 0,
             18: perfect_count,
             19: perfect_consecutive,
-            20: BadgeProgressHelper._average_last_20(attempts),
+            20: BadgeProgressHelper._average_last_20(attempts_list),
             21: no_mistake_streak,
             22: redemption,
             27: len(coding_quiz_ids),
@@ -240,7 +278,7 @@ class BadgeProgressHelper:
             64: BadgeProgressHelper._get_feedback_count(user),
         }
         
-        # ✅ Cache for 10 minutes (600 seconds)
+        # Cache for 10 minutes (600 seconds)
         cache.set(cache_key, progress_map, 600)
         print(f"✅ [PROGRESS CACHE SET] user={user.id}, took {time.time() - start:.2f}s")
         return progress_map
