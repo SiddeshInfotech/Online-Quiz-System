@@ -95,14 +95,16 @@ class BadgeProgressHelper:
         hard_high_score = False
         champion_count = 0
         no_mistake_streak = 0
+        max_no_mistake_streak = 0
         perfect_consecutive = 0
+        max_perfect_consecutive = 0
         
         # Group attempts by quiz in memory
         attempts_by_quiz = {}
         # Group attempts by date in memory
         attempts_by_date = {}
         
-        for att in attempts_list:
+        for att in reversed(attempts_list):
             # Grouping by quiz
             qid = att.quiz_id
             if qid not in attempts_by_quiz:
@@ -164,12 +166,16 @@ class BadgeProgressHelper:
                 no_mistake_streak = 0
             else:
                 no_mistake_streak += 1
+            if no_mistake_streak > max_no_mistake_streak:
+                max_no_mistake_streak = no_mistake_streak
             
             # Consecutive perfect scores
             if att.percentage == 100:
                 perfect_consecutive += 1
             else:
                 perfect_consecutive = 0
+            if perfect_consecutive > max_perfect_consecutive:
+                max_perfect_consecutive = perfect_consecutive
         
         # Today's data
         today = timezone.localtime(timezone.now()).date()
@@ -228,9 +234,9 @@ class BadgeProgressHelper:
         redemption = 0
         for qid, q_atts in attempts_by_quiz.items():
             if len(q_atts) >= 2:
-                # attempts_list is ordered by -submitted_at, so first is last, last is first.
-                first = q_atts[-1]
-                last = q_atts[0]
+                # attempts_by_quiz is populated chronologically (oldest first)
+                first = q_atts[0]
+                last = q_atts[-1]
                 if first.percentage < 60 and last.percentage == 100:
                     redemption = 1
                     break
@@ -247,9 +253,9 @@ class BadgeProgressHelper:
             13: total_attempts, 14: today_questions, 15: today_quiz_count, 16: total_attempts,
             17: 1 if sharp_shooter else 0,
             18: perfect_count,
-            19: perfect_consecutive,
+            19: max_perfect_consecutive,
             20: BadgeProgressHelper._average_last_20(attempts_list),
-            21: no_mistake_streak,
+            21: max_no_mistake_streak,
             22: redemption,
             27: len(coding_quiz_ids),
             28: len(python_quiz_ids),
@@ -291,9 +297,9 @@ class BadgeProgressHelper:
     @staticmethod
     def _average_last_20(attempts):
         last_20 = list(attempts[:20])
-        if last_20:
-            return sum(a.percentage for a in last_20) / len(last_20)
-        return 0
+        if len(last_20) < 20:
+            return 0
+        return sum(a.percentage for a in last_20) / len(last_20)
 
     @staticmethod
     def _subjects_above_80(subject_data, threshold):
@@ -308,7 +314,7 @@ class BadgeProgressHelper:
         target_map = {
             1: 3, 2: 7, 3: 14, 4: 30, 5: 60, 6: 100, 7: 365,
             9: 1, 10: 10, 11: 50, 12: 100, 13: 250, 14: 100, 15: 5, 16: 500, 55: 50,
-            17: 90, 18: 100, 19: 5, 20: 80, 21: 3, 22: 1,
+            17: 90, 18: 100, 19: 10, 20: 80, 21: 3, 22: 1,
             27: 5, 28: 5, 29: 5, 30: 5, 32: 5, 33: 10,
             34: 7, 35: 60, 37: 1, 38: 1, 39: 7,
             40: 5, 45: 1, 50: 70, 51: 20, 52: 20, 53: 10, 54: 100, 58: 10, 59: 95, 60: 100, 61: 1, 62: 1, 
