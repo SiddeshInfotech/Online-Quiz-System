@@ -52,12 +52,7 @@ const QuizAttemptPage = () => {
     answersRef.current = answers;
   }, [answers]);
 
-  useEffect(() => {
-    fetchAttempt();
-    return () => clearInterval(timerRef.current);
-  }, [attemptId]);
-
-  const fetchAttempt = async () => {
+  const fetchAttempt = useCallback(async () => {
     if (!attemptId || attemptId === "undefined" || attemptId === "null") {
       console.error("attemptId is undefined");
       setIsLoading(false);
@@ -106,7 +101,12 @@ const QuizAttemptPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [attemptId, navigate, location.state]);
+
+  useEffect(() => {
+    fetchAttempt();
+    return () => clearInterval(timerRef.current);
+  }, [fetchAttempt]);
 
   // Timer Effect
   useEffect(() => {
@@ -135,37 +135,8 @@ const QuizAttemptPage = () => {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (isLoading || showSubmitModal || showExitModal) return;
-
-      if (e.key === "ArrowRight") {
-        handleNext();
-      } else if (e.key === "ArrowLeft") {
-        handlePrev();
-      } else if (["1", "2", "3", "4"].includes(e.key)) {
-        const optionIndex = parseInt(e.key) - 1;
-        const currentQ = questions[currentIndex];
-        if (currentQ && currentQ.options && currentQ.options[optionIndex]) {
-          handleSelectOption(currentQ.options[optionIndex].id);
-        }
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isLoading, showSubmitModal, showExitModal, currentIndex, questions]);
-
-  // Sync ref for current question id
-  useEffect(() => {
-    if (questions.length > 0) {
-      currentQIdRef.current = questions[currentIndex]?.id;
-    }
-  }, [currentIndex, questions]);
-
   // -- Actions --
-
-  const performAutosave = async (questionId, optionId, marked) => {
+  const performAutosave = useCallback(async (questionId, optionId, marked) => {
     const payload = {
       question_id: questionId,
       selected_option_id: optionId || null,
@@ -185,9 +156,9 @@ const QuizAttemptPage = () => {
       console.error("Autosave failed", err);
       setAutosaveStatus("error");
     }
-  };
+  }, [attemptId]);
 
-  const handleSelectOption = (optionId) => {
+  const handleSelectOption = useCallback((optionId) => {
     const qId = questions[currentIndex].id;
     setAnswers((prev) => {
       const newAnswers = { ...prev, [qId]: optionId };
@@ -197,47 +168,75 @@ const QuizAttemptPage = () => {
       return newAnswers;
     });
     performAutosave(qId, optionId, markedForReview[currentIndex]);
-  };
+  }, [questions, currentIndex, markedForReview, performAutosave]);
 
-  const handleClearAnswer = () => {
+  const handleClearAnswer = useCallback(() => {
     const qId = questions[currentIndex].id;
     const newAnswers = { ...answers };
     delete newAnswers[qId];
     setAnswers(newAnswers);
     performAutosave(qId, null, markedForReview[currentIndex]);
-  };
+  }, [questions, currentIndex, answers, markedForReview, performAutosave]);
 
-  const handleToggleReview = () => {
+  const handleToggleReview = useCallback(() => {
     const qId = questions[currentIndex].id;
     const isMarked = !markedForReview[currentIndex];
     setMarkedForReview((prev) => ({ ...prev, [currentIndex]: isMarked }));
     performAutosave(qId, answers[qId], isMarked);
-  };
+  }, [questions, currentIndex, markedForReview, answers, performAutosave]);
 
-  const smoothScrollToTop = () => {
+  const smoothScrollToTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     // Focus the question heading for accessibility
     setTimeout(() => {
       const heading = document.getElementById("question-heading");
       if (heading) heading.focus({ preventScroll: true });
     }, 300);
-  };
+  }, []);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (currentIndex < questions.length - 1) {
       setCurrentIndex((prev) => prev + 1);
       smoothScrollToTop();
     } else {
       setShowSubmitModal(true);
     }
-  };
+  }, [currentIndex, questions.length, smoothScrollToTop]);
 
-  const handlePrev = () => {
+  const handlePrev = useCallback(() => {
     if (currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
       smoothScrollToTop();
     }
-  };
+  }, [currentIndex, smoothScrollToTop]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (isLoading || showSubmitModal || showExitModal) return;
+
+      if (e.key === "ArrowRight") {
+        handleNext();
+      } else if (e.key === "ArrowLeft") {
+        handlePrev();
+      } else if (["1", "2", "3", "4"].includes(e.key)) {
+        const optionIndex = parseInt(e.key) - 1;
+        const currentQ = questions[currentIndex];
+        if (currentQ && currentQ.options && currentQ.options[optionIndex]) {
+          handleSelectOption(currentQ.options[optionIndex].id);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isLoading, showSubmitModal, showExitModal, currentIndex, questions, handleNext, handlePrev, handleSelectOption]);
+
+  // Sync ref for current question id
+  useEffect(() => {
+    if (questions.length > 0) {
+      currentQIdRef.current = questions[currentIndex]?.id;
+    }
+  }, [currentIndex, questions]);
 
   const handleNavigatePalette = (index) => {
     setCurrentIndex(index);

@@ -3,13 +3,13 @@
   padding: 5px 10px;
   border-radius: 5px;
   color: var(--accent);
-  background: var(--accent-bg);
+  background: var(--accent-soft);
   border: 2px solid transparent;
   transition: border-color 0.3s;
   margin-bottom: 24px;
 
   &:hover {
-    border-color: var(--accent-border);
+    border-color: var(--accent);
   }
   &:focus-visible {
     outline: 2px solid var(--accent);
@@ -116,10 +116,10 @@
   }
 
   a {
-    color: var(--text-h);
+    color: var(--text-primary);
     font-size: 16px;
     border-radius: 6px;
-    background: var(--social-bg);
+    background: var(--bg-subtle);
     display: flex;
     padding: 6px 12px;
     align-items: center;

@@ -113,7 +113,7 @@ const PerformanceChart = ({ stats, chartData, isLoading }) => {
                   cy={pt.y}
                   r="3.5"
                   fill="var(--bg-surface)"
-                  stroke="var(--primary)"
+                  stroke="var(--accent)"
                   strokeWidth="2"
                   vectorEffect="non-scaling-stroke"
                   className="hover:r-[5px] transition-all cursor-pointer shadow-sm"

@@ -43,9 +43,9 @@ class AchievementService {
     try {
       const response = await api.post('/achievements/check-unlock/');
       return response.data;
-    } catch (e) {
+    } catch {
       // Non-critical — swallow error so callers don't need to handle it
-      console.warn('Achievement check-unlock failed (non-critical):', e?.response?.status);
+      console.warn('Achievement check-unlock failed (non-critical)');
       return null;
     }
   }

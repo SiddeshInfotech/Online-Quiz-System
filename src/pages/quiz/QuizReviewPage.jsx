@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import attemptsService from "../../services/attemptsService";
@@ -24,11 +24,7 @@ const QuizReviewPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
-  useEffect(() => {
-    fetchReview();
-  }, [attemptId]);
-
-  const fetchReview = async () => {
+  const fetchReview = useCallback(async () => {
     try {
       setIsLoading(true);
       const data = await attemptsService.getAttemptReview(attemptId);
@@ -56,7 +52,33 @@ const QuizReviewPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [attemptId]);
+
+  const smoothScrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => {
+      const heading = document.getElementById("question-heading");
+      if (heading) heading.focus({ preventScroll: true });
+    }, 300);
+  }, []);
+
+  const handleNext = useCallback(() => {
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex((prev) => prev + 1);
+      smoothScrollToTop();
+    }
+  }, [currentIndex, questions.length, smoothScrollToTop]);
+
+  const handlePrev = useCallback(() => {
+    if (currentIndex > 0) {
+      setCurrentIndex((prev) => prev - 1);
+      smoothScrollToTop();
+    }
+  }, [currentIndex, smoothScrollToTop]);
+
+  useEffect(() => {
+    fetchReview();
+  }, [fetchReview]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -71,29 +93,7 @@ const QuizReviewPage = () => {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isLoading, currentIndex, questions]);
-
-  const smoothScrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    setTimeout(() => {
-      const heading = document.getElementById("question-heading");
-      if (heading) heading.focus({ preventScroll: true });
-    }, 300);
-  };
-
-  const handleNext = () => {
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex((prev) => prev + 1);
-      smoothScrollToTop();
-    }
-  };
-
-  const handlePrev = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex((prev) => prev - 1);
-      smoothScrollToTop();
-    }
-  };
+  }, [isLoading, handleNext, handlePrev]);
 
   const handleNavigatePalette = (index) => {
     setCurrentIndex(index);

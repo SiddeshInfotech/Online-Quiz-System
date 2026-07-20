@@ -42,7 +42,7 @@ const BrandPanel = () => {
             Create Smarter
             <br />
             Quizzes{" "}
-            <span className="bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent" style={{ WebkitBackgroundClip: "text" }}>
               with AI
             </span>
           </h1>

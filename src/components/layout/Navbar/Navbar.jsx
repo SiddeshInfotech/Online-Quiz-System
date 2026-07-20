@@ -17,7 +17,7 @@ function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-app surface/80 backdrop-blur-md"
+    <header className="sticky top-0 z-50 border-b border-app bg-[var(--bg-surface)]/80 backdrop-blur-md"
       style={{ backgroundColor: "color-mix(in srgb, var(--bg-surface) 80%, transparent)" }}>
       <Container>
         <nav className="flex h-20 items-center justify-between">

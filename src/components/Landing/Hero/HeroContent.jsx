@@ -25,7 +25,7 @@ function HeroContent() {
         quizzes
         <span
           className="bg-clip-text text-transparent"
-          style={{ backgroundImage: "var(--grad-primary)" }}
+          style={{ backgroundImage: "var(--grad-primary)", WebkitBackgroundClip: "text" }}
         >
           {" "}in seconds
         </span>
