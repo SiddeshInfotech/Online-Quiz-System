@@ -15,8 +15,6 @@ function Footer() {
           <div className="flex gap-8 text-sm text-slate-600">
             <a href="#">About</a>
             <a href="#">Features</a>
-            <a href="#">Contact</a>
-            <a href="#">Privacy</a>
           </div>
 
           <p className="text-sm text-slate-400">
