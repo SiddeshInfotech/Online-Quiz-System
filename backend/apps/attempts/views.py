@@ -234,6 +234,17 @@ class SubmitAttemptView(APIView):
             attempt.submitted_at = timezone.now()
             attempt.score = total_score
             attempt.percentage = percentage
+
+            # Calculate and save time spent/taken
+            from datetime import time as dt_time
+            time_diff = attempt.submitted_at - attempt.started_at
+            total_seconds = int(time_diff.total_seconds())
+            hours = (total_seconds // 3600) % 24
+            minutes = (total_seconds // 60) % 60
+            seconds = total_seconds % 60
+            attempt.time_taken = dt_time(hours, minutes, seconds)
+            attempt.time_spent_seconds = total_seconds
+
             attempt.save()
 
             # Create/replace Result (idempotent so re-submits don't error)

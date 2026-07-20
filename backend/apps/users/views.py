@@ -843,24 +843,23 @@ class ClaimBadgeView(APIView):
             user_badge.claimed_at = timezone.now()
             user_badge.save()
 
-            # Award XP  use the badge's own xp_reward so it matches the
-            # total_points recomputation in attempts/signals.py (which sums
-            # badge__xp_reward for CLAIMED badges). Keeping these in sync
-            # prevents points from drifting on the next quiz submit.
-            xp_reward = badge.xp_reward or 10
+            # Bug #5: Award XP aligned with AllBadgeSerializer's dynamic XP mapping
+            xp_map = {'COMMON': 25, 'RARE': 50, 'EPIC': 100, 'LEGENDARY': 200}
+            xp_reward = xp_map.get(badge.rarity, 25)
             user.xp += xp_reward
             user.level = (user.xp // 100) + 1
+            
             # total_points is recomputed authoritatively as quiz_score_sum +
-            # claimed_badge_xp; set it directly here too so the response is
-            # immediately correct without waiting for a quiz submit.
+            # claimed_badge_xp using the exact same dynamic mapping to prevent point drift
             from apps.attempts.models import QuizAttempt
             from django.db.models import Sum as _Sum
             quiz_score_total = QuizAttempt.objects.filter(
                 user=user, submitted_at__isnull=False
             ).aggregate(total=_Sum('score'))['total'] or 0
-            badge_xp = UserBadge.objects.filter(
-                user=user, status='CLAIMED'
-            ).aggregate(total=_Sum('badge__xp_reward'))['total'] or 0
+            
+            claimed_badges = UserBadge.objects.filter(user=user, status='CLAIMED').select_related('badge')
+            badge_xp = sum(xp_map.get(ub.badge.rarity, 25) for ub in claimed_badges)
+            
             user.total_points = quiz_score_total + badge_xp
             user.save()
 

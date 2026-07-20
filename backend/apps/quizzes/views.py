@@ -92,9 +92,24 @@ class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
         instance.delete()
 
 class QuizStartView(APIView):
+    """
+    DEPRECATED: This view is deprecated in favor of StartAttemptView located in apps.attempts.views.
+    
+    Deprecation instructions:
+    - Frontend clients must migrate to POST /api/attempts/start/ with JSON payload {"quiz_id": <id>}.
+    - This view lacks advanced features like automatic expiration of previous, stale attempts that have exceeded the quiz's duration.
+    - StartAttemptView correctly manages attempt lifecycle, auto-submits expired attempts, and handles multi-session states.
+    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):  
+        import warnings
+        warnings.warn(
+            "QuizStartView (/api/quizzes/<id>/start/) is deprecated. Use /api/attempts/start/ instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+
         quiz = get_object_or_404(Quiz, id=pk, status='published')
         user = request.user
 
@@ -118,6 +133,7 @@ class QuizStartView(APIView):
         question_data = AttemptQuestionSerializer(questions, many=True).data
 
         return Response({
+            "warning": "This endpoint is deprecated. Please migrate to POST /api/attempts/start/.",
             "attempt_id": attempt.id,
             "quiz": {
                 "id": quiz.id,

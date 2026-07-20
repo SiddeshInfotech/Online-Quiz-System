@@ -106,21 +106,27 @@ def trigger_proactive_notifications(user):
                 )
 
         # 2. Unclaimed Badges Reminder
-        claimable_badges = UserBadge.objects.filter(user=user, status='CLAIMABLE')
-        for ub in claimable_badges:
-            reminder_exists = Notification.objects.filter(
+        claimable_badges = UserBadge.objects.filter(user=user, status='CLAIMABLE').select_related('badge')
+        badge_ids = [ub.badge.badge_id for ub in claimable_badges]
+
+        if badge_ids:
+            # Bulk query checking to avoid N+1 queries
+            existing_reminders = set(Notification.objects.filter(
                 user=user,
                 type='achievement',
                 title__icontains="unclaimed",
-                reference_id=ub.badge.badge_id
-            ).exists()
-            if not reminder_exists:
-                Notification.objects.create(
-                    user=user,
-                    type='achievement',
-                    reference_id=ub.badge.badge_id,
-                    title=f"Unclaimed Badge: {ub.badge.name}",
-                    message=f"You have an unclaimed '{ub.badge.name}' badge waiting for you! Claim it now to collect your +{ub.badge.xp_reward or 10} XP reward.",
-                )
+                reference_id__in=badge_ids
+            ).values_list('reference_id', flat=True))
+
+            for ub in claimable_badges:
+                badge_id = ub.badge.badge_id
+                if badge_id not in existing_reminders:
+                    Notification.objects.create(
+                        user=user,
+                        type='achievement',
+                        reference_id=badge_id,
+                        title=f"Unclaimed Badge: {ub.badge.name}",
+                        message=f"You have an unclaimed '{ub.badge.name}' badge waiting for you! Claim it now to collect your +{ub.badge.xp_reward or 10} XP reward.",
+                    )
     except Exception as e:
         print(f"[proactive-notify] skipped: {e}")

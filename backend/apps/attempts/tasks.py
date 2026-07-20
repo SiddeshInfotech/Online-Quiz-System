@@ -60,60 +60,44 @@ def process_quiz_submission_background(user_id, attempt_id):
             ).count()
 
             # --- Calculate current streak and longest streak ---
-            from datetime import timedelta, datetime
+            from datetime import timedelta
             today = timezone.localdate()
+
+            # Single query to fetch all submitted attempt timestamps for this user
+            sub_times = QuizAttempt.objects.filter(
+                user=user,
+                submitted_at__isnull=False
+            ).values_list('submitted_at', flat=True)
+
+            # Evaluate dates in memory using the user's timezone locale
+            dates_set = {timezone.localdate(dt) for dt in sub_times}
+
             streak = 0
             check_date = today
 
-            # Check if user has submitted any quiz today
-            day_start = timezone.make_aware(datetime.combine(today, datetime.min.time()))
-            day_end = timezone.make_aware(datetime.combine(today, datetime.max.time()))
-            has_today = QuizAttempt.objects.filter(
-                user=user,
-                submitted_at__isnull=False,
-                submitted_at__range=(day_start, day_end)
-            ).exists()
-
-            if not has_today:
+            # If they did not attempt today, check starting from yesterday
+            if today not in dates_set:
                 check_date = today - timedelta(days=1)
 
-            while True:
-                d_start = timezone.make_aware(datetime.combine(check_date, datetime.min.time()))
-                d_end = timezone.make_aware(datetime.combine(check_date, datetime.max.time()))
-                attempts_on_day = QuizAttempt.objects.filter(
-                    user=user,
-                    submitted_at__isnull=False,
-                    submitted_at__range=(d_start, d_end)
-                ).exists()
-
-                if attempts_on_day:
-                    streak += 1
-                    check_date -= timedelta(days=1)
-                else:
-                    break
+            # Count consecutive days backwards
+            while check_date in dates_set:
+                streak += 1
+                check_date -= timedelta(days=1)
 
             longest_streak = max(getattr(user, 'longest_streak', 0) or 0, streak)
 
-            # Retrieve badges XP
-            badge_xp = UserBadge.objects.filter(
-                user=user, status='CLAIMED'
-            ).aggregate(total=Sum('badge__xp_reward'))['total'] or 0
+            # Retrieve badges XP dynamically to match AllBadgeSerializer (Bug #5 alignment)
+            claimed_badges = UserBadge.objects.filter(user=user, status='CLAIMED').select_related('badge')
+            xp_map = {'COMMON': 25, 'RARE': 50, 'EPIC': 100, 'LEGENDARY': 200}
+            badge_xp = sum(xp_map.get(ub.badge.rarity, 25) for ub in claimed_badges)
 
-            # Update User profile statistics
-            User.objects.filter(id=user.id).update(
-                total_points=quiz_score_total + badge_xp,
-                quizzes_completed=quizzes_completed,
-                current_streak=streak,
-                longest_streak=longest_streak,
-                last_active_date=today
-            )
-            
-            # Update the in-memory user object attributes for subsequent badge checks
+            # Update User profile statistics and save (Bug #6 fix)
+            user.total_points = quiz_score_total + badge_xp
+            user.quizzes_completed = quizzes_completed
             user.current_streak = streak
             user.longest_streak = longest_streak
             user.last_active_date = today
-            user.total_points = quiz_score_total + badge_xp
-            user.quizzes_completed = quizzes_completed
+            user.save()
             
             # Clear leaderboard cache so it recalculates with new stats
             cache.delete("leaderboard_all_rankings")
