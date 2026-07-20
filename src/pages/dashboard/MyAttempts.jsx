@@ -10,6 +10,7 @@ import {
   Target,
   Trophy,
   XCircle,
+  RotateCcw,
 } from "lucide-react";
 
 import Badge from "../../components/ui/Badge";
