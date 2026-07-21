@@ -73,16 +73,22 @@ class UserSerializer(serializers.ModelSerializer):
     profile_picture = serializers.SerializerMethodField()
     profile_completion = serializers.SerializerMethodField()
     badge_count = serializers.SerializerMethodField()
+    total_attempts = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'full_name', 'role', 'bio',
             'date_joined', 'profile_picture', 'school', 'grade',
-            'subject_interests', 'profile_completion', 'badge_count'
-            
+            'subject_interests', 'profile_completion', 'badge_count',
+            'quizzes_completed', 'total_points', 'xp', 'level',
+            'current_streak', 'longest_streak', 'total_attempts'
         ]
-        read_only_fields = ['id', 'username', 'email', 'role', 'date_joined']
+        read_only_fields = [
+            'id', 'username', 'email', 'role', 'date_joined',
+            'quizzes_completed', 'total_points', 'xp', 'level',
+            'current_streak', 'longest_streak', 'total_attempts'
+        ]
 
     def update(self, instance, validated_data):
         request = self.context.get('request')
@@ -144,6 +150,10 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_badge_count(self, obj):
         return UserBadge.objects.filter(user=obj, status='CLAIMED').count()
+
+    def get_total_attempts(self, obj):
+        from apps.attempts.models import QuizAttempt
+        return QuizAttempt.objects.filter(user=obj, submitted_at__isnull=False).count()
 
 
 class GoogleAuthSerializer(serializers.Serializer):

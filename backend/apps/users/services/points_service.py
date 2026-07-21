@@ -49,8 +49,11 @@ def recalculate_user_points_and_stats(user):
     user.level = (user.xp // 100) + 1
     user.save()
 
-    # 5. Flush leaderboard cache
+    # 5. Flush caches
     cache.delete("leaderboard_all_rankings")
+    cache.delete(f"user_badges_{user.id}")
+    cache.delete(f"badges_all_{user.id}")
+    cache.delete(f"badge_progress_{user.id}")
 
     return {
         "quiz_score_total": quiz_score_total,

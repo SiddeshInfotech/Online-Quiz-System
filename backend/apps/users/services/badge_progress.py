@@ -246,11 +246,12 @@ class BadgeProgressHelper:
         weekly_count = sum(1 for a in attempts_list if a.submitted_at >= week_ago)
         
         # --- Build progress map ---
+        unique_quizzes = len(attempts_by_quiz)
         progress_map = {
             1: streak, 2: streak, 3: streak, 4: streak, 5: streak, 6: streak, 7: streak,
             8: 0,  # Comeback King not implemented
-            9: total_attempts, 10: total_attempts, 11: total_attempts, 12: total_attempts,
-            13: total_attempts, 14: today_questions, 15: today_quiz_count, 16: total_attempts,
+            9: unique_quizzes, 10: unique_quizzes, 11: unique_quizzes, 12: unique_quizzes,
+            13: unique_quizzes, 14: today_questions, 15: today_quiz_count, 16: unique_quizzes,
             17: 1 if sharp_shooter else 0,
             18: perfect_count,
             19: max_perfect_consecutive,
@@ -275,7 +276,7 @@ class BadgeProgressHelper:
             52: reviewed_count,
             53: 0,  # Top Performer (handled externally)
             54: champion_count,
-            55: total_attempts,
+            55: unique_quizzes,
             58: subjects_count,
             59: 1 if peak_performer else 0,
             60: total_correct,

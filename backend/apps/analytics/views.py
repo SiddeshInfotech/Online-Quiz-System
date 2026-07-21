@@ -24,10 +24,11 @@ class DashboardSummaryView(APIView):
         completed_attempts = QuizAttempt.objects.filter(
             user=user, submitted_at__isnull=False
         )
-        total_completed = completed_attempts.count()
+        quizzes_completed = completed_attempts.values('quiz_id').distinct().count()
+        total_attempts = completed_attempts.count()
         progress_percentage = 0
         if total_quizzes > 0:
-            progress_percentage = round((total_completed / total_quizzes) * 100, 2)
+            progress_percentage = round((quizzes_completed / total_quizzes) * 100, 2)
 
         # ==================== CONTINUE QUIZ LOGIC (FIXED) ====================
         continue_quiz_data = None
@@ -171,7 +172,9 @@ class DashboardSummaryView(APIView):
             },
             "overall_progress": {
                 "percentage": progress_percentage,
-                "completed": total_completed,
+                "completed": quizzes_completed,
+                "quizzes_completed": quizzes_completed,
+                "total_attempts": total_attempts,
                 "total": total_quizzes
             },
             "continue_quiz": continue_quiz_data,
@@ -183,7 +186,9 @@ class DashboardSummaryView(APIView):
             },
             "recent_attempts": recent_attempts_data,
             "performance": {
+                "quizzes_completed": quizzes_completed,
                 "quizzes_attempted": total_attempts,
+                "total_attempts": total_attempts,
                 "average_score": round(avg_score, 2),
                 "accuracy": accuracy,
                 "total_time_spent_seconds": total_time_spent,
