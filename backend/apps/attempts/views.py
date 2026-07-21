@@ -668,3 +668,153 @@ Example output:
 Return ONLY valid JSON. No extra text.
 """
         return prompt
+
+
+class LogViolationView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _calculate_grade(self, percentage):
+        if percentage >= 90:
+            return "A+"
+        elif percentage >= 80:
+            return "A"
+        elif percentage >= 70:
+            return "B"
+        elif percentage >= 60:
+            return "C"
+        elif percentage >= 40:
+            return "D"
+        else:
+            return "F"
+
+    def post(self, request, attempt_id):
+        try:
+            attempt = QuizAttempt.objects.get(
+                id=attempt_id,
+                user=request.user,
+                submitted_at__isnull=True
+            )
+        except QuizAttempt.DoesNotExist:
+            return Response(
+                {"error": "Active quiz attempt not found or already submitted."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        attempt.tab_switch_count += 1
+        max_allowed = 2
+
+        if attempt.tab_switch_count >= max_allowed:
+            # Auto submit!
+            quiz = attempt.quiz
+            questions = Question.objects.filter(quiz=quiz).prefetch_related('questionoption_set')
+            question_map = {q.id: q for q in questions}
+            option_map = {}
+            for q in questions:
+                for opt in q.questionoption_set.all():
+                    option_map[opt.id] = opt
+
+            existing_answers = UserAnswer.objects.filter(attempt=attempt)
+            existing_answers_map = {ua.question_id: ua for ua in existing_answers}
+
+            user_answers_to_create = []
+            user_answers_to_update = []
+            correct_count = 0
+            wrong_count = 0
+            total_score = 0
+            total_marks = 0
+            answered_question_ids = set()
+
+            for q in questions:
+                total_marks += q.marks
+                ua = existing_answers_map.get(q.id)
+                if ua and ua.selected_option_id:
+                    answered_question_ids.add(q.id)
+                    option = option_map.get(ua.selected_option_id)
+                    is_correct = False
+                    if option and option.question_id == q.id:
+                        is_correct = option.is_correct
+                    
+                    marks_obtained = q.marks if is_correct else 0
+                    if is_correct:
+                        correct_count += 1
+                    else:
+                        wrong_count += 1
+                    
+                    total_score += marks_obtained
+
+                    ua.is_correct = is_correct
+                    ua.marks_obtained = marks_obtained
+                    user_answers_to_update.append(ua)
+                else:
+                    if ua:
+                        ua.is_correct = False
+                        ua.marks_obtained = 0
+                        user_answers_to_update.append(ua)
+                    else:
+                        user_answers_to_create.append(
+                            UserAnswer(
+                                attempt=attempt,
+                                question=q,
+                                is_correct=False,
+                                marks_obtained=0
+                            )
+                        )
+
+            total_questions = questions.count()
+            answered_count = len(answered_question_ids)
+            unanswered_count = total_questions - answered_count
+            percentage = round((total_score / total_marks * 100), 2) if total_marks > 0 else 0
+
+            from django.db import transaction
+            with transaction.atomic():
+                if user_answers_to_create:
+                    UserAnswer.objects.bulk_create(user_answers_to_create)
+                if user_answers_to_update:
+                    UserAnswer.objects.bulk_update(user_answers_to_update, ['is_correct', 'marks_obtained'])
+
+                attempt.submitted_at = timezone.now()
+                attempt.score = total_score
+                attempt.percentage = percentage
+                attempt.is_auto_submitted = True
+
+                from datetime import time as dt_time
+                time_diff = attempt.submitted_at - attempt.started_at
+                total_seconds = int(time_diff.total_seconds())
+                hours = (total_seconds // 3600) % 24
+                minutes = (total_seconds // 60) % 60
+                seconds = total_seconds % 60
+                attempt.time_taken = dt_time(hours, minutes, seconds)
+                attempt.time_spent_seconds = total_seconds
+
+                attempt.save()
+
+                Result.objects.update_or_create(
+                    attempt=attempt,
+                    defaults={
+                        "correct_answers": correct_count,
+                        "wrong_answers": wrong_count,
+                        "unanswered_questions": unanswered_count,
+                        "total_score": total_score,
+                        "percentage": percentage,
+                        "grade": self._calculate_grade(percentage),
+                        "pass_status": percentage >= 40,
+                    },
+                )
+
+            return Response({
+                "status": "auto_submitted",
+                "tab_switch_count": attempt.tab_switch_count,
+                "max_allowed": max_allowed,
+                "is_auto_submitted": True,
+                "message": "Limit of tab switches exceeded. Quiz attempt has been automatically submitted."
+            }, status=status.HTTP_200_OK)
+
+        else:
+            attempt.save()
+            return Response({
+                "status": "warning_logged",
+                "tab_switch_count": attempt.tab_switch_count,
+                "max_allowed": max_allowed,
+                "is_auto_submitted": False,
+                "message": "Violation logged successfully."
+            }, status=status.HTTP_200_OK)

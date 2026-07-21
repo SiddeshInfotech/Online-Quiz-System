@@ -12,6 +12,8 @@ class QuizAttempt(models.Model):
     started_at = models.DateTimeField(auto_now_add=True)
     submitted_at = models.DateTimeField(null=True, blank=True)
     time_spent_seconds = models.IntegerField(default=0)
+    tab_switch_count = models.IntegerField(default=0)
+    is_auto_submitted = models.BooleanField(default=False)
     class Meta:
         indexes = [
             models.Index(fields=['user', 'submitted_at']),
