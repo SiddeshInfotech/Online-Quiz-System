@@ -73,12 +73,8 @@ const QuizResultsPage = () => {
     result?.quiz?.created_by_ai
   );
 
-  const handleBackToLibrary = () => {
-    if (isAiQuiz) {
-      navigate("/dashboard");
-    } else {
-      navigate("/library");
-    }
+  const handleBackToDashboard = () => {
+    navigate("/dashboard");
   };
 
   if (error) {
@@ -139,9 +135,9 @@ const QuizResultsPage = () => {
         <ResultActions 
           onRetry={handleRetry}
           onReview={handleReview}
-          onBackToLibrary={handleBackToLibrary}
+          onBackToLibrary={handleBackToDashboard}
           isLoading={isLoading}
-          returnLabel={isAiQuiz ? "Back to Dashboard" : "Back to Quiz Library"}
+          returnLabel="Back to Dashboard"
         />
         
       </div>

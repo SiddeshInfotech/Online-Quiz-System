@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { RefreshCw, BookOpen, ArrowLeft } from "lucide-react";
 import Button from "../../../../components/ui/Button";
 
-const ResultActions = ({ onRetry, onReview, onBackToLibrary, isLoading, returnLabel = "Back to Library" }) => {
+const ResultActions = ({ onRetry, onReview, onBackToLibrary, isLoading, returnLabel = "Back to Dashboard" }) => {
   const [isRetrying, setIsRetrying] = useState(false);
 
   if (isLoading) {

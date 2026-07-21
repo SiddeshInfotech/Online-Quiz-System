@@ -4,6 +4,7 @@ import {
   Mail,
   Phone,
   Send,
+  MessageSquare,
   ChevronDown,
   ChevronUp,
   CheckCircle2,
