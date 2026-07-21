@@ -37,6 +37,7 @@ urlpatterns = [
     path('api/otp/', include('apps.otp.urls')),
     path('api/ai/', include('apps.ai_generator.urls')),
     path('api/feedback/', include('apps.feedback.urls')),
+    path('api/support/', include('apps.support.urls')),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

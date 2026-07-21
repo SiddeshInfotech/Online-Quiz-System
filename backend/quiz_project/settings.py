@@ -15,8 +15,8 @@ env = environ.Env()
 ENV_FILE = BASE_DIR / '.env'
 environ.Env.read_env(ENV_FILE)
 
-SECRET_KEY = env('SECRET_KEY')
-DEBUG = env('DEBUG', default=False)
+SECRET_KEY = env('SECRET_KEY', default='django-insecure-fallback-key-for-development-purposes-only')
+DEBUG = env.bool('DEBUG', default=True)
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
 ALLOWED_HOSTS = ['*']
 
@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'apps.leaderboard',
     'apps.analytics',
     'apps.feedback',
+    'apps.support',
 ]
 
 MIDDLEWARE = [
@@ -74,14 +75,23 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'quiz_project.wsgi.application'
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL'),
-        conn_max_age=600,
-        ssl_require=False
-    )
-}
-DATABASES['default']['OPTIONS'] = {'ssl': {}}
+db_url = os.environ.get('DATABASE_URL')
+if not db_url:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+else:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=db_url,
+            conn_max_age=600,
+            ssl_require=False
+        )
+    }
+    DATABASES['default']['OPTIONS'] = {'ssl': {}}
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
