@@ -5,13 +5,110 @@ from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
+from django.db.models import Q, Count
+from rest_framework import status
 from .models import Quiz, QuizCategory
 from .serializers import QuizLibrarySerializer, QuizSerializer, QuizCategorySerializer
 from apps.attempts.models import QuizAttempt
-from apps.questions.serializers import QuestionSerializer
-from django.db.models import Count
-from rest_framework import status
-from apps.questions.serializers import AttemptQuestionSerializer
+from apps.questions.serializers import QuestionSerializer, AttemptQuestionSerializer
+
+
+def apply_quiz_filters(queryset, request):
+    """
+    Applies dynamic multi-field filtering and search to Quiz querysets:
+    - created_by_me / filter=my_quizzes
+    - subject (ID, name, category_name)
+    - difficulty (EASY, MEDIUM, HARD, etc. or comma-separated)
+    - quiz_mode (TIMED, PRACTICE, THEORY, CODING, etc. or comma-separated)
+    - search / q (case-insensitive search on title and description)
+    - grade_level
+    """
+    params = request.query_params
+    user = request.user if request and hasattr(request, 'user') else None
+
+    # 1. Base filter: created_by_me vs published
+    created_by_me = (
+        params.get('created_by_me', '').lower() == 'true' or
+        params.get('filter', '').lower() == 'my_quizzes'
+    )
+    if created_by_me and user and user.is_authenticated:
+        queryset = queryset.filter(created_by=user)
+    elif 'status' in params:
+        queryset = queryset.filter(status=params.get('status'))
+    else:
+        if not created_by_me:
+            queryset = queryset.filter(status='published')
+
+    # 2. Subject filter (subject ID, name, category, or topic)
+    subject_val = params.get('subject', '').strip()
+    if subject_val:
+        if subject_val.isdigit():
+            queryset = queryset.filter(
+                Q(subject__iexact=subject_val) |
+                Q(category__id=int(subject_val)) |
+                Q(category__category_name__icontains=subject_val)
+            )
+        else:
+            queryset = queryset.filter(
+                Q(subject__icontains=subject_val) |
+                Q(category__category_name__icontains=subject_val) |
+                Q(topic__icontains=subject_val)
+            )
+
+    # 3. Difficulty filter (EASY, MEDIUM, HARD, or comma-separated)
+    diff_val = params.get('difficulty', '').strip()
+    if diff_val:
+        diff_items = [d.strip() for d in diff_val.split(',') if d.strip()]
+        if diff_items:
+            diff_q = Q()
+            for d in diff_items:
+                diff_q |= Q(difficulty__iexact=d)
+            queryset = queryset.filter(diff_q)
+
+    # 4. Quiz mode filter (TIMED, PRACTICE, THEORY, CODING, etc.)
+    mode_val = params.get('quiz_mode', '').strip() or params.get('mode', '').strip()
+    if mode_val:
+        mode_items = [m.strip() for m in mode_val.split(',') if m.strip()]
+        if mode_items:
+            mode_q = Q()
+            for m in mode_items:
+                m_upper = m.upper()
+                if m_upper == 'TIMED':
+                    mode_q |= Q(duration_minutes__gt=0)
+                elif m_upper == 'PRACTICE':
+                    mode_q |= Q(duration_minutes=0)
+                elif m.lower() == 'theory':
+                    mode_q |= Q(question_type__iexact='MCQ')
+                elif m.lower() == 'coding':
+                    mode_q |= Q(question_type__iexact='Coding')
+                else:
+                    mode_q |= Q(question_type__icontains=m) | Q(description__icontains=m)
+            queryset = queryset.filter(mode_q)
+
+    # 5. Search filter (case-insensitive search on title and description)
+    search_val = params.get('search', '').strip() or params.get('q', '').strip()
+    if search_val:
+        queryset = queryset.filter(
+            Q(title__icontains=search_val) |
+            Q(description__icontains=search_val) |
+            Q(subject__icontains=search_val) |
+            Q(topic__icontains=search_val)
+        )
+
+    # 6. Grade level
+    grade_val = params.get('grade_level', '').strip()
+    if grade_val:
+        queryset = queryset.filter(grade_level__iexact=grade_val)
+
+    # Ordering
+    ordering = params.get('ordering', '').strip()
+    if ordering and ordering in ['created_at', '-created_at', 'title', '-title', 'duration_minutes', '-duration_minutes']:
+        queryset = queryset.order_by(ordering)
+    else:
+        queryset = queryset.order_by('-created_at')
+
+    return queryset.distinct()
+
 
 class CategoryListView(generics.ListAPIView):
     queryset = QuizCategory.objects.all().order_by('category_name')
@@ -21,21 +118,9 @@ class CategoryListView(generics.ListAPIView):
 class QuizLibraryListView(generics.ListAPIView):
     serializer_class = QuizLibrarySerializer
     permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
-    filterset_fields = ['difficulty', 'grade_level', 'subject']
-    search_fields = ['title', 'subject', 'description']
-    ordering_fields = ['created_at', 'title', 'duration_minutes']
-    ordering = ['-created_at']
 
     def get_queryset(self):
-        user = self.request.user
-        created_by_me = (
-            self.request.query_params.get('created_by_me', '').lower() == 'true' or
-            self.request.query_params.get('filter', '').lower() == 'my_quizzes'
-        )
-        if created_by_me:
-            return Quiz.objects.filter(created_by=user).order_by('-created_at')
-        return Quiz.objects.filter(status='published').order_by('-created_at')
+        return apply_quiz_filters(Quiz.objects.all(), self.request)
 
 class RecommendedQuizzesListView(generics.ListAPIView):
     serializer_class = QuizLibrarySerializer
@@ -70,14 +155,7 @@ class QuizListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
-        created_by_me = (
-            self.request.query_params.get('created_by_me', '').lower() == 'true' or
-            self.request.query_params.get('filter', '').lower() == 'my_quizzes'
-        )
-        if created_by_me:
-            return Quiz.objects.filter(created_by=user).order_by('-created_at')
-        return Quiz.objects.filter(status='published').order_by('-created_at')
+        return apply_quiz_filters(Quiz.objects.all(), self.request)
 
     def create(self, request, *args, **kwargs):
         return Response(
