@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Bookmark, FileText, Clock, Play } from "lucide-react";
-import { useState } from "react";
+import { FileText, Clock, Play, UserCheck } from "lucide-react";
 import Button from "../ui/Button/Button";
 import { getLanguageIcon } from "../../utils/languageIcons";
 
@@ -20,7 +19,6 @@ const progressColor = (progress) => {
 };
 
 const QuizCard = ({ quiz: rawQuiz, viewMode = "grid" }) => {
-  const [bookmarked, setBookmarked] = useState(false);
   const quiz = enrichQuiz(rawQuiz);
   const { icon: LanguageIcon, color: iconColor } = getLanguageIcon(quiz.subject);
 
@@ -112,7 +110,7 @@ const QuizCard = ({ quiz: rawQuiz, viewMode = "grid" }) => {
     >
       <div className="rounded-2xl overflow-hidden surface border border-app shadow-sm hover:shadow-xl hover:border-violet-300 transition-all duration-300 h-full flex flex-col focus-within:ring-2 focus-within:ring-violet-400">
         {/* Thumbnail */}
-        <div className="relative h-[180px] overflow-hidden bg-slate-50 flex items-center justify-center">
+        <div className="relative h-[140px] overflow-hidden bg-slate-50 flex items-center justify-center">
           <Link to={`/quiz/${quiz.id}`} className="block w-full h-full focus:outline-none">
             {quiz.isDynamicThumbnail ? (
               <div className="w-full h-full flex flex-col items-center justify-center opacity-90 group-hover:scale-105 transition-transform duration-700 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -127,34 +125,8 @@ const QuizCard = ({ quiz: rawQuiz, viewMode = "grid" }) => {
                 loading="lazy"
               />
             )}
-            {/* Gradient Overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
           </Link>
-
-          {/* Bookmark */}
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              setBookmarked(!bookmarked);
-            }}
-            className={`
-              absolute top-3 right-3 w-8 h-8 rounded-lg
-              flex items-center justify-center
-              transition-all duration-200 z-10
-              focus:outline-none focus:ring-2 focus:ring-violet-400
-              ${
-                bookmarked
-                  ? "bg-violet-600 text-white shadow-md"
-                  : "bg-white/90 backdrop-blur-sm text-slate-500 hover:text-violet-600 hover:bg-white shadow-sm"
-              }
-            `}
-            aria-label={bookmarked ? "Remove bookmark" : "Add bookmark"}
-          >
-            <Bookmark
-              size={14}
-              className={bookmarked ? "fill-white" : ""}
-            />
-          </button>
 
           {/* Subject Badge */}
           <div className="absolute bottom-3 left-3 z-10">
@@ -165,10 +137,19 @@ const QuizCard = ({ quiz: rawQuiz, viewMode = "grid" }) => {
               {quiz.subject}
             </span>
           </div>
+
+          {/* Created By You Badge */}
+          {(quiz.createdByMe || rawQuiz?.created_by_me) && (
+            <div className="absolute top-3 right-3 z-10">
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-violet-600 text-white shadow-md">
+                <UserCheck size={11} /> Created by You
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-5 flex flex-col">
+        <div className="flex-1 p-4 flex flex-col">
           <Link
             to={`/quiz/${quiz.id}`}
             className="block focus:outline-none mb-3"
@@ -208,11 +189,11 @@ const QuizCard = ({ quiz: rawQuiz, viewMode = "grid" }) => {
           </div>
 
           {/* Start Button */}
-          <div className="mt-auto pt-2 border-t border-slate-100">
+          <div className="mt-auto pt-2 border-t border-app">
             <Link to={`/quiz/${quiz.id}`} tabIndex={-1} className="block w-full focus:outline-none">
               <Button
                 variant={quiz.progress > 0 ? "outline" : "primary"}
-                className={`w-full transition-all duration-300 ${quiz.progress > 0 ? "group-hover:bg-violet-50 group-hover:text-violet-700 group-hover:border-violet-200" : "group-hover:bg-violet-700"}`}
+                className={`w-full transition-all duration-300 ${quiz.progress > 0 ? "group-hover:bg-violet-50 dark:group-hover:bg-violet-500/20 group-hover:text-violet-700 dark:group-hover:text-violet-300 group-hover:border-violet-200 dark:group-hover:border-violet-500/40" : "group-hover:bg-violet-700"}`}
               >
                 <Play size={16} className="mr-2" />
                 {quiz.progress > 0 ? "Continue Quiz" : "Start Quiz"}

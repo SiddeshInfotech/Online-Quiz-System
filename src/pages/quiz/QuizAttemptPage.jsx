@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Clock, Loader2, AlertTriangle, ShieldAlert } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import attemptsService from "../../services/attemptsService";
 import Button from "../../components/ui/Button";
 
@@ -16,6 +17,7 @@ const QuizAttemptPage = () => {
   const { attemptId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const fromAi = location.state?.from_ai;
 
   // State
   const [attempt, setAttempt] = useState(null);
@@ -27,6 +29,7 @@ const QuizAttemptPage = () => {
   // Timer state
   const [remainingSeconds, setRemainingSeconds] = useState(null);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [isTimeUp, setIsTimeUp] = useState(false);
 
   // UI state
   const [isLoading, setIsLoading] = useState(true);
@@ -38,6 +41,10 @@ const QuizAttemptPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
 
+  // Anti-Cheating State
+  const [warningModalData, setWarningModalData] = useState(null); // { count, maxAllowed }
+  const [forcedAutoSubmitted, setForcedAutoSubmitted] = useState(false);
+
   // Autosave status state
   // 'idle' | 'saving' | 'saved' | 'error'
   const [autosaveStatus, setAutosaveStatus] = useState("idle");
@@ -47,6 +54,8 @@ const QuizAttemptPage = () => {
   const attemptIdRef = useRef(attemptId);
   const currentQIdRef = useRef(null);
   const answersRef = useRef(answers);
+  const isLoggingViolationRef = useRef(false);
+  const lastViolationTimeRef = useRef(0);
 
   useEffect(() => {
     answersRef.current = answers;
@@ -64,7 +73,7 @@ const QuizAttemptPage = () => {
       
       // Redirect if attempt is already submitted/completed
       if (data.status === 'completed' || data.status === 'expired' || data.is_completed) {
-        navigate(`/results/${attemptId}`, { replace: true, state: { message: "This attempt has already been submitted or expired." } });
+        navigate(`/results/${attemptId}`, { replace: true, state: { message: "This attempt has already been submitted or expired.", from_ai: fromAi } });
         return;
       }
 
@@ -101,7 +110,7 @@ const QuizAttemptPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [attemptId, navigate, location.state]);
+  }, [attemptId, navigate, location.state, fromAi]);
 
   useEffect(() => {
     fetchAttempt();
@@ -114,12 +123,22 @@ const QuizAttemptPage = () => {
 
     if (remainingSeconds <= 0) {
       setIsTimerRunning(false);
+      setIsTimeUp(true);
       handleFinalSubmit(); // Auto-submit when time is up
       return;
     }
 
     timerRef.current = setInterval(() => {
-      setRemainingSeconds((prev) => prev - 1);
+      setRemainingSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current);
+          setIsTimerRunning(false);
+          setIsTimeUp(true);
+          handleFinalSubmit();
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
 
     return () => clearInterval(timerRef.current);
@@ -135,8 +154,85 @@ const QuizAttemptPage = () => {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
+  // Anti-Cheating: Tab Switch & Window Blur Detection
+  useEffect(() => {
+    if (isLoading || !attempt || isSubmitting || isTimeUp || forcedAutoSubmitted) return;
+
+    const triggerViolationLog = async () => {
+      const now = Date.now();
+      // Ignore duplicate calls within 1500ms or while API is in-flight
+      if (isLoggingViolationRef.current || (now - lastViolationTimeRef.current < 1500)) {
+        return;
+      }
+
+      isLoggingViolationRef.current = true;
+      lastViolationTimeRef.current = now;
+
+      try {
+        const res = await attemptsService.logViolation(attemptId);
+        const { status, tab_switch_count, max_allowed, is_auto_submitted, message } = res || {};
+
+        if (status === "auto_submitted" || is_auto_submitted === true) {
+          setIsTimerRunning(false);
+          setIsTimeUp(true);
+          setForcedAutoSubmitted(true);
+          
+          // Submit current answer snapshot
+          const actualAnswers = answersRef.current || answers;
+          const payload = {
+            answers: Object.entries(actualAnswers).map(([qId, optId]) => ({
+              question_id: parseInt(qId, 10),
+              selected_option_id: optId
+            }))
+          };
+          try {
+            await attemptsService.submitAttempt(attemptId, payload);
+          } catch (e) {
+            console.error("Auto submit failed during violation log:", e);
+          }
+          
+          // Redirect immediately to result
+          setTimeout(() => {
+            navigate(`/results/${attemptId}`, { replace: true, state: { from_ai: fromAi } });
+          }, 1200);
+        } else if (status === "warning_logged" || !is_auto_submitted) {
+          setWarningModalData({
+            count: tab_switch_count ?? 1,
+            maxAllowed: max_allowed ?? 2,
+            message: message || "Switching tabs or leaving the quiz screen is strictly monitored."
+          });
+        }
+      } catch (err) {
+        console.error("Anti-cheating violation log failed:", err);
+      } finally {
+        setTimeout(() => {
+          isLoggingViolationRef.current = false;
+        }, 1000);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        triggerViolationLog();
+      }
+    };
+
+    const handleWindowBlur = () => {
+      triggerViolationLog();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleWindowBlur);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleWindowBlur);
+    };
+  }, [isLoading, attempt, isSubmitting, isTimeUp, forcedAutoSubmitted, attemptId, navigate, fromAi, answers]);
+
   // -- Actions --
   const performAutosave = useCallback(async (questionId, optionId, marked) => {
+    if (isSubmitting || isTimeUp) return;
     const payload = {
       question_id: questionId,
       selected_option_id: optionId || null,
@@ -156,34 +252,37 @@ const QuizAttemptPage = () => {
       console.error("Autosave failed", err);
       setAutosaveStatus("error");
     }
-  }, [attemptId]);
+  }, [attemptId, isSubmitting, isTimeUp]);
 
   const handleSelectOption = useCallback((optionId) => {
-    const qId = questions[currentIndex].id;
+    if (isSubmitting || isTimeUp || remainingSeconds === 0) return;
+    const qId = questions[currentIndex]?.id;
+    if (!qId) return;
     setAnswers((prev) => {
       const newAnswers = { ...prev, [qId]: optionId };
-      console.log("Selected question:", qId);
-      console.log("Selected option:", optionId);
-      console.log("Updated answers:", newAnswers);
       return newAnswers;
     });
     performAutosave(qId, optionId, markedForReview[currentIndex]);
-  }, [questions, currentIndex, markedForReview, performAutosave]);
+  }, [questions, currentIndex, markedForReview, performAutosave, isSubmitting, isTimeUp, remainingSeconds]);
 
   const handleClearAnswer = useCallback(() => {
-    const qId = questions[currentIndex].id;
+    if (isSubmitting || isTimeUp || remainingSeconds === 0) return;
+    const qId = questions[currentIndex]?.id;
+    if (!qId) return;
     const newAnswers = { ...answers };
     delete newAnswers[qId];
     setAnswers(newAnswers);
     performAutosave(qId, null, markedForReview[currentIndex]);
-  }, [questions, currentIndex, answers, markedForReview, performAutosave]);
+  }, [questions, currentIndex, answers, markedForReview, performAutosave, isSubmitting, isTimeUp, remainingSeconds]);
 
   const handleToggleReview = useCallback(() => {
-    const qId = questions[currentIndex].id;
+    if (isSubmitting || isTimeUp || remainingSeconds === 0) return;
+    const qId = questions[currentIndex]?.id;
+    if (!qId) return;
     const isMarked = !markedForReview[currentIndex];
     setMarkedForReview((prev) => ({ ...prev, [currentIndex]: isMarked }));
     performAutosave(qId, answers[qId], isMarked);
-  }, [questions, currentIndex, markedForReview, answers, performAutosave]);
+  }, [questions, currentIndex, markedForReview, answers, performAutosave, isSubmitting, isTimeUp, remainingSeconds]);
 
   const smoothScrollToTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -213,7 +312,7 @@ const QuizAttemptPage = () => {
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (isLoading || showSubmitModal || showExitModal) return;
+      if (isLoading || showSubmitModal || showExitModal || isSubmitting || isTimeUp) return;
 
       if (e.key === "ArrowRight") {
         handleNext();
@@ -229,7 +328,7 @@ const QuizAttemptPage = () => {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isLoading, showSubmitModal, showExitModal, currentIndex, questions, handleNext, handlePrev, handleSelectOption]);
+  }, [isLoading, showSubmitModal, showExitModal, isSubmitting, isTimeUp, currentIndex, questions, handleNext, handlePrev, handleSelectOption]);
 
   // Sync ref for current question id
   useEffect(() => {
@@ -275,7 +374,7 @@ const QuizAttemptPage = () => {
       // Backend now returns only { status, attempt_id, result_id }
       // Do not use the response body — navigate to result page which fetches its own data
       await attemptsService.submitAttempt(attemptId, payload);
-      navigate(`/results/${attemptId}`, { replace: true });
+      navigate(`/results/${attemptId}`, { replace: true, state: { from_ai: fromAi } });
     } catch (err) {
       console.error("Submission failed", err);
       setSubmitError(err.response?.data?.message || "Failed to submit quiz. Please try again.");
@@ -351,6 +450,7 @@ const QuizAttemptPage = () => {
             onClearAnswer={handleClearAnswer}
             onToggleReview={handleToggleReview}
             isLoading={isLoading}
+            disabled={isSubmitting || isTimeUp || remainingSeconds === 0 || forcedAutoSubmitted}
           />
 
           {/* Navigation Buttons */}
@@ -392,6 +492,7 @@ const QuizAttemptPage = () => {
             markedForReview={markedForReview}
             onNavigate={handleNavigatePalette}
             isLoading={isLoading}
+            questions={questions}
           />
         </div>
       </div>
@@ -405,7 +506,126 @@ const QuizAttemptPage = () => {
         answers={answers}
         markedForReview={markedForReview}
         onNavigate={handleNavigatePalette}
+        questions={questions}
       />
+
+      {/* Time Expired Auto-Submit Modal Overlay */}
+      <AnimatePresence>
+        {isTimeUp && !forcedAutoSubmitted && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="surface rounded-3xl p-8 max-w-md w-full border border-app text-center shadow-2xl space-y-5"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto border border-amber-500/20">
+                <Clock size={32} className="animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold font-space-grotesk text-app mb-1">
+                  Time Expired!
+                </h3>
+                <p className="text-xs text-app-muted">
+                  Your quiz time limit has ended.
+                </p>
+              </div>
+
+              <p className="text-sm text-app-2 leading-relaxed">
+                {isSubmitting
+                  ? "We are automatically submitting your recorded answers..."
+                  : submitError
+                  ? submitError
+                  : "Submitting your quiz attempt..."}
+              </p>
+
+              {isSubmitting && (
+                <div className="flex items-center justify-center gap-2 text-violet-600 dark:text-violet-400 font-semibold text-sm pt-2">
+                  <Loader2 size={20} className="animate-spin" />
+                  Auto-submitting quiz...
+                </div>
+              )}
+
+              {submitError && !isSubmitting && (
+                <Button
+                  variant="primary"
+                  className="w-full justify-center mt-2"
+                  onClick={handleFinalSubmit}
+                >
+                  Retry Submission
+                </Button>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Anti-Cheating Warning Alert Modal */}
+      <AnimatePresence>
+        {warningModalData && !forcedAutoSubmitted && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="surface rounded-3xl p-8 max-w-md w-full border border-amber-500/40 text-center shadow-2xl space-y-5"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto border border-amber-500/20">
+                <AlertTriangle size={32} className="animate-bounce" />
+              </div>
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
+                  Tab-Switch Warning ({warningModalData.count} / {warningModalData.maxAllowed})
+                </span>
+                <h3 className="text-2xl font-bold font-space-grotesk text-app mt-3">
+                  ⚠️ Anti-Cheating Alert
+                </h3>
+              </div>
+              <p className="text-sm text-app-2 leading-relaxed">
+                Switching tabs or leaving the quiz screen is strictly monitored. Continuing to do so will result in immediate automatic quiz submission!
+              </p>
+              <Button
+                variant="primary"
+                className="w-full justify-center bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm"
+                onClick={() => setWarningModalData(null)}
+              >
+                I Understand & Resume Quiz
+              </Button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Anti-Cheating Forced Auto-Submission Modal */}
+      <AnimatePresence>
+        {forcedAutoSubmitted && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="surface rounded-3xl p-8 max-w-md w-full border border-red-500/40 text-center shadow-2xl space-y-5"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center mx-auto border border-red-500/20">
+                <ShieldAlert size={36} className="animate-pulse" />
+              </div>
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-red-500 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20">
+                  Violation Limit Exceeded
+                </span>
+                <h3 className="text-2xl font-bold font-space-grotesk text-app mt-3">
+                  🚨 Quiz Auto-Submitted!
+                </h3>
+              </div>
+              <p className="text-sm text-app-2 leading-relaxed">
+                You have exceeded the maximum allowed tab switches. Your current answers have been evaluated and submitted.
+              </p>
+              <div className="flex items-center justify-center gap-2 text-red-500 font-semibold text-sm pt-2">
+                <Loader2 size={20} className="animate-spin" />
+                Evaluating and redirecting to results...
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

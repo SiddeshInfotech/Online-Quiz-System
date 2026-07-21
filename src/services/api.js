@@ -7,7 +7,7 @@ import { getToken } from "../utils/auth";
  * (e.g. /media/profile_pictures/avatar.jpg → full URL).
  */
 export const BACKEND_ORIGIN =
-  (import.meta.env.VITE_API_URL || "https://online-quiz-system-dd78.onrender.com/api/")
+  (import.meta.env.VITE_API_URL || "https://online-quiz-system-9vlk.onrender.com/api/")
     .replace(/\/api\/?$/, "")   // strip trailing /api/
     .replace(/\/$/, "");        // strip any remaining trailing slash
 
@@ -25,7 +25,7 @@ export const resolveMediaUrl = (url) => {
 };
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "https://online-quiz-system-dd78.onrender.com/api/",
+  baseURL: import.meta.env.VITE_API_URL || "https://online-quiz-system-9vlk.onrender.com/api/",
   timeout: 120000, // 120 seconds
   headers: {
     "Content-Type": "application/json",

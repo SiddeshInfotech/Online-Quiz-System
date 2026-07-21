@@ -8,7 +8,7 @@ const BadgeFilters = ({ filters, activeFilter, onFilterChange }) => {
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
             activeFilter === filter
               ? "bg-violet-600 text-white shadow-md shadow-violet-600/20"
-              : "surface text-slate-600 hover:bg-slate-50 border border-app"
+              : "surface text-app-2 hover:bg-[var(--bg-elevated)] border border-app"
           }`}
         >
           {filter}

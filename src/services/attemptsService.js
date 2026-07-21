@@ -52,6 +52,17 @@ const attemptsService = {
     const response = await api.post(`/attempts/${attemptId}/submit/`, data);
     return response.data;
   },
+
+  /**
+   * Log anti-cheating tab-switch violation.
+   * POST /api/attempts/:attemptId/log-violation/
+   * @param {string|number} attemptId
+   * @param {Object} [payload={}]
+   */
+  logViolation: async (attemptId, payload = {}) => {
+    const response = await api.post(`/attempts/${attemptId}/log-violation/`, payload);
+    return response.data;
+  },
   /**
    * Get the detailed result of a submitted attempt.
    * GET /api/attempts/:attemptId/result/

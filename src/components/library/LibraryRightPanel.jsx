@@ -35,7 +35,7 @@ const AiRecommendedItem = ({ item }) => (
 
 const SidebarFilterSelect = ({ label, value, options, onChange }) => (
   <div>
-    <label className="block text-xs font-semibold text-slate-700 mb-2">
+    <label className="block text-xs font-semibold text-app-2 mb-2">
       {label}
     </label>
     <div className="relative">
@@ -44,22 +44,22 @@ const SidebarFilterSelect = ({ label, value, options, onChange }) => (
         onChange={(e) => onChange(e.target.value)}
         className="
           appearance-none w-full h-10 rounded-xl
-          border border-slate-200 bg-white pl-3.5 pr-9
-          text-xs font-medium text-slate-600
+          border border-app surface pl-3.5 pr-9
+          text-xs font-medium text-app
           outline-none transition-all duration-200
-          focus:border-violet-400 focus:ring-4 focus:ring-violet-100
-          hover:border-slate-300 cursor-pointer
+          focus:border-violet-400 focus:ring-4 focus:ring-violet-500/20
+          hover:border-[var(--accent)] cursor-pointer
         "
       >
         {options.map((opt) => (
-          <option key={opt} value={opt}>
+          <option key={opt} value={opt} className="surface text-app">
             {opt}
           </option>
         ))}
       </select>
       <ChevronDown
         size={14}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-app-muted pointer-events-none"
       />
     </div>
   </div>
@@ -129,12 +129,6 @@ const LibraryRightPanel = ({
             value={sidebarFilters.status}
             options={statusOptions}
             onChange={(v) => onSidebarFilterChange("status", v)}
-          />
-          <SidebarFilterSelect
-            label="Duration"
-            value={sidebarFilters.duration}
-            options={durationOptions}
-            onChange={(v) => onSidebarFilterChange("duration", v)}
           />
 
           <Button

@@ -8,10 +8,10 @@ import ProgressBar from "../../components/achievements/ProgressBar";
 import { resolveMediaUrl } from "../../services/api";
 
 const rarityColors = {
-  Common: "surface-elev text-slate-600 border-app",
-  Rare: "bg-blue-50 text-blue-600 border-blue-200",
-  Epic: "bg-fuchsia-50 text-fuchsia-600 border-fuchsia-200",
-  Legendary: "bg-amber-50 text-amber-600 border-amber-200",
+  Common: "surface-elev text-app-2 border-app",
+  Rare: "bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/30",
+  Epic: "bg-fuchsia-50 dark:bg-fuchsia-500/20 text-fuchsia-600 dark:text-fuchsia-400 border-fuchsia-200 dark:border-fuchsia-500/30",
+  Legendary: "bg-amber-50 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/30",
 };
 
 const BadgeDetailsPage = () => {
@@ -125,7 +125,7 @@ const BadgeDetailsPage = () => {
             {/* Left Content */}
             <div className="flex-1">
               <h1 className="text-3xl font-bold font-space-grotesk text-app mb-3">{name}</h1>
-              <p className="text-slate-600 text-lg leading-relaxed mb-6">{description}</p>
+              <p className="text-app-2 text-lg leading-relaxed mb-6">{description}</p>
               
               <div className="mb-8">
                 <ProgressBar current={progress} total={target || 1} color={isClaimed ? "emerald" : "violet"} />
@@ -137,7 +137,7 @@ const BadgeDetailsPage = () => {
               </div>
 
               {/* Related Quizzes Mock Section */}
-              <div className="border-t border-slate-100 pt-8 mt-8">
+              <div className="border-t border-app pt-8 mt-8">
                 <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
                   <BookOpen size={18} className="text-violet-600" /> Related Quizzes to Claim This
                 </h3>

@@ -295,8 +295,8 @@ const TableRow = ({ id, entry, isCurrentUser, index }) => {
     transition={{ duration: 0.3, delay: index * 0.03 }}
     className={`group transition-colors duration-200 ${
       isCurrentUser
-        ? "bg-violet-50/70 border-l-4 border-l-violet-500 ring-inset ring-1 ring-violet-100"
-        : "hover:bg-slate-50"
+        ? "bg-violet-50/70 dark:bg-violet-500/10 border-l-4 border-l-violet-500 ring-inset ring-1 ring-violet-100 dark:ring-violet-500/20"
+        : "hover:bg-slate-50 dark:hover:bg-[var(--bg-elevated)]"
     }`}
   >
     {/* Rank */}
@@ -314,18 +314,18 @@ const TableRow = ({ id, entry, isCurrentUser, index }) => {
             size="sm"
           />
           {isCurrentUser && (
-            <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-violet-500 rounded-full border-2 border-white" />
+            <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-violet-500 rounded-full border-2 border-white dark:border-slate-900" />
           )}
         </div>
         <p
           className={`font-semibold text-sm truncate ${
-            isCurrentUser ? "text-violet-700" : "text-app"
+            isCurrentUser ? "text-violet-700 dark:text-violet-400" : "text-app"
           }`}
           title={entry.fullName || entry.username}
         >
           {entry.fullName || entry.username}
           {isCurrentUser && (
-            <span className="ml-2 text-[10px] font-bold bg-violet-100 text-violet-600 rounded-full px-2 py-0.5 border border-violet-200">
+            <span className="ml-2 text-[10px] font-bold bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-300 rounded-full px-2 py-0.5 border border-violet-200 dark:border-violet-500/30">
               You
             </span>
           )}
@@ -340,7 +340,7 @@ const TableRow = ({ id, entry, isCurrentUser, index }) => {
         <Star size={13} className="text-amber-400 flex-shrink-0" fill="currentColor" />
         <span
           className={`font-bold font-space-grotesk text-sm tabular-nums ${
-            isCurrentUser ? "text-violet-700" : "text-slate-800"
+            isCurrentUser ? "text-violet-700 dark:text-violet-400" : "text-app"
           }`}
         >
           {formatPoints(entry.points)}
@@ -351,8 +351,8 @@ const TableRow = ({ id, entry, isCurrentUser, index }) => {
     {/* Quizzes – right-aligned */}
     <td className="py-3.5 pr-5 text-right">
       <div className="flex items-center justify-end gap-1.5">
-        <BookOpen size={13} className="text-slate-400 flex-shrink-0" />
-        <span className="text-sm text-slate-600 font-medium tabular-nums">
+        <BookOpen size={13} className="text-app-muted flex-shrink-0" />
+        <span className="text-sm text-app-2 font-medium tabular-nums">
           {entry.quizzesCompleted}
         </span>
       </div>
@@ -653,9 +653,9 @@ const LeaderboardPage = () => {
             >
               <Card className="overflow-hidden">
                 {/* Table header */}
-                <div className="flex items-center px-6 py-4 border-b border-slate-100">
+                <div className="flex items-center px-6 py-4 border-b border-app">
                   <div className="flex items-center gap-2">
-                    <Award size={18} className="text-violet-600" />
+                    <Award size={18} className="text-violet-600 dark:text-violet-400" />
                     <h2 className="font-space-grotesk font-bold text-app">
                       All Rankings
                     </h2>
@@ -670,22 +670,22 @@ const LeaderboardPage = () => {
                   <table className="w-full min-w-[420px] border-collapse">
                     <thead>
                       <tr className="surface-subtle text-left">
-                        <th className="py-3 pl-4 pr-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        <th className="py-3 pl-4 pr-3 text-[11px] font-semibold uppercase tracking-wider text-app-muted">
                           Rank
                         </th>
-                        <th className="py-3 pr-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        <th className="py-3 pr-4 text-[11px] font-semibold uppercase tracking-wider text-app-muted">
                           Player
                         </th>
 
-                        <th className="py-3 pr-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400 text-right">
+                        <th className="py-3 pr-4 text-[11px] font-semibold uppercase tracking-wider text-app-muted text-right">
                           Points
                         </th>
-                        <th className="py-3 pr-5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 text-right">
+                        <th className="py-3 pr-5 text-[11px] font-semibold uppercase tracking-wider text-app-muted text-right">
                           Quizzes
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {entries.map((entry, idx) => (
                         <TableRow
                           key={entry.userId}
@@ -700,7 +700,7 @@ const LeaderboardPage = () => {
                 </div>
 
                 {/* Table footer */}
-                <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 text-xs text-slate-400 text-center">
+                <div className="px-6 py-4 border-t border-app surface-subtle text-xs text-app-muted text-center">
                   Rankings update in real-time · 1 correct answer = 1 point
                 </div>
               </Card>

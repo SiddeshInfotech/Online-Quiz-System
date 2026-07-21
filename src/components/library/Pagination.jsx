@@ -35,7 +35,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         className="
           inline-flex items-center gap-1 h-9 px-3
           rounded-lg text-xs font-medium text-app-muted
-          hover:text-violet-600 hover:bg-violet-50
+          hover:text-violet-600 dark:hover:text-violet-400 hover:bg-[var(--bg-elevated)]
           disabled:opacity-40 disabled:pointer-events-none
           transition-colors duration-200
           focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2
@@ -51,7 +51,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         page === "..." ? (
           <span
             key={`ellipsis-${idx}`}
-            className="w-9 h-9 flex items-center justify-center text-xs text-slate-400"
+            className="w-9 h-9 flex items-center justify-center text-xs text-app-muted"
           >
             …
           </span>
@@ -66,7 +66,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
               ${
                 currentPage === page
                   ? "bg-violet-600 text-white shadow-md shadow-violet-600/20"
-                  : "text-slate-600 hover:bg-violet-50 hover:text-violet-600"
+                  : "text-app-2 hover:bg-[var(--bg-elevated)] hover:text-violet-600 dark:hover:text-violet-400"
               }
             `}
             aria-current={currentPage === page ? "page" : undefined}
@@ -84,7 +84,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         className="
           inline-flex items-center gap-1 h-9 px-3
           rounded-lg text-xs font-medium text-app-muted
-          hover:text-violet-600 hover:bg-violet-50
+          hover:text-violet-600 dark:hover:text-violet-400 hover:bg-[var(--bg-elevated)]
           disabled:opacity-40 disabled:pointer-events-none
           transition-colors duration-200
           focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2

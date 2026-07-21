@@ -48,36 +48,45 @@
 
 .dark {
   /* Surfaces */
-  --bg-app: #0F1117;
-  --bg-surface: #1A1F2B;
-  --bg-elevated: #222838;
-  --bg-subtle: #131722;
+  --bg-app: #0F172A;
+  --bg-sidebar: #111827;
+  --bg-surface: #1E293B;
+  --bg-elevated: #273449;
+  --bg-card: #1F2937;
+  --bg-subtle: #0F172A;
 
   /* Text */
   --text-primary: #F8FAFC;
   --text-secondary: #CBD5E1;
   --text-muted: #94A3B8;
 
-  /* Borders */
-  --border: #32384A;
-  --border-strong: #32384A;
+  /* Borders & Dividers */
+  --border: #334155;
+  --border-strong: #374151;
 
-  /* Primary accent: purple (consistent with light mode) */
-  --accent: #7C3AED;
-  --accent-hover: #8B5CF6;
-  --accent-soft: rgba(124, 58, 237, 0.15);
+  /* Primary & Accent */
+  --accent: #6D5EF9;
+  --accent-hover: #7C6CFB;
+  --accent-secondary: #A78BFA;
+  --accent-soft: rgba(109, 94, 249, 0.15);
   --accent-contrast: #FFFFFF;
 
-  /* Purple gradient for buttons/CTAs */
-  --grad-primary: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+  /* Status Colors */
+  --success: #10B981;
+  --danger: #EF4444;
+  --warning: #F59E0B;
+  --disabled: #64748B;
 
-  --hero-glow-1: rgba(124, 58, 237, 0.18);
-  --hero-glow-2: rgba(109, 40, 217, 0.14);
+  /* Purple gradient for buttons/CTAs */
+  --grad-primary: linear-gradient(135deg, #6D5EF9 0%, #7C6CFB 100%);
+
+  --hero-glow-1: rgba(109, 94, 249, 0.18);
+  --hero-glow-2: rgba(124, 108, 251, 0.14);
 
   /* Gold — reserved for achievements, XP, trophies only */
   --gold: #FBBF24;
 
-  --ring: #7C3AED;
+  --ring: #6D5EF9;
   --shadow-color: 0 0 0;
   color-scheme: dark;
 }

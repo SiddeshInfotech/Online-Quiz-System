@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import attemptsService from "../../services/attemptsService";
 import Button from "../../components/ui/Button";
 
@@ -55,8 +55,26 @@ const QuizResultsPage = () => {
     navigate(`/results/${attemptId}/review`);
   };
 
+  const location = useLocation();
+
+  const isAiQuiz = Boolean(
+    location.state?.from_ai ||
+    result?.quiz?.is_ai_generated ||
+    result?.quiz?.is_ai ||
+    result?.is_ai_generated ||
+    result?.is_ai ||
+    (typeof result?.quiz?.quiz_type === "string" && result.quiz.quiz_type.toLowerCase().includes("ai")) ||
+    (typeof result?.quiz?.source === "string" && result.quiz.source.toLowerCase().includes("ai")) ||
+    (typeof result?.quiz?.type === "string" && result.quiz.type.toLowerCase().includes("ai")) ||
+    result?.quiz?.created_by_ai
+  );
+
   const handleBackToLibrary = () => {
-    navigate("/library");
+    if (isAiQuiz) {
+      navigate("/dashboard");
+    } else {
+      navigate("/library");
+    }
   };
 
   if (error) {
@@ -113,6 +131,7 @@ const QuizResultsPage = () => {
           onReview={handleReview}
           onBackToLibrary={handleBackToLibrary}
           isLoading={isLoading}
+          returnLabel={isAiQuiz ? "Back to Dashboard" : "Back to Quiz Library"}
         />
         
       </div>

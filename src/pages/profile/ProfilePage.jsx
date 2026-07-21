@@ -343,7 +343,7 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
         className="relative w-full max-w-md surface rounded-3xl shadow-2xl border border-app flex flex-col z-10 max-h-[90vh] overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-8 pb-6 border-b border-slate-100 flex-shrink-0">
+        <div className="flex items-center justify-between p-8 pb-6 border-b border-app flex-shrink-0">
           <div>
             <h2 className="text-lg font-bold font-space-grotesk text-app">
               Edit Profile
@@ -479,7 +479,7 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
           </div>
 
           {/* Actions Footer */}
-          <div className="p-8 pt-6 border-t border-slate-100 flex-shrink-0 flex flex-col gap-4 bg-slate-50/50">
+        <div className="p-8 pt-6 border-t border-app flex-shrink-0 flex flex-col gap-4 surface-subtle">
             {fieldError && (
               <p className="text-xs text-red-500 flex items-center gap-1.5">
                 <AlertCircle size={14} /> {fieldError}
@@ -988,9 +988,9 @@ const ProfilePage = () => {
               transition={{ duration: 0.35, delay: 0.15 }}
             >
               <Card className="p-8 hover:shadow-xl transition-shadow duration-300">
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-                  <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
-                    <User className="text-violet-600" size={20} />
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-app">
+                  <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center">
+                    <User className="text-violet-600 dark:text-violet-400" size={20} />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold font-space-grotesk text-app">
@@ -1006,7 +1006,7 @@ const ProfilePage = () => {
                   {/* Info Row: Full Name */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 px-4 rounded-xl surface-subtle border border-app hover:bg-[var(--bg-surface)] hover:shadow-sm transition-all duration-300">
                     <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
+                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-app flex-shrink-0">
                         <User size={16} className="text-app-muted" />
                       </div>
                       <div>
@@ -1023,7 +1023,7 @@ const ProfilePage = () => {
                   {/* Info Row: Username */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 px-4 rounded-xl surface-subtle border border-app hover:bg-[var(--bg-surface)] hover:shadow-sm transition-all duration-300">
                     <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
+                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-app flex-shrink-0">
                         <AtSign size={16} className="text-app-muted" />
                       </div>
                       <div>
@@ -1040,7 +1040,7 @@ const ProfilePage = () => {
                   {/* Info Row: Email */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 px-4 rounded-xl surface-subtle border border-app hover:bg-[var(--bg-surface)] hover:shadow-sm transition-all duration-300">
                     <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
+                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-app flex-shrink-0">
                         <Mail size={16} className="text-app-muted" />
                       </div>
                       <div>
@@ -1057,7 +1057,7 @@ const ProfilePage = () => {
                   {/* Info Row: Bio */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 px-4 rounded-xl surface-subtle border border-app hover:bg-[var(--bg-surface)] hover:shadow-sm transition-all duration-300">
                     <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
+                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-app flex-shrink-0">
                         <FileText size={16} className="text-app-muted" />
                       </div>
                       <div>
@@ -1080,10 +1080,10 @@ const ProfilePage = () => {
               transition={{ duration: 0.35, delay: 0.2 }}
             >
               <Card className="p-8 hover:shadow-xl transition-shadow duration-300">
-                <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-app">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                      <GraduationCap className="text-emerald-600" size={20} />
+                    <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center">
+                      <GraduationCap className="text-emerald-600 dark:text-emerald-400" size={20} />
                     </div>
                     <div>
                       <h3 className="text-lg font-bold font-space-grotesk text-app">
@@ -1100,7 +1100,7 @@ const ProfilePage = () => {
                   {/* Info Row: School */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 px-4 rounded-xl surface-subtle border border-app hover:bg-[var(--bg-surface)] hover:shadow-sm transition-all duration-300">
                     <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
+                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-app flex-shrink-0">
                         <GraduationCap size={16} className="text-app-muted" />
                       </div>
                       <div>
@@ -1117,7 +1117,7 @@ const ProfilePage = () => {
                   {/* Info Row: Class & Subject (Grid) */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex items-center gap-3 py-3 px-4 rounded-xl surface-subtle border border-app hover:bg-[var(--bg-surface)] hover:shadow-sm transition-all duration-300">
-                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
+                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-app flex-shrink-0">
                         <Target size={16} className="text-app-muted" />
                       </div>
                       <div>
@@ -1131,7 +1131,7 @@ const ProfilePage = () => {
                     </div>
 
                     <div className="flex items-center gap-3 py-3 px-4 rounded-xl surface-subtle border border-app hover:bg-[var(--bg-surface)] hover:shadow-sm transition-all duration-300">
-                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-slate-100 flex-shrink-0">
+                      <div className="w-9 h-9 rounded-full surface shadow-sm flex items-center justify-center border border-app flex-shrink-0">
                         <Book size={16} className="text-app-muted" />
                       </div>
                       <div>
@@ -1156,9 +1156,9 @@ const ProfilePage = () => {
               transition={{ duration: 0.35, delay: 0.25 }}
             >
               <Card className="p-8 hover:shadow-xl transition-shadow duration-300">
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-                  <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-                    <Shield className="text-amber-600" size={20} />
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-app">
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center">
+                    <Shield className="text-amber-600 dark:text-amber-400" size={20} />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold font-space-grotesk text-app">

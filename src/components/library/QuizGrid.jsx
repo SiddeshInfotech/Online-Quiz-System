@@ -6,32 +6,32 @@ import Pagination from "./Pagination";
 const QuizCardSkeleton = ({ viewMode }) => {
   if (viewMode === "list") {
     return (
-      <div className="flex items-center gap-5 p-4 rounded-2xl surface border border-slate-100 shadow-sm animate-pulse">
-        <div className="w-24 h-20 rounded-xl bg-slate-200 flex-shrink-0" />
+      <div className="flex items-center gap-5 p-4 rounded-2xl surface border border-app shadow-sm animate-pulse">
+        <div className="w-24 h-20 rounded-xl surface-elev flex-shrink-0" />
         <div className="flex-1">
-          <div className="h-5 bg-slate-200 rounded w-1/3 mb-2" />
-          <div className="h-3 bg-slate-200 rounded w-1/4" />
+          <div className="h-5 surface-elev rounded w-1/3 mb-2" />
+          <div className="h-3 surface-elev rounded w-1/4" />
         </div>
         <div className="hidden sm:flex gap-4">
-          <div className="h-4 bg-slate-200 rounded w-12" />
-          <div className="h-4 bg-slate-200 rounded w-16" />
+          <div className="h-4 surface-elev rounded w-12" />
+          <div className="h-4 surface-elev rounded w-16" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl surface border border-slate-100 shadow-sm h-[340px] flex flex-col animate-pulse">
-      <div className="h-[180px] bg-slate-200 rounded-t-2xl" />
+    <div className="rounded-2xl surface border border-app shadow-sm h-[340px] flex flex-col animate-pulse">
+      <div className="h-[180px] surface-elev rounded-t-2xl" />
       <div className="p-5 flex-1 flex flex-col">
-        <div className="h-5 bg-slate-200 rounded w-3/4 mb-2" />
-        <div className="h-3 bg-slate-200 rounded w-1/2 mb-4" />
+        <div className="h-5 surface-elev rounded w-3/4 mb-2" />
+        <div className="h-3 surface-elev rounded w-1/2 mb-4" />
         <div className="flex gap-4 mb-4">
-          <div className="h-4 bg-slate-200 rounded w-12" />
-          <div className="h-4 bg-slate-200 rounded w-16" />
+          <div className="h-4 surface-elev rounded w-12" />
+          <div className="h-4 surface-elev rounded w-16" />
         </div>
         <div className="mt-auto">
-          <div className="h-9 bg-slate-200 rounded-xl w-full" />
+          <div className="h-9 surface-elev rounded-xl w-full" />
         </div>
       </div>
     </div>
@@ -191,7 +191,7 @@ const QuizGrid = ({
         </div>
       ) : (
         /* Empty State */
-        <div className="flex flex-col items-center justify-center py-16 gap-3 surface rounded-2xl border border-slate-100 shadow-sm">
+        <div className="flex flex-col items-center justify-center py-16 gap-3 surface rounded-2xl border border-app shadow-sm">
           <div className="w-14 h-14 rounded-2xl surface-subtle flex items-center justify-center text-slate-400">
             <LayoutGrid size={26} />
           </div>

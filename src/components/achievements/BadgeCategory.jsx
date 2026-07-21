@@ -16,14 +16,14 @@ const BadgeCategory = ({ category, badges, onClaim }) => {
         className="flex items-center justify-between w-full mb-6 group cursor-pointer"
       >
         <div className="flex items-center gap-3">
-          <h2 className="text-xl font-bold font-space-grotesk text-slate-800 group-hover:text-violet-600 transition-colors">
+          <h2 className="text-xl font-bold font-space-grotesk text-app group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
             {category}
           </h2>
-          <span className="text-sm font-medium text-slate-400 surface-elev px-2 py-0.5 rounded-md">
+          <span className="text-sm font-medium text-app-muted surface-elev px-2 py-0.5 rounded-md">
             {badges.length}
           </span>
         </div>
-        <div className="p-1 rounded-md text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-600 transition-colors">
+        <div className="p-1 rounded-md text-app-muted group-hover:bg-[var(--bg-elevated)] group-hover:text-app transition-colors">
           {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </div>
       </button>

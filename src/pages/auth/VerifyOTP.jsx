@@ -12,11 +12,13 @@ import AuthHeader from "../../components/auth/AuthHeader";
 
 import OTPInput from "../../components/auth/OTPInput";
 import authService from "../../services/authService";
+import { useAuthModal } from "../../context/AuthModalContext";
 
-const VerifyOTP = () => {
+const VerifyOTP = ({ inModal = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const email = location.state?.email;
+  const { changeView, meta } = useAuthModal();
+  const email = inModal ? meta?.email : location.state?.email;
 
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
@@ -28,9 +30,10 @@ const VerifyOTP = () => {
 
   useEffect(() => {
     if (!email) {
-      navigate("/forgot-password", { replace: true });
+      if (inModal) changeView("forgot-password");
+      else navigate("/forgot-password", { replace: true });
     }
-  }, [email, navigate]);
+  }, [email, navigate, inModal, changeView]);
 
   useEffect(() => {
     let timer;
@@ -54,7 +57,11 @@ const VerifyOTP = () => {
 
     try {
       await authService.verifyOTP(email, otp);
-      navigate("/reset-password", { state: { email, otp } });
+      if (inModal) {
+          changeView("reset-password", { email, otp });
+      } else {
+          navigate("/reset-password", { state: { email, otp } });
+      }
     } catch (err) {
       setApiError(
         err.response?.data?.message || "Invalid OTP. Please try again."
@@ -87,17 +94,17 @@ const VerifyOTP = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 25 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45 }}
-      className="w-full"
+      transition={{ duration: 0.35 }}
+      className={`w-full ${!inModal ? 'rounded-3xl border border-app surface p-8 shadow-xl lg:p-10 relative' : ''}`}
     >
-      <Card className="relative rounded-3xl border border-app surface p-8 shadow-xl lg:p-10">
-        <div className="absolute right-6 top-6">
-
-        </div>
-
-        <Logo className="mb-8" />
+        {!inModal && (
+            <>
+                <div className="absolute right-6 top-6"></div>
+                <Logo className="mb-8" />
+            </>
+        )}
 
         <AuthHeader
           title="Verify OTP"
@@ -163,14 +170,24 @@ const VerifyOTP = () => {
           </button>
         </div>
 
-        <Link
-          to="/forgot-password"
-          className="mt-6 flex items-center justify-center gap-2 text-sm font-medium text-violet-600 hover:text-violet-700"
-        >
-          <ArrowLeft size={16} />
-          Change Email
-        </Link>
-      </Card>
+        {inModal ? (
+            <button
+                type="button"
+                onClick={() => changeView("forgot-password")}
+                className="mt-6 flex items-center justify-center gap-2 text-sm font-medium text-violet-600 hover:text-violet-700 w-full"
+            >
+                <ArrowLeft size={16} />
+                Change Email
+            </button>
+        ) : (
+            <Link
+                to="/forgot-password"
+                className="mt-6 flex items-center justify-center gap-2 text-sm font-medium text-violet-600 hover:text-violet-700"
+            >
+                <ArrowLeft size={16} />
+                Change Email
+            </Link>
+        )}
     </motion.div>
   );
 };

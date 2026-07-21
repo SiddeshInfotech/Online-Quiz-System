@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -200,6 +200,8 @@ const StatCard = ({ icon: Icon, iconColor, value, label, delay = 0 }) => (
 const QuizDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromAi = location.state?.from_ai;
   const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -232,7 +234,7 @@ const QuizDetailsPage = () => {
     try {
       setStartingQuiz(true);
       const res = await attemptsService.startAttempt(quiz.id);
-      navigate(`/attempts/${res.attempt_id || res.id}`);
+      navigate(`/attempts/${res.attempt_id || res.id}`, { state: { from_ai: fromAi } });
     } catch (err) {
       console.error("Error starting quiz:", err);
       setError("Failed to start quiz. Please try again.");
@@ -306,13 +308,16 @@ const QuizDetailsPage = () => {
         >
           {/* Back to Library */}
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => {
+                if (fromAi) navigate("/dashboard");
+                else navigate(-1);
+            }}
             className="inline-flex items-center gap-2 text-sm font-medium text-app-muted hover:text-app transition-colors mb-6 group"
           >
             <span className="w-7 h-7 rounded-lg flex items-center justify-center surface-elev group-hover:bg-violet-100 group-hover:text-violet-600 transition-all duration-200">
               <ArrowLeft size={15} />
             </span>
-            Back to Library
+            {fromAi ? "Back to Dashboard" : "Back to Library"}
           </button>
 
           <Card className="p-8 md:p-10 relative overflow-hidden shadow-sm border border-app">
@@ -462,14 +467,12 @@ const QuizDetailsPage = () => {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.52, duration: 0.35 }}
             >
-              <Button
-                variant="secondary"
-                size="lg"
-                className="w-full sm:w-auto"
-                onClick={() => navigate(-1)}
-              >
-                <ArrowLeft size={16} className="mr-2" />
-                Back to Library
+              <Button variant="outline" onClick={() => {
+                  if (fromAi) navigate("/dashboard");
+                  else navigate(-1);
+              }}>
+                <ArrowLeft size={18} className="mr-2" />
+                {fromAi ? "Back to Dashboard" : "Back to Library"}
               </Button>
               <Button
                 variant="primary"

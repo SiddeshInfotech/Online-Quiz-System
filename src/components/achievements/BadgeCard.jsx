@@ -6,10 +6,10 @@ import ProgressBar from "./ProgressBar";
 import { Link } from "react-router-dom";
 
 const rarityColors = {
-  Common: "surface-elev text-slate-600 border-app",
-  Rare: "bg-blue-50 text-blue-600 border-blue-200",
-  Epic: "bg-fuchsia-50 text-fuchsia-600 border-fuchsia-200",
-  Legendary: "bg-amber-50 text-amber-600 border-amber-200",
+  Common: "surface-elev text-app-2 border-app",
+  Rare: "bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/30",
+  Epic: "bg-fuchsia-50 dark:bg-fuchsia-500/20 text-fuchsia-600 dark:text-fuchsia-400 border-fuchsia-200 dark:border-fuchsia-500/30",
+  Legendary: "bg-amber-50 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/30",
 };
 
 const BadgeCard = ({ badge, onClaim, className = "" }) => {

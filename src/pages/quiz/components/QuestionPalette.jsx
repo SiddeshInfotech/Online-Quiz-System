@@ -30,7 +30,7 @@ const QuestionPalette = ({
     { label: "Incorrect", className: "bg-red-500" },
   ] : [
     { label: "Answered", className: "bg-emerald-500" },
-    { label: "Unanswered", className: "bg-slate-200" },
+    { label: "Unanswered", className: "bg-slate-200 dark:bg-slate-700" },
     { label: "Marked", className: "bg-amber-500" },
   ];
 
@@ -43,7 +43,8 @@ const QuestionPalette = ({
       <div className="grid grid-cols-5 gap-2 mb-8">
         {[...Array(totalQuestions)].map((_, i) => {
           const isCurrent = currentQuestionIndex === i;
-          const isAnswered = !!answers[i];
+          const qId = questions[i]?.id;
+          const isAnswered = qId ? answers[qId] !== undefined : false;
           const isMarked = !!markedForReview[i];
 
           // Determine button style based on states
@@ -53,7 +54,7 @@ const QuestionPalette = ({
           if (reviewMode) {
              const isCorrect = questions[i]?.is_correct;
              if (isCurrent) {
-               btnClass = "border-2 border-violet-500 bg-violet-50 text-violet-700 font-bold shadow-sm shadow-violet-100 ring-2 ring-violet-200 ring-offset-1";
+               btnClass = "border-2 border-violet-500 bg-violet-50 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300 font-bold shadow-sm ring-2 ring-violet-200 dark:ring-violet-500/30";
              } else if (isCorrect) {
                btnClass = "border-2 border-emerald-500 bg-emerald-500 text-white font-medium";
              } else {
@@ -61,13 +62,13 @@ const QuestionPalette = ({
              }
           } else {
             if (isCurrent) {
-              btnClass = "border-2 border-violet-500 bg-violet-50 text-violet-700 font-bold shadow-sm shadow-violet-100 ring-2 ring-violet-200 ring-offset-1";
+              btnClass = "border-2 border-violet-500 bg-violet-50 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300 font-bold shadow-sm ring-2 ring-violet-200 dark:ring-violet-500/30";
             } else if (isAnswered && isMarked) {
-              btnClass = "border-2 border-emerald-500 bg-emerald-50 text-emerald-700 shadow-[inset_0_-4px_0_rgba(245,158,11,1)]"; // Green with orange bottom border
+              btnClass = "border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 shadow-[inset_0_-4px_0_rgba(245,158,11,1)]"; // Green with orange bottom border
             } else if (isAnswered) {
               btnClass = "border-2 border-emerald-500 bg-emerald-500 text-white font-medium";
             } else if (isMarked) {
-              btnClass = "border-2 border-amber-500 bg-amber-50 text-amber-700 font-medium";
+              btnClass = "border-2 border-amber-500 bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-medium";
             }
             showMarked = isMarked && !isCurrent;
           }
@@ -91,22 +92,22 @@ const QuestionPalette = ({
         })}
       </div>
 
-      <div className="space-y-3 pt-6 border-t border-slate-100">
-        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+      <div className="space-y-3 pt-6 border-t border-app">
+        <h4 className="text-xs font-bold text-app-muted uppercase tracking-wider mb-2">
           Legend
         </h4>
         <div className="grid grid-cols-2 gap-3">
           {legend.map((item) => (
             <div key={item.label} className="flex items-center gap-2">
               <div className={`w-3 h-3 rounded-full ${item.className}`} />
-              <span className="text-xs font-medium text-slate-600">
+              <span className="text-xs font-medium text-app-2">
                 {item.label}
               </span>
             </div>
           ))}
           <div className="flex items-center gap-2 col-span-2">
             <div className="w-3 h-3 border-2 border-violet-500 rounded-full" />
-            <span className="text-xs font-medium text-slate-600">Current Question</span>
+            <span className="text-xs font-medium text-app-2">Current Question</span>
           </div>
         </div>
       </div>

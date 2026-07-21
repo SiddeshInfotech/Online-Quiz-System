@@ -33,19 +33,34 @@ const QuizReviewPage = () => {
       const qs = data.questions || [];
       setQuestions(qs);
       
-      if (data.answers) {
-        const initialAnswers = {};
+      const initialAnswers = {};
+      
+      // Try to extract from data.answers if it exists and has items
+      if (data.answers && data.answers.length > 0) {
         data.answers.forEach((ans) => {
-          initialAnswers[ans.question_id] = ans.selected_option_id;
+          const qId = ans.question_id || ans.question;
+          const optId = ans.selected_option_id || ans.option_id || ans.user_answer_id || ans.selected_option || ans.answer;
+          if (qId != null && optId != null) {
+            initialAnswers[qId] = optId;
+          }
         });
-        setAnswers(initialAnswers);
-      } else {
-         const initialAnswers = {};
-         qs.forEach(q => {
-             if (q.selected_option_id) initialAnswers[q.id] = q.selected_option_id;
-         });
-         setAnswers(initialAnswers);
       }
+
+      // Also try to extract directly from questions as a fallback/merge
+      if (qs && qs.length > 0) {
+        qs.forEach((q) => {
+          // If we already found it in data.answers, we can skip or overwrite
+          // But let's check all possible fields on the question itself
+          const optId = q.selected_option_id || q.user_answer_id || q.user_selected_option_id || 
+                       (q.selected_option && q.selected_option.id) || q.selected_option || 
+                       (q.user_answer && q.user_answer.id) || q.user_answer;
+          if (optId != null) {
+            initialAnswers[q.id] = optId;
+          }
+        });
+      }
+
+      setAnswers(initialAnswers);
 
     } catch (err) {
       console.error("Failed to load review", err);
@@ -120,7 +135,7 @@ const QuizReviewPage = () => {
           <QuestionCard
             question={currentQuestion}
             index={currentIndex}
-            selectedOptionId={currentQuestion ? answers[currentQuestion.id] : null}
+            selectedOptionId={currentQuestion?.selected_option_id ?? currentQuestion?.user_answer_id ?? (currentQuestion ? answers[currentQuestion.id] : null)}
             isMarkedForReview={false} 
             onSelectOption={() => {}} 
             onClearAnswer={() => {}} 

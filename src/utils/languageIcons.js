@@ -63,21 +63,30 @@ FallbackIcon.displayName = "FallbackCodeIcon";
  */
 const LOGO_MAP = {
   "python":       { icon: createLogoComponent(pythonLogo, "Python"),           color: "#3776AB",  name: "Python" },
+  "py":           { icon: createLogoComponent(pythonLogo, "Python"),           color: "#3776AB",  name: "Python" },
   "java":         { icon: createLogoComponent(javaLogo, "Java"),               color: "#E76F00",  name: "Java" },
   "javascript":   { icon: createLogoComponent(javascriptLogo, "JavaScript"),   color: "#F7DF1E",  name: "JavaScript" },
+  "js":           { icon: createLogoComponent(javascriptLogo, "JavaScript"),   color: "#F7DF1E",  name: "JavaScript" },
   "typescript":   { icon: createLogoComponent(typescriptLogo, "TypeScript"),   color: "#3178C6",  name: "TypeScript" },
+  "ts":           { icon: createLogoComponent(typescriptLogo, "TypeScript"),   color: "#3178C6",  name: "TypeScript" },
   "html":         { icon: createLogoComponent(html5Logo, "HTML5"),             color: "#E34F26",  name: "HTML" },
   "html5":        { icon: createLogoComponent(html5Logo, "HTML5"),             color: "#E34F26",  name: "HTML5" },
   "css":          { icon: createLogoComponent(css3Logo, "CSS3"),               color: "#1572B6",  name: "CSS" },
   "css3":         { icon: createLogoComponent(css3Logo, "CSS3"),               color: "#1572B6",  name: "CSS3" },
   "react":        { icon: createLogoComponent(reactLogo, "React"),             color: "#61DAFB",  name: "React" },
+  "reactjs":      { icon: createLogoComponent(reactLogo, "React"),             color: "#61DAFB",  name: "React" },
+  "react.js":     { icon: createLogoComponent(reactLogo, "React"),             color: "#61DAFB",  name: "React" },
   "angular":      { icon: createLogoComponent(angularLogo, "Angular"),         color: "#DD0031",  name: "Angular" },
+  "angularjs":    { icon: createLogoComponent(angularLogo, "Angular"),         color: "#DD0031",  name: "Angular" },
   "vue":          { icon: createLogoComponent(vueLogo, "Vue"),                 color: "#4FC08D",  name: "Vue" },
   "vue.js":       { icon: createLogoComponent(vueLogo, "Vue.js"),              color: "#4FC08D",  name: "Vue.js" },
+  "vuejs":        { icon: createLogoComponent(vueLogo, "Vue.js"),              color: "#4FC08D",  name: "Vue.js" },
   "node.js":      { icon: createLogoComponent(nodejsLogo, "Node.js"),          color: "#339933",  name: "Node.js" },
   "nodejs":       { icon: createLogoComponent(nodejsLogo, "Node.js"),          color: "#339933",  name: "Node.js" },
+  "node":         { icon: createLogoComponent(nodejsLogo, "Node.js"),          color: "#339933",  name: "Node.js" },
   "express":      { icon: createLogoComponent(expressLogo, "Express"),         color: "#000000",  name: "Express" },
   "express.js":   { icon: createLogoComponent(expressLogo, "Express.js"),      color: "#000000",  name: "Express.js" },
+  "expressjs":    { icon: createLogoComponent(expressLogo, "Express.js"),      color: "#000000",  name: "Express.js" },
   "django":       { icon: createLogoComponent(djangoLogo, "Django"),           color: "#092E20",  name: "Django" },
   "flask":        { icon: createLogoComponent(flaskLogo, "Flask"),             color: "#000000",  name: "Flask" },
   "php":          { icon: createLogoComponent(phpLogo, "PHP"),                 color: "#777BB4",  name: "PHP" },
@@ -89,13 +98,20 @@ const LOGO_MAP = {
   "swift":        { icon: createLogoComponent(swiftLogo, "Swift"),             color: "#F05138",  name: "Swift" },
   "ruby":         { icon: createLogoComponent(rubyLogo, "Ruby"),               color: "#CC342D",  name: "Ruby" },
   "c++":          { icon: createLogoComponent(cplusplusLogo, "C++"),           color: "#00599C",  name: "C++" },
+  "cpp":          { icon: createLogoComponent(cplusplusLogo, "C++"),           color: "#00599C",  name: "C++" },
+  "cplusplus":    { icon: createLogoComponent(cplusplusLogo, "C++"),           color: "#00599C",  name: "C++" },
   "c#":           { icon: createLogoComponent(csharpLogo, "C#"),               color: "#68217A",  name: "C#" },
+  "cs":           { icon: createLogoComponent(csharpLogo, "C#"),               color: "#68217A",  name: "C#" },
+  "csharp":       { icon: createLogoComponent(csharpLogo, "C#"),               color: "#68217A",  name: "C#" },
   "c":            { icon: createLogoComponent(cLogo, "C"),                     color: "#A8B9CC",  name: "C" },
   "mongodb":      { icon: createLogoComponent(mongodbLogo, "MongoDB"),         color: "#47A248",  name: "MongoDB" },
+  "mongo":        { icon: createLogoComponent(mongodbLogo, "MongoDB"),         color: "#47A248",  name: "MongoDB" },
   "postgresql":   { icon: createLogoComponent(postgresqlLogo, "PostgreSQL"),   color: "#336791",  name: "PostgreSQL" },
   "postgres":     { icon: createLogoComponent(postgresqlLogo, "PostgreSQL"),   color: "#336791",  name: "PostgreSQL" },
+  "psql":         { icon: createLogoComponent(postgresqlLogo, "PostgreSQL"),   color: "#336791",  name: "PostgreSQL" },
   "mysql":        { icon: createLogoComponent(mysqlLogo, "MySQL"),             color: "#4479A1",  name: "MySQL" },
   "sql":          { icon: createLogoComponent(sqlLogo, "SQL"),                 color: "#003B57",  name: "SQL" },
+  "sqlite":       { icon: createLogoComponent(sqlLogo, "SQL"),                 color: "#003B57",  name: "SQL" },
 };
 
 const FALLBACK = { icon: FallbackIcon, color: "#6366f1", name: "Code" };
@@ -103,19 +119,46 @@ const FALLBACK = { icon: FallbackIcon, color: "#6366f1", name: "Code" };
 /**
  * getLanguageIcon(subject)
  *
- * Primary input: quiz.subject (provided by the backend)
+ * Primary input: quiz.subject, category, or title
  * Returns: { icon: Component, color: string, name: string }
  *
- * - If subject matches a known language → returns the official SVG logo as an <img> component
- * - If subject is unknown → returns the generic Code icon from lucide-react
- *
- * The returned `icon` component accepts: size, className
+ * - Performs direct match first.
+ * - Performs smart substring and token search for composite names like "Python 3 Basics" or "Node.js REST API".
  */
 export const getLanguageIcon = (subject) => {
   if (!subject || typeof subject !== "string") {
     return FALLBACK;
   }
 
-  const key = subject.trim().toLowerCase();
-  return LOGO_MAP[key] || { icon: FallbackIcon, color: "#6366f1", name: subject };
+  const rawKey = subject.trim().toLowerCase();
+
+  // 1. Direct match
+  if (LOGO_MAP[rawKey]) {
+    return LOGO_MAP[rawKey];
+  }
+
+  // 2. Intelligent token & substring matching
+  // Sort keys by length descending so longer keys match first (e.g. "javascript" before "java", "c++" before "c")
+  const keysByLength = Object.keys(LOGO_MAP).sort((a, b) => b.length - a.length);
+
+  for (const k of keysByLength) {
+    if (k === "c") {
+      // Standalone C language check (e.g. "c programming", "c language", "c")
+      if (/\bc\b/i.test(rawKey)) {
+        return LOGO_MAP["c"];
+      }
+      continue;
+    }
+    if (k === "go") {
+      if (/\bgo\b/i.test(rawKey) || rawKey.includes("golang")) {
+        return LOGO_MAP["go"];
+      }
+      continue;
+    }
+    if (rawKey.includes(k)) {
+      return LOGO_MAP[k];
+    }
+  }
+
+  return { icon: FallbackIcon, color: "#6366f1", name: subject };
 };

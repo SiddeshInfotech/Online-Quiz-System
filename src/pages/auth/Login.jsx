@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mail, ArrowRight, Loader2 } from "lucide-react";
 import authService from "../../services/authService";
 import { useAuth } from "../../hooks/useAuth";
+import { useAuthModal } from "../../context/AuthModalContext";
 
 import Logo from "../../components/ui/Logo";
 
@@ -66,21 +67,27 @@ const getErrorMessage = (err) => {
   return data.error || "An unexpected error occurred.";
 };
 
-const Login = () => {
+const Login = ({ inModal = false }) => {
   const navigate = useNavigate();
   const { login, fetchProfile } = useAuth();
+  const { changeView, closeModal, formData, updateFormData } = useAuthModal();
   const [rememberMe, setRememberMe] = useState(false);
 
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
+  const [localFormData, setLocalFormData] = useState({
+    email: formData?.email || "",
+    password: formData?.password || "",
   });
+
+  // Keep modal state in sync when switching views
+  useEffect(() => {
+    updateFormData({ email: localFormData.email });
+  }, [localFormData.email, updateFormData]);
 
   const [apiError, setApiError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFormData((prev) => ({
+    setLocalFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
@@ -90,7 +97,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.email.trim() || !formData.password.trim()) {
+    if (!localFormData.email.trim() || !localFormData.password.trim()) {
       setApiError("Please enter both email and password.");
       return;
     }
@@ -99,7 +106,7 @@ const Login = () => {
     setApiError("");
 
     try {
-      const data = await authService.login(formData.email, formData.password);
+      const data = await authService.login(localFormData.email, localFormData.password);
 
       // Save token and user details
       const token = data?.token || data?.access_token;
@@ -111,6 +118,7 @@ const Login = () => {
           await fetchProfile();
         }
 
+        if (inModal) closeModal();
         navigate("/dashboard");
       } else {
         setApiError("Invalid response from server. Missing access token.");
@@ -137,6 +145,7 @@ const Login = () => {
           await fetchProfile();
         }
 
+        if (inModal) closeModal();
         navigate("/dashboard");
       } else {
         setApiError("Google login failed. Missing access token.");
@@ -150,21 +159,13 @@ const Login = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 25 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45 }}
+      transition={{ duration: 0.35 }}
       className="w-full"
     >
-      <Card className="relative rounded-3xl border border-app surface p-8 shadow-xl lg:p-10">
-
-        {/* Theme Toggle */}
-
-        <div className="absolute right-6 top-6">
-
-        </div>
-
-        {/* Logo */}
-        <Logo className="mb-8" />
+      <div className={!inModal ? "relative rounded-3xl border border-app surface p-8 shadow-xl lg:p-10" : ""}>
+        {!inModal && <Logo className="mb-8" />}
 
         <AuthHeader
           title="Welcome Back 👋"
@@ -186,7 +187,7 @@ const Login = () => {
             name="email"
             type="email"
             placeholder="you@example.com"
-            value={formData.email}
+            value={localFormData.email}
             onChange={handleChange}
             leftIcon={Mail}
           />
@@ -194,7 +195,7 @@ const Login = () => {
           <PasswordInput
             label="Password"
             name="password"
-            value={formData.password}
+            value={localFormData.password}
             onChange={handleChange}
           />
 
@@ -212,12 +213,22 @@ const Login = () => {
               Remember Me
             </label>
 
-            <Link
-              to="/forgot-password"
-              className="font-medium text-violet-600 hover:text-violet-700"
-            >
-              Forgot Password?
-            </Link>
+            {inModal ? (
+              <button
+                type="button"
+                onClick={() => changeView("forgot-password")}
+                className="font-medium text-violet-600 hover:text-violet-700"
+              >
+                Forgot Password?
+              </button>
+            ) : (
+              <a
+                href="/forgot-password"
+                className="font-medium text-violet-600 hover:text-violet-700"
+              >
+                Forgot Password?
+              </a>
+            )}
           </div>
 
           <Button
@@ -254,14 +265,24 @@ const Login = () => {
         <p className="mt-8 text-center text-sm text-app-muted">
           Don't have an account?{" "}
 
-          <Link
-            to="/signup"
-            className="font-semibold text-violet-600 hover:text-violet-700"
-          >
-            Create Account
-          </Link>
+          {inModal ? (
+            <button
+              type="button"
+              onClick={() => changeView("signup")}
+              className="font-semibold text-violet-600 hover:text-violet-700"
+            >
+              Create Account
+            </button>
+          ) : (
+            <a
+              href="/signup"
+              className="font-semibold text-violet-600 hover:text-violet-700"
+            >
+              Create Account
+            </a>
+          )}
         </p>
-      </Card>
+      </div>
     </motion.div>
   );
 };

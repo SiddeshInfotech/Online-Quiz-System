@@ -144,8 +144,8 @@ const SubjectDropdown = ({ value, onChange, hasError }) => {
             className="absolute z-30 mt-1.5 w-full surface border border-app rounded-2xl shadow-xl shadow-slate-200/60 overflow-hidden"
           >
             {/* Search input */}
-            <div className="p-2 border-b border-slate-100 sticky top-0 surface">
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg surface-subtle border border-slate-100">
+            <div className="p-2 border-b border-app sticky top-0 surface">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg surface-subtle border border-app">
                 <Search size={13} className="text-app-muted flex-shrink-0" />
                 <input
                   ref={inputRef}
@@ -198,7 +198,7 @@ const SubjectDropdown = ({ value, onChange, hasError }) => {
 
 const PillSelector = ({ options, value, onChange, metaMap, hasError, fullWidth = false }) => (
   <div
-    className={`flex gap-2.5 p-3 rounded-xl border transition-all duration-200 ${hasError ? "border-red-300 bg-red-50/20" : "border-app bg-slate-50/50"}
+    className={`flex gap-2.5 p-3 rounded-xl border transition-all duration-200 ${hasError ? "border-red-300 bg-red-50/20" : "border-app surface-subtle"}
       } ${fullWidth ? "flex-col sm:flex-row" : ""}`}
   >
     {options.map((opt) => {
@@ -352,7 +352,7 @@ const GenerateQuizPage = () => {
         setGeneratedQuizId(quizId);
         setSuccessMessage(data.message || "Quiz Generated Successfully!");
         setGenerated(true);
-        navigate(`/quiz/${quizId}`);
+        navigate(`/quiz/${quizId}`, { state: { from_ai: true } });
       } else {
         setApiError(data?.message || "Quiz generation failed");
       }
@@ -553,7 +553,7 @@ const GenerateQuizPage = () => {
                 </motion.div>
 
                 {/* ── Divider ── */}
-                <div className="border-t border-slate-100" />
+                <div className="border-t border-app" />
 
                 {/* ── Submit row ── */}
                 <motion.div

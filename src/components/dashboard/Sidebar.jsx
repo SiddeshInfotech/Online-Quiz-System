@@ -80,7 +80,7 @@ const Sidebar = ({ user, dailyGoal, onMenuClose }) => {
                 `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
                   isActive
                     ? "bg-violet-600 text-white shadow-md shadow-violet-600/20"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-violet-600"
+                    : "text-app-2 hover:bg-[var(--bg-elevated)] hover:text-violet-500 dark:hover:text-violet-400"
                 }`
               }
             >

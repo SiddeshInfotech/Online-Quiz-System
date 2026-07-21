@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mail, ArrowLeft, Loader2 } from "lucide-react";
 import authService from "../../services/authService";
+import { useAuthModal } from "../../context/AuthModalContext";
 
 import Logo from "../../components/ui/Logo";
 
@@ -34,13 +35,18 @@ const getErrorMessage = (err) => {
   return data.error || "An unexpected error occurred.";
 };
 
-const ForgotPassword = () => {
+const ForgotPassword = ({ inModal = false }) => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const { changeView, formData, updateFormData, meta } = useAuthModal();
+  const [email, setEmail] = useState(formData?.email || "");
   const [emailError, setEmailError] = useState("");
   const [apiError, setApiError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    updateFormData({ email });
+  }, [email, updateFormData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -68,7 +74,11 @@ const ForgotPassword = () => {
       
       // Delay navigation slightly so user can see success message
       setTimeout(() => {
-        navigate("/reset-password", { state: { email } });
+        if (inModal) {
+            changeView("reset-password", { email });
+        } else {
+            navigate("/reset-password", { state: { email } });
+        }
       }, 1500);
       
     } catch (err) {
@@ -80,19 +90,17 @@ const ForgotPassword = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 25 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45 }}
-      className="w-full"
+      transition={{ duration: 0.35 }}
+      className={`w-full ${!inModal ? 'rounded-3xl border border-app surface p-8 shadow-xl lg:p-10 relative' : ''}`}
     >
-      <Card className="relative rounded-3xl border border-app surface p-8 shadow-xl lg:p-10">
-        {/* Theme Toggle */}
-        <div className="absolute right-6 top-6">
-
-        </div>
-
-        {/* Logo */}
-        <Logo className="mb-8" />
+      {!inModal && (
+        <>
+          <div className="absolute right-6 top-6"></div>
+          <Logo className="mb-8" />
+        </>
+      )}
 
         <AuthHeader
           title="Forgot Password?"
@@ -149,14 +157,23 @@ const ForgotPassword = () => {
 
         <p className="text-center text-sm text-app-muted">
           Remember your password?{" "}
-          <Link
-            to="/login"
-            className="font-semibold text-violet-600 hover:text-violet-700"
-          >
-            Back to Login
-          </Link>
+          {inModal ? (
+            <button
+                type="button"
+                onClick={() => changeView('login')}
+                className="font-semibold text-violet-600 hover:text-violet-700"
+            >
+                Back to Login
+            </button>
+          ) : (
+            <a
+                href="/login"
+                className="font-semibold text-violet-600 hover:text-violet-700"
+            >
+                Back to Login
+            </a>
+          )}
         </p>
-      </Card>
     </motion.div>
   );
 };

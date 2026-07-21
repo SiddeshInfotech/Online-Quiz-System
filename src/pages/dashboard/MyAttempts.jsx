@@ -79,8 +79,9 @@ const ScoreRing = ({ percentage }) => {
           cy="50"
           r="38"
           fill="transparent"
-          stroke="#E2E8F0"
+          stroke="currentColor"
           strokeWidth="8"
+          className="text-slate-200 dark:text-slate-700"
         />
         <circle
           cx="50"
@@ -98,7 +99,7 @@ const ScoreRing = ({ percentage }) => {
         <span className="font-space-grotesk text-xl font-bold text-app">
           {percentage}%
         </span>
-        <span className="text-[10px] font-semibold text-slate-400">Score</span>
+        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">Score</span>
       </div>
     </div>
   );
@@ -183,15 +184,15 @@ const AttemptCard = ({ attempt }) => {
 
             <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="flex items-center gap-2 text-sm text-app-muted">
-                <CalendarDays size={16} className="text-slate-400" />
+                <CalendarDays size={16} className="text-app-muted" />
                 <span>{date}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-app-muted">
-                <Award size={16} className="text-slate-400" />
+                <Award size={16} className="text-app-muted" />
                 <span>{score}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-app-muted">
-                <Clock3 size={16} className="text-slate-400" />
+                <Clock3 size={16} className="text-app-muted" />
                 <span>{timeTaken}</span>
               </div>
             </div>

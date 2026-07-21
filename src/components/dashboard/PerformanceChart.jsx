@@ -46,12 +46,12 @@ const PerformanceChart = ({ stats, chartData, isLoading }) => {
       )}
 
       {isLoading ? (
-        <div className="relative flex-1 min-h-[160px] w-full flex items-end border-b border-slate-100 pb-6 animate-pulse">
+        <div className="relative flex-1 min-h-[160px] w-full flex items-end border-b border-app pb-6 animate-pulse">
           <div className="absolute inset-0 flex flex-col justify-between pt-2 pb-6 z-0">
             {[1, 2, 3, 4, 5].map((val) => (
                <div key={val} className="flex items-center gap-2 w-full">
-                 <div className="w-6 h-2 bg-slate-200 rounded"></div>
-                 <div className="flex-1 h-px bg-slate-100"></div>
+                 <div className="w-6 h-2 surface-elev rounded"></div>
+                 <div className="flex-1 h-px bg-app"></div>
                </div>
             ))}
           </div>

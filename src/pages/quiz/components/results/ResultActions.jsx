@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { RefreshCw, BookOpen, ArrowLeft } from "lucide-react";
 import Button from "../../../../components/ui/Button";
 
-const ResultActions = ({ onRetry, onReview, onBackToLibrary, isLoading }) => {
+const ResultActions = ({ onRetry, onReview, onBackToLibrary, isLoading, returnLabel = "Back to Library" }) => {
   const [isRetrying, setIsRetrying] = useState(false);
 
   if (isLoading) {
@@ -36,7 +36,7 @@ const ResultActions = ({ onRetry, onReview, onBackToLibrary, isLoading }) => {
         onClick={onBackToLibrary}
       >
         <ArrowLeft size={18} className="mr-2" />
-        Back to Library
+        {returnLabel}
       </Button>
 
       <Button 

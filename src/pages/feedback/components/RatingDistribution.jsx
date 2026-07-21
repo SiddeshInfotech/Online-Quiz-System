@@ -13,7 +13,7 @@ const RatingDistribution = ({ summary }) => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row items-center gap-8 surface p-6 rounded-2xl shadow-sm border border-slate-100">
+    <div className="flex flex-col md:flex-row items-center gap-8 surface p-6 rounded-2xl shadow-sm border border-app">
       {/* Average Rating Block */}
       <div className="flex flex-col items-center justify-center min-w-[150px]">
         <div className="text-5xl font-bold text-app mb-2">
@@ -31,7 +31,7 @@ const RatingDistribution = ({ summary }) => {
           const percentage = getPercentage(stars);
           return (
             <div key={stars} className="flex items-center gap-3">
-              <div className="flex items-center gap-1 w-12 text-sm font-medium text-slate-600">
+              <div className="flex items-center gap-1 w-12 text-sm font-medium text-app-2">
                 {stars} <span className="text-amber-400">★</span>
               </div>
               <div className="flex-1 h-3 surface-elev rounded-full overflow-hidden">

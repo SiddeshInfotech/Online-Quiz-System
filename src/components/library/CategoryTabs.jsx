@@ -22,7 +22,7 @@ const Chip = ({ cat, isActive, onClick }) => (
       focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2
       ${isActive
         ? "bg-violet-600 text-white shadow-lg shadow-violet-600/25 border-transparent"
-        : "bg-white text-slate-600 border border-slate-200 hover:border-violet-300 hover:text-violet-600 hover:bg-violet-50 hover:shadow-sm"
+        : "surface text-app-2 border border-app hover:border-violet-500 hover:text-violet-500 dark:hover:text-violet-400 hover:bg-[var(--bg-elevated)] hover:shadow-sm"
       }
     `}
   >
@@ -106,7 +106,7 @@ const CategoryTabs = ({ categories, activeCategory, onCategoryChange }) => {
               focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2
               ${activeInOverflow
                 ? "bg-violet-600 text-white shadow-lg shadow-violet-600/25 border-transparent"
-                : "bg-white text-slate-600 border border-slate-200 hover:border-violet-300 hover:text-violet-600 hover:bg-violet-50 hover:shadow-sm"
+                : "surface text-app-2 border border-app hover:border-violet-500 hover:text-violet-500 dark:hover:text-violet-400 hover:bg-[var(--bg-elevated)] hover:shadow-sm"
               }
             `}
           >
@@ -129,19 +129,19 @@ const CategoryTabs = ({ categories, activeCategory, onCategoryChange }) => {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: -6 }}
                 transition={{ duration: 0.15 }}
-                className="absolute left-0 top-full mt-2 z-50 w-64 rounded-2xl bg-white border border-slate-200 shadow-2xl overflow-hidden"
+                className="absolute left-0 top-full mt-2 z-50 w-64 rounded-2xl surface border border-app shadow-2xl overflow-hidden"
               >
                 {/* Search box */}
-                <div className="p-3 border-b border-slate-100">
+                <div className="p-3 border-b border-app">
                   <div className="relative flex items-center">
-                    <Search size={14} className="absolute left-3 text-slate-400 pointer-events-none" />
+                    <Search size={14} className="absolute left-3 text-app-muted pointer-events-none" />
                     <input
                       ref={searchRef}
                       type="text"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search subjects…"
-                      className="w-full pl-8 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 text-slate-800 placeholder-slate-400 transition-all"
+                      className="w-full pl-8 pr-3 py-2 text-sm surface-subtle border border-app rounded-xl outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 dark:focus:ring-violet-500/20 text-app placeholder:text-app-muted transition-all"
                     />
                   </div>
                 </div>
@@ -149,7 +149,7 @@ const CategoryTabs = ({ categories, activeCategory, onCategoryChange }) => {
                 {/* Subject list */}
                 <div className="max-h-56 overflow-y-auto py-2 no-scrollbar">
                   {filteredOverflow.length === 0 ? (
-                    <p className="text-xs text-slate-400 text-center py-4">No subjects found</p>
+                    <p className="text-xs text-app-muted text-center py-4">No subjects found</p>
                   ) : (
                     filteredOverflow.map((cat) => {
                       const isActive = activeCategory === cat.id;
@@ -164,8 +164,8 @@ const CategoryTabs = ({ categories, activeCategory, onCategoryChange }) => {
                           className={`
                             w-full text-left px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2
                             ${isActive
-                              ? "bg-violet-50 text-violet-700 font-semibold"
-                              : "text-slate-700 hover:bg-slate-50 hover:text-violet-600"
+                              ? "bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 font-semibold"
+                              : "text-app-2 hover:bg-[var(--bg-elevated)] hover:text-violet-600 dark:hover:text-violet-400"
                             }
                           `}
                         >

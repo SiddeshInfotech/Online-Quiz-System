@@ -20,11 +20,11 @@ const RecommendedCard = ({ quiz: rawQuiz }) => {
         className="block rounded-2xl overflow-hidden surface border border-app shadow-sm hover:shadow-lg hover:border-violet-200 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2"
       >
         {/* Thumbnail */}
-        <div className="relative h-[140px] overflow-hidden bg-slate-50 flex items-center justify-center">
+        <div className="relative h-[140px] overflow-hidden surface-subtle flex items-center justify-center">
           {quiz.isDynamicThumbnail ? (
-            <div className="w-full h-full flex flex-col items-center justify-center opacity-90 group-hover:scale-105 transition-transform duration-500 bg-gradient-to-br from-slate-100 to-slate-200">
-              <LanguageIcon size={48} className="mb-2 drop-shadow-sm" />
-              <span className="text-slate-700 font-black text-lg tracking-widest uppercase">{quiz.subject || "Code"}</span>
+            <div className="w-full h-full flex flex-col items-center justify-center opacity-90 group-hover:scale-105 transition-transform duration-500 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900">
+              <LanguageIcon size={48} className="mb-2 drop-shadow-sm text-app" />
+              <span className="text-slate-700 dark:text-slate-200 font-black text-lg tracking-widest uppercase">{quiz.subject || "Code"}</span>
             </div>
           ) : (
             <img
@@ -52,7 +52,7 @@ const RecommendedCard = ({ quiz: rawQuiz }) => {
           </p>
 
           {/* Meta */}
-          <div className="flex items-center gap-4 text-[11px] text-slate-400 font-medium mb-3">
+          <div className="flex items-center gap-4 text-[11px] text-app-muted font-medium mb-3">
             <span className="inline-flex items-center gap-1">
               <FileText size={12} />
               {quiz.questions} Questions

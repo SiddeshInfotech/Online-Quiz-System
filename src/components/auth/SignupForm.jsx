@@ -7,32 +7,40 @@ import AuthHeader from "./AuthHeader";
 import AuthDivider from "./AuthDivider";
 import AuthFooter from "./AuthFooter";
 import PasswordInput from "./PasswordInput";
+import PasswordStrengthIndicator, { isPasswordStrong } from "./PasswordStrengthIndicator";
 import SocialButton from "./SocialButton";
 
 import Input from "../../components/ui/Input";
 import authService from "../../services/authService";
 import { useAuth } from "../../hooks/useAuth";
+import { useAuthModal } from "../../context/AuthModalContext";
 
-const SignupForm = ({ onSuccess }) => {
+const SignupForm = ({ onSuccess, inModal = false }) => {
     const navigate = useNavigate();
     const { login, fetchProfile } = useAuth();
+    const { changeView, closeModal, formData, updateFormData } = useAuthModal();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
 
-    const [formData, setFormData] = useState({
-        username: "",
-        firstName: "",
-        lastName: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
+    const [localFormData, setLocalFormData] = useState({
+        username: formData?.username || "",
+        firstName: formData?.firstName || "",
+        lastName: formData?.lastName || "",
+        email: formData?.email || "",
+        password: formData?.password || "",
+        confirmPassword: formData?.confirmPassword || "",
     });
 
     const handleChange = (e) => {
-        setFormData((prev) => ({
-            ...prev,
-            [e.target.name]: e.target.value,
-        }));
+        setLocalFormData((prev) => {
+            const updated = {
+                ...prev,
+                [e.target.name]: e.target.value,
+            };
+            // Also update the global context so it's preserved if we switch views
+            if (inModal) updateFormData(updated);
+            return updated;
+        });
     };
 
     const handleSubmit = async (e) => {
@@ -43,25 +51,25 @@ const SignupForm = ({ onSuccess }) => {
         setIsLoading(true);
 
         // 2. Validations
-        if (formData.password !== formData.confirmPassword) {
+        if (localFormData.password !== localFormData.confirmPassword) {
             setError("Passwords do not match");
             setIsLoading(false);
             return;
         }
 
-        if (!formData.username.trim()) {
+        if (!localFormData.username.trim()) {
             setError("Username is required");
             setIsLoading(false);
             return;
         }
 
-        if (!formData.email.trim()) {
+        if (!localFormData.email.trim()) {
             setError("Email is required");
             setIsLoading(false);
             return;
         }
 
-        if (formData.password.length < 6) {
+        if (localFormData.password.length < 6) {
             setError("Password must be at least 6 characters");
             setIsLoading(false);
             return;
@@ -69,11 +77,11 @@ const SignupForm = ({ onSuccess }) => {
 
         // 3. Build payload
         const payload = {
-            username: formData.username,
-            email: formData.email,
-            password: formData.password,
-            first_name: formData.firstName,
-            last_name: formData.lastName,
+            username: localFormData.username,
+            email: localFormData.email,
+            password: localFormData.password,
+            first_name: localFormData.firstName,
+            last_name: localFormData.lastName,
         };
 
         try {
@@ -83,7 +91,9 @@ const SignupForm = ({ onSuccess }) => {
             if (response.status === 201) {
                 // Return kar do taaki neeche error wala block kabhi execute na ho
                 if (onSuccess) {
-                    onSuccess(formData.email);
+                    onSuccess(localFormData.email);
+                } else if (inModal) {
+                    changeView('login');
                 } else {
                     navigate("/login", {
                         state: {
@@ -129,6 +139,7 @@ const SignupForm = ({ onSuccess }) => {
                 if (!data.user) {
                     await fetchProfile();
                 }
+                if (inModal) closeModal();
                 navigate("/dashboard");
             } else {
                 setError("Google login failed. Missing access token.");
@@ -142,15 +153,16 @@ const SignupForm = ({ onSuccess }) => {
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="relative w-full rounded-3xl border border-app surface p-8 shadow-xl lg:p-10"
+            transition={{ duration: 0.35 }}
+            className={`w-full ${!inModal ? 'rounded-3xl border border-app surface p-8 shadow-xl lg:p-10 relative' : ''}`}
         >
             {/* Theme Toggle */}
-            <div className="absolute right-5 top-5">
-
-            </div>
+            {!inModal && (
+                <div className="absolute right-5 top-5">
+                </div>
+            )}
 
             {/* Header */}
             <AuthHeader
@@ -173,7 +185,7 @@ const SignupForm = ({ onSuccess }) => {
                         type="text"
                         name="username"
                         placeholder="Username"
-                        value={formData.username}
+                        value={localFormData.username}
                         onChange={handleChange}
                         leftIcon={UserPlus}
                         required
@@ -185,14 +197,14 @@ const SignupForm = ({ onSuccess }) => {
                     <Input
                         name="firstName"
                         placeholder="First Name"
-                        value={formData.firstName}
+                        value={localFormData.firstName}
                         onChange={handleChange}
                         leftIcon={User}
                     />
                     <Input
                         name="lastName"
                         placeholder="Last Name"
-                        value={formData.lastName}
+                        value={localFormData.lastName}
                         onChange={handleChange}
                         leftIcon={User}
                     />
@@ -203,27 +215,37 @@ const SignupForm = ({ onSuccess }) => {
                     type="email"
                     name="email"
                     placeholder="Email Address"
-                    value={formData.email}
+                    value={localFormData.email}
                     onChange={handleChange}
                     leftIcon={Mail}
                     required
                 />
 
                 {/* Password */}
-                <PasswordInput
-                    name="password"
-                    placeholder="Password"
-                    value={formData.password}
-                    onChange={handleChange}
-                />
+                <div>
+                    <PasswordInput
+                        name="password"
+                        placeholder="Password"
+                        value={localFormData.password}
+                        onChange={handleChange}
+                    />
+                    <PasswordStrengthIndicator password={localFormData.password} />
+                </div>
 
                 {/* Confirm Password */}
-                <PasswordInput
-                    name="confirmPassword"
-                    placeholder="Confirm Password"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                />
+                <div>
+                    <PasswordInput
+                        name="confirmPassword"
+                        placeholder="Confirm Password"
+                        value={localFormData.confirmPassword}
+                        onChange={handleChange}
+                    />
+                    {localFormData.confirmPassword && localFormData.password !== localFormData.confirmPassword && (
+                        <p className="mt-1 text-xs text-red-500 font-medium">
+                            Passwords do not match
+                        </p>
+                    )}
+                </div>
 
                 {/* Checkbox */}
                 <label className="flex cursor-pointer items-start gap-3 text-sm text-app-2">
@@ -234,27 +256,27 @@ const SignupForm = ({ onSuccess }) => {
                     />
                     <span>
                         I agree to the{" "}
-                        <Link
-                            to="/terms"
-                            className="font-medium text-violet-600 hover:underline"
-                        >
-                            Terms of Service
-                        </Link>{" "}
-                        and{" "}
-                        <Link
-                            to="/privacy"
-                            className="font-medium text-violet-600 hover:underline"
-                        >
-                            Privacy Policy
-                        </Link>
+                        {inModal ? (
+                            <>
+                                <button type="button" onClick={() => changeView('tos')} className="font-medium text-violet-600 hover:underline">Terms of Service</button>
+                                {" "}and{" "}
+                                <button type="button" onClick={() => changeView('privacy')} className="font-medium text-violet-600 hover:underline">Privacy Policy</button>
+                            </>
+                        ) : (
+                            <>
+                                <Link to="/terms" className="font-medium text-violet-600 hover:underline">Terms of Service</Link>
+                                {" "}and{" "}
+                                <Link to="/privacy" className="font-medium text-violet-600 hover:underline">Privacy Policy</Link>
+                            </>
+                        )}
                     </span>
                 </label>
 
                 {/* Submit */}
                 <button
                     type="submit"
-                    disabled={isLoading}
-                    className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-3 font-semibold text-white transition hover:shadow-lg hover:shadow-violet-500/30 disabled:opacity-50"
+                    disabled={isLoading || !isPasswordStrong(localFormData.password) || localFormData.password !== localFormData.confirmPassword}
+                    className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-3 font-semibold text-white transition hover:shadow-lg hover:shadow-violet-500/30 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                     {isLoading ? "Creating Account..." : "Create Account →"}
                 </button>
@@ -270,11 +292,20 @@ const SignupForm = ({ onSuccess }) => {
 
             {/* Footer */}
             <div className="mt-8">
-                <AuthFooter
-                    text="Already have an account?"
-                    linkText="Sign In"
-                    to="/login"
-                />
+                {inModal ? (
+                    <p className="text-center text-sm text-app-muted">
+                        Already have an account?{" "}
+                        <button onClick={() => changeView('login')} className="font-semibold text-violet-600 hover:text-violet-700">
+                            Sign In
+                        </button>
+                    </p>
+                ) : (
+                    <AuthFooter
+                        text="Already have an account?"
+                        linkText="Sign In"
+                        to="/login"
+                    />
+                )}
             </div>
         </motion.div>
     );

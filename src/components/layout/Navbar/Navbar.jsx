@@ -6,15 +6,17 @@ import Button from "../../ui/Button";
 import Container from "../../ui/Container";
 import Logo from "../../ui/Logo";
 import ThemeToggle from "../../ui/ThemeToggle";
+import { useAuthModal } from "../../../context/AuthModalContext";
 
 const navLinks = [
-  { label: "About", href: "#about" },
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "Contact Us", href: "#contact" },
+  { label: "About", href: "#about", isAnchor: true },
+  { label: "How It Works", href: "#how-it-works", isAnchor: true },
+  { label: "Contact", to: "/contact", isAnchor: false },
 ];
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { openModal } = useAuthModal();
 
   return (
     <header className="sticky top-0 z-50 border-b border-app bg-[var(--bg-surface)]/80 backdrop-blur-md"
@@ -26,24 +28,29 @@ function Navbar() {
           <ul className="hidden items-center gap-10 md:flex">
             {navLinks.map((item) => (
               <li key={item.label}>
-                <a
-                  href={item.href}
-                  className="text-sm font-medium text-app-2 transition hover:text-[var(--accent)]"
-                >
-                  {item.label}
-                </a>
+                {item.isAnchor ? (
+                  <a
+                    href={item.href}
+                    className="text-sm font-medium text-app-2 transition hover:text-[var(--accent)]"
+                  >
+                    {item.label}
+                  </a>
+                ) : (
+                  <Link
+                    to={item.to}
+                    className="text-sm font-medium text-app-2 transition hover:text-[var(--accent)]"
+                  >
+                    {item.label}
+                  </Link>
+                )}
               </li>
             ))}
           </ul>
 
           <div className="hidden items-center gap-3 md:flex">
             <ThemeToggle />
-            <Link to="/login">
-              <Button variant="ghost">Log In</Button>
-            </Link>
-            <Link to="/signup">
-              <Button>Get Started Free</Button>
-            </Link>
+            <Button variant="ghost" onClick={() => openModal('login')}>Log In</Button>
+            <Button onClick={() => openModal('signup')}>Get Started Free</Button>
           </div>
 
           <div className="flex items-center gap-2 md:hidden">
@@ -62,21 +69,28 @@ function Navbar() {
           <div className="pb-6 md:hidden">
             <div className="flex flex-col gap-4">
               {navLinks.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  className="text-app-2 transition hover:text-[var(--accent)]"
-                  onClick={() => setIsOpen(false)}
-                >
-                  {item.label}
-                </a>
+                item.isAnchor ? (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    className="text-app-2 transition hover:text-[var(--accent)]"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {item.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={item.label}
+                    to={item.to}
+                    className="text-app-2 transition hover:text-[var(--accent)]"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                )
               ))}
-              <Link to="/login" onClick={() => setIsOpen(false)}>
-                <Button variant="ghost" className="w-full">Log In</Button>
-              </Link>
-              <Link to="/signup" onClick={() => setIsOpen(false)}>
-                <Button className="w-full">Get Started Free</Button>
-              </Link>
+              <Button variant="ghost" className="w-full" onClick={() => { setIsOpen(false); openModal('login'); }}>Log In</Button>
+              <Button className="w-full" onClick={() => { setIsOpen(false); openModal('signup'); }}>Get Started Free</Button>
             </div>
           </div>
         )}

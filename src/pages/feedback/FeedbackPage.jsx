@@ -215,8 +215,8 @@ const FeedbackPage = () => {
                 <FeedbackCard key={fb.id} feedback={fb} />
               ))
             ) : (
-              <div className="surface-subtle rounded-2xl p-8 text-center border border-slate-100">
-                <p className="text-app-muted">No feedback available yet. Be the first to share yours!</p>
+              <div className="surface-subtle rounded-2xl p-8 text-center border border-app">
+                <p className="text-app-muted text-sm">No reviews yet. Be the first to leave feedback!</p>
               </div>
             )}
           </div>
@@ -224,7 +224,7 @@ const FeedbackPage = () => {
 
         {/* Section 3: Submit Your Feedback */}
         <div className="lg:col-span-5">
-          <div className="surface p-6 rounded-2xl shadow-sm border border-slate-100 sticky top-6">
+          <div className="surface p-6 rounded-2xl shadow-sm border border-app sticky top-6">
             <h2 className="text-xl font-bold text-app mb-4">Share Your Feedback</h2>
 
             {myFeedbacks.length > 0 && (

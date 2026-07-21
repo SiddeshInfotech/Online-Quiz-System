@@ -34,7 +34,7 @@ const FeedbackCard = ({ feedback }) => {
   const displayTime = isEdited ? `Updated ${timeAgo(updated_at)}` : timeAgo(created_at);
 
   return (
-    <div className="surface p-5 rounded-2xl shadow-sm border border-slate-100 mb-4 hover:shadow-md transition-shadow">
+    <div className="surface p-5 rounded-2xl shadow-sm border border-app mb-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
           <img
@@ -48,14 +48,14 @@ const FeedbackCard = ({ feedback }) => {
           />
           <div>
             <h4 className="font-semibold text-app text-sm">{userName}</h4>
-            <div className="text-xs text-slate-400">
+            <div className="text-xs text-app-muted">
               {displayTime}
             </div>
           </div>
         </div>
         <StarRating rating={rating} readOnly size={16} />
       </div>
-      <p className="text-slate-600 text-sm leading-relaxed mt-2 whitespace-pre-wrap">
+      <p className="text-app-2 text-sm leading-relaxed mt-2 whitespace-pre-wrap">
         {message}
       </p>
     </div>

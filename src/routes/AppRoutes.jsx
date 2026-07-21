@@ -2,7 +2,6 @@ import { Routes, Route } from "react-router-dom";
 
 import LandingPage from "../pages/LandingPage";
 
-import AuthLayout from "../layouts/AuthLayout";
 import Login from "../pages/auth/Login";
 import Signup from "../pages/auth/Signup";
 import ForgotPassword from "../pages/auth/ForgotPassword";
@@ -31,21 +30,26 @@ import AchievementPage from "../pages/Achievements/AchievementPage";
 import BadgeDetailsPage from "../pages/Achievements/BadgeDetailsPage";
 import UserBadgesPage from "../pages/Achievements/UserBadgesPage";
 
+import TermsOfServicePage from "../pages/legal/TermsOfServicePage";
+import PrivacyPolicyPage from "../pages/legal/PrivacyPolicyPage";
+import ContactPage from "../pages/contact/ContactPage";
+
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Landing */}
+      {/* Public Pages */}
       <Route path="/" element={<LandingPage />} />
+      <Route path="/terms" element={<TermsOfServicePage />} />
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/contact" element={<ContactPage />} />
 
-      {/* Authentication */}
-      <Route element={<AuthLayout />}>
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/verify-otp" element={<VerifyOTP />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/password-reset-success" element={<PasswordResetSuccess />} />
-      </Route>
+      {/* Authentication Routes (Now open Modal over Landing Page) */}
+      <Route path="/login" element={<LandingPage />} />
+      <Route path="/signup" element={<LandingPage />} />
+      <Route path="/forgot-password" element={<LandingPage />} />
+      <Route path="/verify-otp" element={<LandingPage />} />
+      <Route path="/reset-password" element={<LandingPage />} />
+      <Route path="/password-reset-success" element={<LandingPage />} />
 
       {/* Dashboard (Protected Routes) */}
       <Route element={<ProtectedRoute />}>

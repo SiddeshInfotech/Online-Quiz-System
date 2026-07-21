@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Loader2, Mail, Key } from "lucide-react";
 import authService from "../../services/authService";
+import { useAuthModal } from "../../context/AuthModalContext";
 
 import Logo from "../../components/ui/Logo";
 
@@ -10,6 +11,7 @@ import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import PasswordInput from "../../components/auth/PasswordInput";
+import PasswordStrengthIndicator, { isPasswordStrong } from "../../components/auth/PasswordStrengthIndicator";
 import AuthHeader from "../../components/auth/AuthHeader";
 import AuthDivider from "../../components/auth/AuthDivider";
 
@@ -34,13 +36,14 @@ const getErrorMessage = (err) => {
   return data.error || "An unexpected error occurred.";
 };
 
-const ResetPassword = () => {
+const ResetPassword = ({ inModal = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { changeView, meta } = useAuthModal();
 
   const [formData, setFormData] = useState({
-    email: location.state?.email || "",
-    otp: "",
+    email: (inModal ? meta?.email : location.state?.email) || "",
+    otp: (inModal ? meta?.otp : location.state?.otp) || "",
     password: "",
     confirmPassword: "",
   });
@@ -119,7 +122,11 @@ const ResetPassword = () => {
       setSuccessMessage("Password reset successful! Redirecting to login...");
       
       setTimeout(() => {
-        navigate("/login", { replace: true });
+        if (inModal) {
+            changeView("login");
+        } else {
+            navigate("/login", { replace: true });
+        }
       }, 1500);
 
     } catch (err) {
@@ -132,17 +139,17 @@ const ResetPassword = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 25 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45 }}
-      className="w-full"
+      transition={{ duration: 0.35 }}
+      className={`w-full ${!inModal ? 'rounded-3xl border border-app surface p-8 shadow-xl lg:p-10 relative' : ''}`}
     >
-      <Card className="relative rounded-3xl border border-app surface p-8 shadow-xl lg:p-10">
-        <div className="absolute right-6 top-6">
-
-        </div>
-
-        <Logo className="mb-8" />
+        {!inModal && (
+            <>
+                <div className="absolute right-6 top-6"></div>
+                <Logo className="mb-8" />
+            </>
+        )}
 
         <AuthHeader
           title="Create New Password"
@@ -185,25 +192,35 @@ const ResetPassword = () => {
             maxLength={6}
           />
 
-          <PasswordInput
-            label="New Password"
-            name="password"
-            placeholder="Enter your new password"
-            value={formData.password}
-            onChange={handleChange}
-            error={errors.password}
-          />
+          <div>
+            <PasswordInput
+              label="New Password"
+              name="password"
+              placeholder="Enter your new password"
+              value={formData.password}
+              onChange={handleChange}
+              error={errors.password}
+            />
+            <PasswordStrengthIndicator password={formData.password} />
+          </div>
 
-          <PasswordInput
-            label="Confirm Password"
-            name="confirmPassword"
-            placeholder="Confirm your new password"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            error={errors.confirmPassword}
-          />
+          <div>
+            <PasswordInput
+              label="Confirm Password"
+              name="confirmPassword"
+              placeholder="Confirm your new password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              error={errors.confirmPassword}
+            />
+            {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+              <p className="mt-1 text-xs text-red-500 font-medium">
+                Passwords do not match
+              </p>
+            )}
+          </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full" disabled={isLoading || !isPasswordStrong(formData.password) || formData.password !== formData.confirmPassword}>
             {isLoading ? (
               <span className="flex items-center justify-center gap-2">
                 <Loader2 className="animate-spin" size={18} />
@@ -221,14 +238,23 @@ const ResetPassword = () => {
 
         <p className="text-center text-sm text-app-muted">
           Remember your password?{" "}
-          <Link
-            to="/login"
-            className="font-semibold text-violet-600 hover:text-violet-700"
-          >
-            Back to Login
-          </Link>
+          {inModal ? (
+            <button
+                type="button"
+                onClick={() => changeView('login')}
+                className="font-semibold text-violet-600 hover:text-violet-700"
+            >
+                Back to Login
+            </button>
+          ) : (
+            <Link
+                to="/login"
+                className="font-semibold text-violet-600 hover:text-violet-700"
+            >
+                Back to Login
+            </Link>
+          )}
         </p>
-      </Card>
     </motion.div>
   );
 };

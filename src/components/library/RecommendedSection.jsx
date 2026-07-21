@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import RecommendedCard from "./RecommendedCard";
 
 const RecommendedSkeleton = () => (
-  <div className="min-w-[260px] md:min-w-[280px] h-[260px] surface rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col animate-pulse">
+  <div className="min-w-[260px] md:min-w-[280px] h-[260px] surface rounded-2xl border border-app shadow-sm p-4 flex flex-col animate-pulse">
     <div className="w-full h-32 bg-slate-200 rounded-xl mb-4" />
     <div className="h-4 bg-slate-200 rounded w-3/4 mb-2" />
     <div className="h-3 bg-slate-200 rounded w-1/2 mb-4" />
@@ -91,7 +91,7 @@ const RecommendedSection = ({ quizzes, isLoading }) => {
               absolute -left-3 top-1/2 -translate-y-1/2 z-10
               w-9 h-9 rounded-full surface border border-app shadow-lg
               flex items-center justify-center
-              text-slate-600 hover:text-violet-600 hover:border-violet-300
+              text-app-2 hover:text-violet-500 dark:hover:text-violet-400 hover:border-[var(--accent)]
               transition-all duration-200
               opacity-0 group-hover/carousel:opacity-100
               focus:outline-none focus:ring-2 focus:ring-violet-400
@@ -110,7 +110,7 @@ const RecommendedSection = ({ quizzes, isLoading }) => {
               absolute -right-3 top-1/2 -translate-y-1/2 z-10
               w-9 h-9 rounded-full surface border border-app shadow-lg
               flex items-center justify-center
-              text-slate-600 hover:text-violet-600 hover:border-violet-300
+              text-app-2 hover:text-violet-500 dark:hover:text-violet-400 hover:border-[var(--accent)]
               transition-all duration-200
               opacity-0 group-hover/carousel:opacity-100
               focus:outline-none focus:ring-2 focus:ring-violet-400
