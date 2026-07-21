@@ -27,13 +27,10 @@ export const AuthProvider = ({ children }) => {
   // Fetch profile from backend and update user state
   const fetchProfile = useCallback(async () => {
     try {
-      console.log("[TRACE] 4. AuthContext.fetchProfile() executing GET /api/auth/profile/");
       const profileData = await authService.getProfile();
-      console.log("[TRACE] 5. GET /api/auth/profile/ response.user:", profileData.user);
       // Backend may return { user: {...} } or the user object directly
       let userData = normaliseUser(profileData.user || profileData);
 
-      console.log("[TRACE] 7. fetchProfile() overwriting AuthContext with:", userData);
       setUser(userData);
       setCurrentUser(userData);
       return userData;
@@ -88,7 +85,6 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const updateUser = useCallback((userData) => {
-    console.log("[TRACE] 6. updateUser() called with:", userData);
     const normalised = normaliseUser(userData);
     setUser(normalised);
     setCurrentUser(normalised);

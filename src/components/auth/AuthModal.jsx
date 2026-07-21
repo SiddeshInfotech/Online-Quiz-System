@@ -5,39 +5,30 @@ import { useAuthModal } from "../../context/AuthModalContext";
 import DashboardPreview from "../Landing/Hero/DashboardPreview";
 import Logo from "../ui/Logo";
 
-// View components to be refactored to work inside the modal
 import Login from "../../pages/auth/Login";
 import SignupForm from "./SignupForm";
 import ForgotPassword from "../../pages/auth/ForgotPassword";
 import ResetPassword from "../../pages/auth/ResetPassword";
 import VerifyOTP from "../../pages/auth/VerifyOTP";
+import TermsOfServicePage from "../../pages/legal/TermsOfServicePage";
+import PrivacyPolicyPage from "../../pages/legal/PrivacyPolicyPage";
 
-// Placeholder components for TOS and Privacy
-const TermsOfService = ({ onBack }) => (
-  <div className="p-8">
-    <button onClick={onBack} className="mb-4 text-violet-600 font-medium hover:underline flex items-center gap-2">
+// Real legal components wrapped for modal view
+const TermsOfServiceView = ({ onBack }) => (
+  <div className="p-6 md:p-8 max-h-[80vh] overflow-y-auto">
+    <button onClick={onBack} className="mb-4 text-xs font-semibold text-violet-600 dark:text-violet-400 hover:underline flex items-center gap-2 cursor-pointer">
       &larr; Back to Signup
     </button>
-    <h2 className="text-2xl font-bold mb-4 text-app">Terms of Service</h2>
-    <div className="prose prose-sm text-app-2 max-h-[60vh] overflow-y-auto pr-2">
-      <p>Welcome to QuizGen AI. By using our service, you agree to the following terms...</p>
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-      <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-    </div>
+    <TermsOfServicePage />
   </div>
 );
 
-const PrivacyPolicy = ({ onBack }) => (
-  <div className="p-8">
-    <button onClick={onBack} className="mb-4 text-violet-600 font-medium hover:underline flex items-center gap-2">
+const PrivacyPolicyView = ({ onBack }) => (
+  <div className="p-6 md:p-8 max-h-[80vh] overflow-y-auto">
+    <button onClick={onBack} className="mb-4 text-xs font-semibold text-violet-600 dark:text-violet-400 hover:underline flex items-center gap-2 cursor-pointer">
       &larr; Back to Signup
     </button>
-    <h2 className="text-2xl font-bold mb-4 text-app">Privacy Policy</h2>
-    <div className="prose prose-sm text-app-2 max-h-[60vh] overflow-y-auto pr-2">
-      <p>Your privacy is important to us. This policy explains how we collect, use, and protect your data.</p>
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-      <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-    </div>
+    <PrivacyPolicyPage />
   </div>
 );
 
@@ -61,9 +52,9 @@ const AuthModal = () => {
       case "verify-otp":
         return <VerifyOTP inModal />;
       case "tos":
-        return <TermsOfService onBack={() => changeView("signup")} />;
+        return <TermsOfServiceView onBack={() => changeView("signup")} />;
       case "privacy":
-        return <PrivacyPolicy onBack={() => changeView("signup")} />;
+        return <PrivacyPolicyView onBack={() => changeView("signup")} />;
       default:
         return <Login inModal />;
     }

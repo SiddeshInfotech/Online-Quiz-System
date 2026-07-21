@@ -176,7 +176,6 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
       if (val && !subjectInterests.includes(val)) {
         const newInterests = [...subjectInterests, val];
         setSubjectInterests(newInterests);
-        console.log("State updated (handleAddSubject):", newInterests);
       }
       setSubjectInput("");
     }
@@ -187,7 +186,6 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
     if (val && !subjectInterests.includes(val)) {
       const newInterests = [...subjectInterests, val];
       setSubjectInterests(newInterests);
-      console.log("State updated (handleBlurSubject):", newInterests);
     }
     setSubjectInput("");
   };
@@ -195,7 +193,6 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
   const removeSubject = (subjectToRemove) => {
     const newInterests = subjectInterests.filter((s) => s !== subjectToRemove);
     setSubjectInterests(newInterests);
-    console.log("State updated (removeSubject):", newInterests);
   };
 
   const handleChange = (e) => {
@@ -223,7 +220,6 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
       currentSubjects.push(pendingSubject);
       setSubjectInterests(currentSubjects);
       setSubjectInput("");
-      console.log("State updated (handleSubmit pending input):", currentSubjects);
     }
 
     setSaving(true);
@@ -271,10 +267,6 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
             throw err;
         }
       }
-
-      console.log("[TRACE] 1. PUT /api/auth/profile/ successful");
-      console.log("[TRACE] 2. Exact response.user returned:", updated?.user);
-      console.log("PUT Response:", updated);
 
       onSaved({ returnedProfile: updated?.user, oldProfilePicture: profile?.profile_picture });
     } catch (err) {
@@ -663,7 +655,6 @@ const ChangePasswordModal = ({ onClose, onSuccess }) => {
 
 const ProfilePage = () => {
   const { currentUser, logout, updateUser, fetchProfile } = useContext(AuthContext);
-  console.log("[TRACE] 8. ProfilePage rendering with currentUser:", currentUser);
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(!currentUser);
@@ -716,7 +707,6 @@ const ProfilePage = () => {
   }, [currentUser?.badge_count]);
 
   const handleSaved = async ({ returnedProfile, oldProfilePicture } = {}) => {
-    console.log("[TRACE] 3. ProfilePage.handleSaved called, triggering fetchProfile()");
     const freshProfile = await fetchProfile();
     
     if (returnedProfile && returnedProfile.profile_picture) {

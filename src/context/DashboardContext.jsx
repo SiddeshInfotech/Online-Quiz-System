@@ -60,8 +60,6 @@ export const DashboardProvider = ({ children }) => {
     };
   }, [dashboard, currentUser]);
 
-  console.log("[TRACE] 9. DashboardContext rendering with data.user:", value.data?.user);
-
   return (
     <DashboardContext.Provider value={value}>
       {children}

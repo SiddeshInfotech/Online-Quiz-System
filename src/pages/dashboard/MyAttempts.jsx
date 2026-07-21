@@ -129,22 +129,31 @@ const AttemptCard = ({ attempt }) => {
 
   const { icon: LangIcon, color: iconColor } = getLanguageIcon(attempt.category || attempt.subject);
 
+  const [retryError, setRetryError] = useState(null);
+
   const handleRetry = async () => {
     try {
       setIsRetrying(true);
-      console.log("Retry attempt:", attempt);
+      setRetryError(null);
       const res = await attemptsService.startAttempt(attempt.quiz_id);
       navigate(`/attempts/${res.attempt_id || res.id}`);
     } catch (err) {
       console.error(err);
-      alert(err?.response?.data?.message || "Failed to start a new attempt. Please try again later.");
+      setRetryError(err?.response?.data?.message || "Failed to start a new attempt. Please try again later.");
+      setTimeout(() => setRetryError(null), 4000);
     } finally {
       setIsRetrying(false);
     }
   };
 
   return (
-    <Card hover className="group overflow-hidden p-5">
+    <Card hover className="group overflow-hidden p-5 relative">
+      {retryError && (
+        <div className="mb-3 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-semibold flex items-center justify-between">
+          <span>{retryError}</span>
+          <button onClick={() => setRetryError(null)} className="text-red-500 font-bold">&times;</button>
+        </div>
+      )}
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 flex-1 gap-4">
           <div 

@@ -18,22 +18,25 @@ function LandingPage() {
 
   useEffect(() => {
     const path = location.pathname;
+    const searchParams = Object.fromEntries(new URLSearchParams(location.search));
+
     if (path === "/login") {
-      openModal("login");
+      openModal("login", searchParams);
     } else if (path === "/signup") {
-      openModal("signup");
+      openModal("signup", searchParams);
     } else if (path === "/forgot-password") {
-      openModal("forgot-password");
+      openModal("forgot-password", searchParams);
     } else if (path === "/verify-otp") {
-      openModal("verify-otp");
+      openModal("verify-otp", searchParams);
     } else if (path === "/reset-password") {
-      openModal("reset-password");
+      openModal("reset-password", searchParams);
     }
-    // Remove the path from URL to just / without reloading
+
     if (path !== "/") {
-      navigate("/", { replace: true });
+      const target = location.search ? `/${location.search}` : "/";
+      navigate(target, { replace: true });
     }
-  }, [location, openModal, navigate]);
+  }, [location.pathname, location.search, openModal, navigate]);
 
   return (
     <>

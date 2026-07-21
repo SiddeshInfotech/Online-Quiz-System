@@ -40,14 +40,18 @@ const QuizResultsPage = () => {
     fetchResult();
   }, [fetchResult]);
 
+  const [actionError, setActionError] = useState(null);
+
   const handleRetry = async () => {
     if (!result?.quiz?.id) return;
     try {
+      setActionError(null);
       const res = await attemptsService.startAttempt(result.quiz.id);
       navigate(`/attempts/${res.attempt_id || res.id}`);
     } catch (err) {
       console.error("Failed to retry quiz", err);
-      alert("Failed to start a new attempt. Please try again later.");
+      setActionError("Failed to start a new attempt. Please try again later.");
+      setTimeout(() => setActionError(null), 4000);
     }
   };
 
@@ -103,7 +107,13 @@ const QuizResultsPage = () => {
   const percentage = result?.percentage ?? 0;
 
   return (
-    <div className="min-h-screen surface-subtle font-inter py-8 px-4 md:px-8">
+    <div className="min-h-screen surface-subtle font-inter pb-16 py-8 px-4 md:px-8">
+      {actionError && (
+        <div className="fixed top-5 right-5 z-50 p-4 rounded-2xl bg-red-600 text-white text-xs font-semibold shadow-xl max-w-sm flex items-center justify-between gap-3 animate-in fade-in duration-200">
+          <span>{actionError}</span>
+          <button onClick={() => setActionError(null)} className="text-white hover:opacity-80 font-bold">&times;</button>
+        </div>
+      )}
       <div className="max-w-5xl mx-auto space-y-6">
         
         {/* Header Section */}

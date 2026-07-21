@@ -24,7 +24,7 @@ const SocialButton = ({ provider, onSuccess }) => {
             }
           }}
           onError={() => {
-            console.log("Google Login Failed");
+            if (onError) onError();
           }}
           shape="rectangular"
           size="large"
