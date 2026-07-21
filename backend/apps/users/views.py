@@ -843,25 +843,10 @@ class ClaimBadgeView(APIView):
             user_badge.claimed_at = timezone.now()
             user_badge.save()
 
-            # Bug #5: Award XP aligned with AllBadgeSerializer's dynamic XP mapping
-            xp_map = {'COMMON': 25, 'RARE': 50, 'EPIC': 100, 'LEGENDARY': 200}
-            xp_reward = xp_map.get(badge.rarity, 25)
-            user.xp += xp_reward
-            user.level = (user.xp // 100) + 1
-            
-            # total_points is recomputed authoritatively as quiz_score_sum +
-            # claimed_badge_xp using the exact same dynamic mapping to prevent point drift
-            from apps.attempts.models import QuizAttempt
-            from django.db.models import Sum as _Sum
-            quiz_score_total = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            ).aggregate(total=_Sum('score'))['total'] or 0
-            
-            claimed_badges = UserBadge.objects.filter(user=user, status='CLAIMED').select_related('badge')
-            badge_xp = sum(xp_map.get(ub.badge.rarity, 25) for ub in claimed_badges)
-            
-            user.total_points = quiz_score_total + badge_xp
-            user.save()
+            from apps.users.services.points_service import recalculate_user_points_and_stats, XP_MAP
+            recalculate_user_points_and_stats(user)
+
+            xp_reward = XP_MAP.get(badge.rarity, 25)
 
             # ✅ Clear all caches
             cache.delete(f"badges_all_{user.id}")

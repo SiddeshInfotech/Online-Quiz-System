@@ -50,15 +50,6 @@ def process_quiz_submission_background(user_id, attempt_id):
             
             print(f"🔄 Background: Processing quiz submit stats/badges for user {user_id}, attempt {attempt_id}")
             
-            # Sum of quiz scores across all completed attempts
-            quiz_score_total = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            ).aggregate(total=Sum('score'))['total'] or 0
-
-            quizzes_completed = QuizAttempt.objects.filter(
-                user=user, submitted_at__isnull=False
-            ).count()
-
             # --- Calculate current streak and longest streak ---
             from datetime import timedelta
             today = timezone.localdate()
@@ -86,14 +77,10 @@ def process_quiz_submission_background(user_id, attempt_id):
 
             longest_streak = max(getattr(user, 'longest_streak', 0) or 0, streak)
 
-            # Retrieve badges XP dynamically to match AllBadgeSerializer (Bug #5 alignment)
-            claimed_badges = UserBadge.objects.filter(user=user, status='CLAIMED').select_related('badge')
-            xp_map = {'COMMON': 25, 'RARE': 50, 'EPIC': 100, 'LEGENDARY': 200}
-            badge_xp = sum(xp_map.get(ub.badge.rarity, 25) for ub in claimed_badges)
+            # Recalculate total_points, quizzes_completed, xp and level authoritatively
+            from apps.users.services.points_service import recalculate_user_points_and_stats
+            recalculate_user_points_and_stats(user)
 
-            # Update User profile statistics and save (Bug #6 fix)
-            user.total_points = quiz_score_total + badge_xp
-            user.quizzes_completed = quizzes_completed
             user.current_streak = streak
             user.longest_streak = longest_streak
             user.last_active_date = today
