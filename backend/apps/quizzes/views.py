@@ -28,7 +28,14 @@ class QuizLibraryListView(generics.ListAPIView):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        return Quiz.objects.filter(status='published')
+        user = self.request.user
+        created_by_me = (
+            self.request.query_params.get('created_by_me', '').lower() == 'true' or
+            self.request.query_params.get('filter', '').lower() == 'my_quizzes'
+        )
+        if created_by_me:
+            return Quiz.objects.filter(created_by=user).order_by('-created_at')
+        return Quiz.objects.filter(status='published').order_by('-created_at')
 
 class RecommendedQuizzesListView(generics.ListAPIView):
     serializer_class = QuizLibrarySerializer
@@ -59,9 +66,18 @@ class QuizLibraryMetaView(generics.GenericAPIView):
         })
 
 class QuizListCreateView(generics.ListCreateAPIView):
-    queryset = Quiz.objects.all().order_by('-created_at')
     serializer_class = QuizSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        created_by_me = (
+            self.request.query_params.get('created_by_me', '').lower() == 'true' or
+            self.request.query_params.get('filter', '').lower() == 'my_quizzes'
+        )
+        if created_by_me:
+            return Quiz.objects.filter(created_by=user).order_by('-created_at')
+        return Quiz.objects.filter(status='published').order_by('-created_at')
 
     def create(self, request, *args, **kwargs):
         return Response(
