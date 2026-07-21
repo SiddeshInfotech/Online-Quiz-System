@@ -3,10 +3,7 @@ import { Link } from "react-router-dom";
 import {
   Mail,
   Phone,
-  MapPin,
-  Clock,
   Send,
-  MessageSquare,
   ChevronDown,
   ChevronUp,
   CheckCircle2,

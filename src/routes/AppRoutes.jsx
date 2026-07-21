@@ -1,80 +1,82 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 
 import LandingPage from "../pages/LandingPage";
-
-import Login from "../pages/auth/Login";
-import Signup from "../pages/auth/Signup";
-import ForgotPassword from "../pages/auth/ForgotPassword";
-import VerifyOTP from "../pages/auth/VerifyOTP";
-import ResetPassword from "../pages/auth/ResetPassword";
-import PasswordResetSuccess from "../pages/auth/PasswordResetSuccess";
-
 import DashboardLayout from "../layouts/DashboardLayout";
-import Dashboard from "../pages/dashboard/Dashboard";
-import LibraryPage from "../pages/library/LibraryPage";
-import ProfilePage from "../pages/profile/ProfilePage";
-import SettingsPage from "../pages/settings/SettingsPage";
-import FeedbackPage from "../pages/feedback/FeedbackPage";
-
-import QuizManagement from "../pages/dashboard/QuizManagement";
-import MyAttempts from "../pages/dashboard/MyAttempts";
-import LeaderboardPage from "../pages/leaderboard/LeaderboardPage";
-import GenerateQuizPage from "../pages/generate/GenerateQuizPage";
-import QuizDetailsPage from "../pages/quiz/QuizDetailsPage";
-import QuizAttemptPage from "../pages/quiz/QuizAttemptPage";
-import QuizResultsPage from "../pages/quiz/QuizResultsPage";
-import QuizReviewPage from "../pages/quiz/QuizReviewPage";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 
-import AchievementPage from "../pages/Achievements/AchievementPage";
-import BadgeDetailsPage from "../pages/Achievements/BadgeDetailsPage";
-import UserBadgesPage from "../pages/Achievements/UserBadgesPage";
+// Lazy-loaded pages for bundle optimization
+const TermsOfServicePage = lazy(() => import("../pages/legal/TermsOfServicePage"));
+const PrivacyPolicyPage = lazy(() => import("../pages/legal/PrivacyPolicyPage"));
+const ContactPage = lazy(() => import("../pages/contact/ContactPage"));
 
-import TermsOfServicePage from "../pages/legal/TermsOfServicePage";
-import PrivacyPolicyPage from "../pages/legal/PrivacyPolicyPage";
-import ContactPage from "../pages/contact/ContactPage";
+const Dashboard = lazy(() => import("../pages/dashboard/Dashboard"));
+const LibraryPage = lazy(() => import("../pages/library/LibraryPage"));
+const ProfilePage = lazy(() => import("../pages/profile/ProfilePage"));
+const SettingsPage = lazy(() => import("../pages/settings/SettingsPage"));
+const FeedbackPage = lazy(() => import("../pages/feedback/FeedbackPage"));
+const QuizManagement = lazy(() => import("../pages/dashboard/QuizManagement"));
+const MyAttempts = lazy(() => import("../pages/dashboard/MyAttempts"));
+const LeaderboardPage = lazy(() => import("../pages/leaderboard/LeaderboardPage"));
+const GenerateQuizPage = lazy(() => import("../pages/generate/GenerateQuizPage"));
+const QuizDetailsPage = lazy(() => import("../pages/quiz/QuizDetailsPage"));
+const QuizAttemptPage = lazy(() => import("../pages/quiz/QuizAttemptPage"));
+const QuizResultsPage = lazy(() => import("../pages/quiz/QuizResultsPage"));
+const QuizReviewPage = lazy(() => import("../pages/quiz/QuizReviewPage"));
+
+const AchievementPage = lazy(() => import("../pages/Achievements/AchievementPage"));
+const BadgeDetailsPage = lazy(() => import("../pages/Achievements/BadgeDetailsPage"));
+const UserBadgesPage = lazy(() => import("../pages/Achievements/UserBadgesPage"));
+
+const PageFallback = () => (
+  <div className="min-h-[50vh] flex items-center justify-center p-8">
+    <div className="w-9 h-9 border-3 border-violet-600 border-t-transparent rounded-full animate-spin"></div>
+  </div>
+);
 
 const AppRoutes = () => {
   return (
-    <Routes>
-      {/* Public Pages */}
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/terms" element={<TermsOfServicePage />} />
-      <Route path="/privacy" element={<PrivacyPolicyPage />} />
-      <Route path="/contact" element={<ContactPage />} />
+    <Suspense fallback={<PageFallback />}>
+      <Routes>
+        {/* Public Pages */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/terms" element={<TermsOfServicePage />} />
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
+        <Route path="/contact" element={<ContactPage />} />
 
-      {/* Authentication Routes (Now open Modal over Landing Page) */}
-      <Route path="/login" element={<LandingPage />} />
-      <Route path="/signup" element={<LandingPage />} />
-      <Route path="/forgot-password" element={<LandingPage />} />
-      <Route path="/verify-otp" element={<LandingPage />} />
-      <Route path="/reset-password" element={<LandingPage />} />
-      <Route path="/password-reset-success" element={<LandingPage />} />
+        {/* Authentication Routes (Now open Modal over Landing Page) */}
+        <Route path="/login" element={<LandingPage />} />
+        <Route path="/signup" element={<LandingPage />} />
+        <Route path="/forgot-password" element={<LandingPage />} />
+        <Route path="/verify-otp" element={<LandingPage />} />
+        <Route path="/reset-password" element={<LandingPage />} />
+        <Route path="/password-reset-success" element={<LandingPage />} />
 
-      {/* Dashboard (Protected Routes) */}
-      <Route element={<ProtectedRoute />}>
-        <Route element={<DashboardLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/library" element={<LibraryPage />} />
-          <Route path="/attempts" element={<MyAttempts />} />
-          <Route path="/quiz-management" element={<QuizManagement />} />
-          <Route path="/generate" element={<GenerateQuizPage />} />
-          <Route path="/quiz/:id" element={<QuizDetailsPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/leaderboard" element={<LeaderboardPage />} />
-          <Route path="/achievements" element={<AchievementPage />} />
-          <Route path="/badges/:id" element={<BadgeDetailsPage />} />
-          <Route path="/profile/badges" element={<UserBadgesPage />} />
-          <Route path="/feedback" element={<FeedbackPage />} />
+        {/* Dashboard (Protected Routes) */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/library" element={<LibraryPage />} />
+            <Route path="/attempts" element={<MyAttempts />} />
+            <Route path="/quiz-management" element={<QuizManagement />} />
+            <Route path="/generate" element={<GenerateQuizPage />} />
+            <Route path="/quiz/:id" element={<QuizDetailsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/leaderboard" element={<LeaderboardPage />} />
+            <Route path="/achievements" element={<AchievementPage />} />
+            <Route path="/badges/:id" element={<BadgeDetailsPage />} />
+            <Route path="/profile/badges" element={<UserBadgesPage />} />
+            <Route path="/feedback" element={<FeedbackPage />} />
+          </Route>
+          
+          {/* Full-screen protected routes (no sidebar) */}
+          <Route path="/attempts/:attemptId" element={<QuizAttemptPage />} />
+          <Route path="/results/:attemptId" element={<QuizResultsPage />} />
+          <Route path="/results/:attemptId/review" element={<QuizReviewPage />} />
         </Route>
-        
-        {/* Full-screen protected routes (no sidebar) */}
-        <Route path="/attempts/:attemptId" element={<QuizAttemptPage />} />
-        <Route path="/results/:attemptId" element={<QuizResultsPage />} />
-        <Route path="/results/:attemptId/review" element={<QuizReviewPage />} />
-      </Route>
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 };
 
