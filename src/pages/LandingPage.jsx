@@ -28,6 +28,8 @@ function LandingPage() {
       openModal("forgot-password", searchParams);
     } else if (path === "/verify-otp") {
       openModal("verify-otp", searchParams);
+    } else if (path === "/verify-email") {
+      openModal("verify-email", searchParams);
     } else if (path === "/reset-password") {
       openModal("reset-password", searchParams);
     }

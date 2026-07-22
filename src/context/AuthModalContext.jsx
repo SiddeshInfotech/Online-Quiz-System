@@ -37,6 +37,14 @@ export const AuthModalProvider = ({ children }) => {
     setFormData(prev => ({ ...prev, ...data }));
   }, []);
 
+  const clearSensitiveData = useCallback(() => {
+    setFormData(prev => ({
+      ...prev,
+      password: '',
+      confirmPassword: '',
+    }));
+  }, []);
+
   return (
     <AuthModalContext.Provider
       value={{
@@ -48,6 +56,7 @@ export const AuthModalProvider = ({ children }) => {
         closeModal,
         changeView,
         updateFormData,
+        clearSensitiveData,
       }}
     >
       {children}

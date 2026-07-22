@@ -28,6 +28,8 @@ import { resolveMediaUrl } from "../../services/api";
 import Card from "../../components/ui/Card/Card";
 import Button from "../../components/ui/Button/Button";
 import Input from "../../components/ui/Input/Input";
+import PasswordInput from "../../components/auth/PasswordInput";
+import PasswordStrengthIndicator, { isPasswordStrong } from "../../components/auth/PasswordStrengthIndicator";
 import { AuthContext } from "../../context/AuthContext";
 import authService from "../../services/authService";
 
@@ -521,13 +523,32 @@ const ChangePasswordModal = ({ onClose, onSuccess }) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const isFormValid =
+    form.old_password.trim().length > 0 &&
+    isPasswordStrong(form.new_password) &&
+    form.new_password === form.confirm_password;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!form.old_password.trim()) {
+      setFieldError("Old password is required.");
+      return;
+    }
+
+    if (!isPasswordStrong(form.new_password)) {
+      setFieldError("New password does not meet all security requirements.");
+      return;
+    }
+
     if (form.new_password !== form.confirm_password) {
       setFieldError("New passwords do not match.");
       return;
     }
+
     setSaving(true);
+    setFieldError("");
+
     try {
       await authService.changePassword({
         old_password: form.old_password,
@@ -535,10 +556,30 @@ const ChangePasswordModal = ({ onClose, onSuccess }) => {
       });
       onSuccess();
     } catch (err) {
-      const msg =
-        err?.response?.data?.detail ??
-        err?.response?.data?.message ??
-        "Failed to change password. Please try again.";
+      console.error("Change password error:", err);
+      let msg = "Failed to change password. Please try again.";
+      if (err?.response?.data) {
+        const data = err.response.data;
+        if (typeof data === "string") {
+          msg = data;
+        } else if (data.detail) {
+          msg = typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail);
+        } else if (data.message) {
+          msg = typeof data.message === "string" ? data.message : JSON.stringify(data.message);
+        } else {
+          try {
+            const errors = Object.values(data)
+              .flat()
+              .map((v) => (typeof v === "object" ? JSON.stringify(v) : v))
+              .join(" ");
+            msg = errors || "Failed to change password.";
+          } catch {
+            msg = JSON.stringify(data);
+          }
+        }
+      } else if (err?.message) {
+        msg = err.message;
+      }
       setFieldError(msg);
     } finally {
       setSaving(false);
@@ -567,7 +608,7 @@ const ChangePasswordModal = ({ onClose, onSuccess }) => {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 12 }}
         transition={{ duration: 0.2 }}
-        className="relative w-full max-w-md surface rounded-3xl shadow-2xl border border-app p-8 z-10"
+        className="relative w-full max-w-md surface rounded-3xl shadow-2xl border border-app p-8 z-10 max-h-[90vh] overflow-y-auto"
       >
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -580,51 +621,57 @@ const ChangePasswordModal = ({ onClose, onSuccess }) => {
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-app-muted hover:text-app-2 hover:bg-[var(--bg-elevated)] transition-colors"
+            className="p-2 rounded-xl text-app-muted hover:text-app-2 hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer"
           >
             <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          <Input
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {/* Old Password */}
+          <PasswordInput
             label="Old Password"
             name="old_password"
-            type="password"
             placeholder="Enter old password"
             value={form.old_password}
             onChange={handleChange}
-            leftIcon={KeyRound}
-            required
-          />
-          <Input
-            label="New Password"
-            name="new_password"
-            type="password"
-            placeholder="Enter new password"
-            value={form.new_password}
-            onChange={handleChange}
-            leftIcon={KeyRound}
-            required
-          />
-          <Input
-            label="Confirm New Password"
-            name="confirm_password"
-            type="password"
-            placeholder="Confirm new password"
-            value={form.confirm_password}
-            onChange={handleChange}
-            leftIcon={KeyRound}
-            required
           />
 
+          {/* New Password */}
+          <div>
+            <PasswordInput
+              label="New Password"
+              name="new_password"
+              placeholder="Enter new password"
+              value={form.new_password}
+              onChange={handleChange}
+            />
+            <PasswordStrengthIndicator password={form.new_password} />
+          </div>
+
+          {/* Confirm New Password */}
+          <div>
+            <PasswordInput
+              label="Confirm New Password"
+              name="confirm_password"
+              placeholder="Confirm new password"
+              value={form.confirm_password}
+              onChange={handleChange}
+            />
+            {form.confirm_password && form.new_password !== form.confirm_password && (
+              <p className="mt-1 text-xs text-red-500 font-medium flex items-center gap-1">
+                <AlertCircle size={12} /> Passwords do not match
+              </p>
+            )}
+          </div>
+
           {fieldError && (
-            <p className="text-xs text-red-500 flex items-center gap-1.5">
-              <AlertCircle size={14} /> {fieldError}
+            <p className="text-xs text-red-500 flex items-center gap-1.5 bg-red-50 dark:bg-red-950/40 p-2.5 rounded-lg border border-red-200 dark:border-red-900">
+              <AlertCircle size={14} className="shrink-0" /> {fieldError}
             </p>
           )}
 
-          <div className="flex gap-3 mt-1">
+          <div className="flex gap-3 mt-2">
             <Button
               type="button"
               variant="secondary"
@@ -638,7 +685,7 @@ const ChangePasswordModal = ({ onClose, onSuccess }) => {
               type="submit"
               variant="primary"
               className="flex-1"
-              disabled={saving}
+              disabled={saving || !isFormValid}
             >
               {saving ? "Updating…" : "Change Password"}
             </Button>

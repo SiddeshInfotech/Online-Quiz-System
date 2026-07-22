@@ -89,19 +89,15 @@ const SignupForm = ({ onSuccess, inModal = false }) => {
 
             // 4. 🔥 SUCCESS: 201 status
             if (response.status === 201) {
-                // Return kar do taaki neeche error wala block kabhi execute na ho
+                updateFormData(localFormData);
                 if (onSuccess) {
                     onSuccess(localFormData.email);
                 } else if (inModal) {
-                    changeView('login');
+                    changeView('verify-email', { email: localFormData.email });
                 } else {
-                    navigate("/login", {
-                        state: {
-                            message: "Registration successful! Please login with your credentials."
-                        }
-                    });
+                    changeView('verify-email', { email: localFormData.email });
                 }
-                return; // <--- 🔥 YEH LINE SABSE IMPORTANT HAI
+                return;
             } else {
                 // Agar kabhi 201 ke alawa kuch aaye (rare)
                 setError(`Unexpected status: ${response.status}`);

@@ -9,10 +9,14 @@ import AuthHeader from "./AuthHeader";
 import OTPInput from "./OTPInput";
 import authService from "../../services/authService";
 import { useAuth } from "../../hooks/useAuth";
+import { useAuthModal } from "../../context/AuthModalContext";
 
-const OtpVerification = ({ email, onBack }) => {
+const OtpVerification = ({ email: propEmail, onBack, inModal = true }) => {
   const navigate = useNavigate();
   const { login, fetchProfile } = useAuth();
+  const { changeView, meta, formData, clearSensitiveData } = useAuthModal() || {};
+
+  const email = propEmail || meta?.email || formData?.email;
 
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
@@ -45,26 +49,41 @@ const OtpVerification = ({ email, onBack }) => {
     try {
       const response = await authService.verifyEmail(email, otp);
       
-      const token = response.token || response.access_token;
-      if (token) {
-        login(token, response.user || null);
+      // Wipe sensitive fields (password, confirmPassword) immediately post verification
+      if (clearSensitiveData) {
+        clearSensitiveData();
+      }
 
-        // Fetch profile if user data is missing in response
-        if (!response.user) {
+      const token = response?.token || response?.access_token || response?.data?.token || response?.data?.access_token;
+      if (token) {
+        login(token, response?.user || null);
+
+        if (!response?.user) {
           await fetchProfile();
         }
 
-        navigate("/dashboard");
+        if (changeView) {
+          changeView("profile-completion");
+        } else {
+          navigate("/dashboard");
+        }
       } else {
-        // Fallback if backend doesn't return token immediately
-        navigate("/login", {
-          state: { message: "Email verified successfully! Please login." },
-        });
+        // Fallback if backend does not return tokens on OTP verification
+        if (changeView) {
+          changeView("login", { message: "Email verified successfully! Please sign in." });
+        } else {
+          navigate("/login", {
+            state: { message: "Email verified successfully! Please sign in." },
+          });
+        }
       }
     } catch (err) {
-      setApiError(
-        err.response?.data?.message || err.response?.data?.detail || err.response?.data?.error || "Invalid OTP. Please try again."
-      );
+      const serverMsg = err.response?.data?.message || err.response?.data?.detail || err.response?.data?.error || err.response?.data?.otp?.[0];
+      if (serverMsg && serverMsg.toLowerCase().includes("expire")) {
+        setApiError("OTP expired. Please request a new code.");
+      } else {
+        setApiError(serverMsg || "Invalid OTP. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -88,12 +107,20 @@ const OtpVerification = ({ email, onBack }) => {
     }
   };
 
+  const handleBackToSignup = () => {
+    if (onBack) {
+      onBack();
+    } else if (changeView) {
+      changeView("signup");
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 25 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45 }}
-      className="relative w-full rounded-3xl border border-app surface p-8 shadow-xl lg:p-10"
+      className={`w-full ${!inModal ? 'rounded-3xl border border-app surface p-8 shadow-xl lg:p-10 relative' : ''}`}
     >
       <div className="absolute right-5 top-5">
 
@@ -105,7 +132,7 @@ const OtpVerification = ({ email, onBack }) => {
           <>
             We've sent a 6-digit code to <br />
             <div className="mt-3 inline-flex items-center justify-center rounded-full surface-elev px-4 py-1.5 text-sm font-medium text-app border border-app shadow-sm">
-              {email}
+              {email || "your email"}
             </div>
           </>
         }
@@ -113,7 +140,7 @@ const OtpVerification = ({ email, onBack }) => {
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-6">
         {apiError && (
-          <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-200">
             {apiError}
           </div>
         )}
@@ -164,9 +191,9 @@ const OtpVerification = ({ email, onBack }) => {
       </div>
 
       <button
-        onClick={onBack}
+        onClick={handleBackToSignup}
         type="button"
-        className="mt-6 flex w-full items-center justify-center gap-2 text-sm font-medium text-app-muted hover:text-app-2 transition-colors"
+        className="mt-6 flex w-full items-center justify-center gap-2 text-sm font-medium text-app-muted hover:text-app-2 transition-colors cursor-pointer"
       >
         <ArrowLeft size={16} />
         Back to signup

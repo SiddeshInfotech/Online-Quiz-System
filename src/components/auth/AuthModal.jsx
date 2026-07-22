@@ -10,6 +10,8 @@ import SignupForm from "./SignupForm";
 import ForgotPassword from "../../pages/auth/ForgotPassword";
 import ResetPassword from "../../pages/auth/ResetPassword";
 import VerifyOTP from "../../pages/auth/VerifyOTP";
+import OtpVerification from "./OtpVerification";
+import ProfileCompletion from "./ProfileCompletion";
 import TermsOfServicePage from "../../pages/legal/TermsOfServicePage";
 import PrivacyPolicyPage from "../../pages/legal/PrivacyPolicyPage";
 
@@ -44,7 +46,11 @@ const AuthModal = () => {
       case "login":
         return <Login inModal />;
       case "signup":
-        return <SignupForm onSuccess={() => changeView("login")} inModal />;
+        return <SignupForm onSuccess={(email) => changeView("verify-email", { email })} inModal />;
+      case "verify-email":
+        return <OtpVerification onBack={() => changeView("signup")} inModal />;
+      case "profile-completion":
+        return <ProfileCompletion inModal />;
       case "forgot-password":
         return <ForgotPassword inModal />;
       case "reset-password":
