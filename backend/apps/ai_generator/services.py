@@ -10,14 +10,17 @@ import ast
 class AIService:
     def __init__(self):
         self.api_key = os.environ.get('OPENROUTER_API_KEY')
-        if not self.api_key:
-            raise ValueError("OPENROUTER_API_KEY not configured")
+        self.gemini_key = os.environ.get('GEMINI_API_KEY')
+        if not self.api_key and not self.gemini_key:
+            raise ValueError("Neither OPENROUTER_API_KEY nor GEMINI_API_KEY is configured")
 
         self.api_url = "https://openrouter.ai/api/v1/chat/completions"
-        self.headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
+        self.headers = {}
+        if self.api_key:
+            self.headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            }
 
     def generate_quiz(self, subject, difficulty, num_questions, prompt_topic="", quiz_mode="Theory"):
         try:
@@ -124,56 +127,157 @@ IMPORTANT:
         return self._call_openrouter(prompt, num_questions)
 
     def _call_openrouter(self, prompt, num_questions):
-        models_to_try = [
-            "openai/gpt-3.5-turbo",
-            "anthropic/claude-3-haiku"
-        ]
+        models_to_try = []
+        if self.gemini_key:
+            models_to_try.append("direct/gemini")
+        if self.api_key:
+            models_to_try.extend([
+                "google/gemini-2.5-flash",
+                "openai/gpt-4o-mini",
+                "anthropic/claude-3-haiku",
+                "openai/gpt-3.5-turbo"
+            ])
 
         last_error = None
 
         for model in models_to_try:
             try:
-                payload = {
-                    "model": model,
-                    "messages": [
-                        {"role": "user", "content": prompt}
-                    ],
-                    "temperature": 0.7,
-                    "max_tokens": 2000,
-                }
+                raw_text = None
+                if model == "direct/gemini":
+                    # Try gemini-2.5-flash and gemini-1.5-flash directly
+                    for gemini_model in ["gemini-2.5-flash", "gemini-1.5-flash"]:
+                        try:
+                            url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={self.gemini_key}"
+                            headers = {"Content-Type": "application/json"}
+                            payload = {
+                                "contents": [{"parts": [{"text": prompt}]}],
+                                "generationConfig": {
+                                    "responseMimeType": "application/json"
+                                }
+                            }
+                            response = requests.post(url, headers=headers, json=payload, timeout=30)
+                            if response.status_code == 200:
+                                res_json = response.json()
+                                raw_text = res_json['candidates'][0]['content']['parts'][0]['text']
+                                break
+                            else:
+                                print(f"Direct Gemini ({gemini_model}) failed with status {response.status_code}: {response.text}")
+                        except Exception as e:
+                            print(f"Direct Gemini ({gemini_model}) request exception: {e}")
+                    
+                    if not raw_text:
+                        raise ValueError("All direct Gemini model attempts failed")
+                else:
+                    # OpenRouter request
+                    payload = {
+                        "model": model,
+                        "messages": [
+                            {"role": "user", "content": prompt}
+                        ],
+                        "temperature": 0.7,
+                        "max_tokens": 2000,
+                    }
 
-                response = requests.post(
-                    self.api_url,
-                    headers=self.headers,
-                    json=payload,
-                    timeout=60
-                )
-
-                if response.status_code == 200:
-                    data = response.json()
-                    raw_text = data['choices'][0]['message']['content'].strip()
-
-                    if raw_text.startswith('```json'):
-                        raw_text = raw_text[7:]
-                    if raw_text.startswith('```'):
-                        raw_text = raw_text[3:]
-                    if raw_text.endswith('```'):
-                        raw_text = raw_text[:-3]
-                    raw_text = raw_text.strip()
-
-                    raw_text = ''.join(
-                        ch for ch in raw_text
-                        if unicodedata.category(ch)[0] != 'C' or ch in '\n\r\t'
+                    response = requests.post(
+                        self.api_url,
+                        headers=self.headers,
+                        json=payload,
+                        timeout=60
                     )
 
-                    json_match = re.search(r'\{.*\}', raw_text, re.DOTALL)
+                    if response.status_code == 200:
+                        data = response.json()
+                        raw_text = data['choices'][0]['message']['content'].strip()
+                    else:
+                        raise ValueError(f"OpenRouter status {response.status_code}: {response.text}")
+
+                # Clean and parse the raw output using multiple robust strategies
+                parsed_data = None
+                raw_text_clean = raw_text.strip()
+                
+                # Strategy 1: Direct loads
+                try:
+                    parsed_data = json.loads(raw_text_clean, strict=False)
+                except Exception:
+                    pass
+
+                # Strategy 2: Extract from markdown code blocks
+                if parsed_data is None:
+                    code_block_match = re.search(r'```(?:json)?\s*(.*?)\s*```', raw_text_clean, re.DOTALL)
+                    if code_block_match:
+                        content = code_block_match.group(1).strip()
+                        try:
+                            parsed_data = json.loads(content, strict=False)
+                        except Exception:
+                            raw_text_clean = content
+
+                # Strategy 3: Stack-based balanced brace/bracket extraction
+                if parsed_data is None:
+                    for start_char, end_char in [('{', '}'), ('[', ']')]:
+                        pos = 0
+                        while True:
+                            start_idx = raw_text_clean.find(start_char, pos)
+                            if start_idx == -1:
+                                break
+                            
+                            in_string = False
+                            escape = False
+                            stack_count = 0
+                            end_idx = -1
+                            
+                            for i in range(start_idx, len(raw_text_clean)):
+                                char = raw_text_clean[i]
+                                if escape:
+                                    escape = False
+                                    continue
+                                if char == '\\':
+                                    escape = True
+                                    continue
+                                if char == '"':
+                                    in_string = not in_string
+                                    continue
+                                if not in_string:
+                                    if char == start_char:
+                                        stack_count += 1
+                                    elif char == end_char:
+                                        stack_count -= 1
+                                        if stack_count == 0:
+                                            end_idx = i
+                                            break
+                            
+                            if end_idx != -1:
+                                json_candidate = raw_text_clean[start_idx:end_idx+1]
+                                try:
+                                    cleaned_candidate = re.sub(r',\s*}', '}', json_candidate)
+                                    cleaned_candidate = re.sub(r',\s*]', ']', cleaned_candidate)
+                                    parsed_data = json.loads(cleaned_candidate, strict=False)
+                                    break
+                                except Exception:
+                                    try:
+                                        parsed_data = ast.literal_eval(json_candidate)
+                                        break
+                                    except Exception:
+                                        pass
+                                pos = start_idx + 1
+                            else:
+                                pos = start_idx + 1
+                        if parsed_data is not None:
+                            break
+
+                # Strategy 4: Standard regex extraction
+                if parsed_data is None:
+                    raw_text_clean = ''.join(
+                        ch for ch in raw_text_clean
+                        if unicodedata.category(ch)[0] != 'C' or ch in '\n\r\t'
+                    )
+                    json_match = re.search(r'\{.*\}', raw_text_clean, re.DOTALL)
                     if not json_match:
-                        json_match = re.search(r'\[.*\]', raw_text, re.DOTALL)
+                        json_match = re.search(r'\[.*\]', raw_text_clean, re.DOTALL)
 
                     if json_match:
                         json_str = json_match.group(0)
                     else:
-                        json_str = raw_text
+                        json_str = raw_text_clean
 
                     json_str = re.sub(r',\s*}', '}', json_str)
                     json_str = re.sub(r',\s*]', ']', json_str)
@@ -188,70 +292,75 @@ IMPORTANT:
                             cleaned = re.sub(r'[^{[]*$', '', cleaned)
                             parsed_data = json.loads(cleaned, strict=False)
 
-                    quiz_title = ""
-                    if isinstance(parsed_data, dict):
-                        quiz_title = parsed_data.get('quiz_title', '').strip()
-                        questions = parsed_data.get('questions', [])
-                    else:
-                        questions = parsed_data
-
-                    if not isinstance(questions, list):
-                        raise ValueError("Response is not a list")
-
-                    random_patterns = ['pizza', 'burger', 'cake', 'dog', 'cat', 'apple', 'banana', 'sandwich']
-                    sensible_alternatives = [
-                        "True, but only under certain conditions",
-                        "False, except in specific cases",
-                        "Partially true",
-                        "Not applicable in this context",
-                        "Both A and B"
-                    ]
-
-                    for q in questions:
-                        q_type = q.get('question_type', '')
-                        options = q.get('options', [])
-                        correct = q.get('correct_answer', '')
-
-                        if q_type in ['MCQ', 'True/False', 'Fill in the Blank']:
-                            if len(options) != 4:
-                                raise ValueError(f"Question '{q.get('question_text', '')}' does not have exactly 4 options")
-
-                            if q_type == 'True/False':
-                                if len(options) >= 2:
-                                    options[0] = "True"
-                                    options[1] = "False"
-
-                                for i in range(2, len(options)):
-                                    opt_lower = options[i].lower()
-                                    if len(options[i]) < 3 or any(word in opt_lower for word in random_patterns):
-                                        options[i] = sensible_alternatives[i - 2] if i - 2 < len(sensible_alternatives) else "None of the above"
-
-                                if correct not in ["True", "False"]:
-                                    if correct in ["A", "True"]:
-                                        q['correct_answer'] = "True"
-                                    elif correct in ["B", "False"]:
-                                        q['correct_answer'] = "False"
-                                    else:
-                                        q['correct_answer'] = "True"
-
-                                q['options'] = options
-
-                            correct = q.get('correct_answer', '')
-                            if correct not in options:
-                                if correct in ['A', 'B', 'C', 'D']:
-                                    label_map = {'A': 0, 'B': 1, 'C': 2, 'D': 3}
-                                    idx = label_map.get(correct, 0)
-                                    if idx < len(options):
-                                        q['correct_answer'] = options[idx]
-                                else:
-                                    q['correct_answer'] = options[0] if options else ""
-
-                    return {
-                        "quiz_title": quiz_title,
-                        "questions": questions
-                    }
+                quiz_title = ""
+                if isinstance(parsed_data, dict):
+                    quiz_title = parsed_data.get('quiz_title', '').strip()
+                    questions = parsed_data.get('questions', [])
                 else:
-                    last_error = f"{model} failed with status {response.status_code}: {response.text}"
+                    questions = parsed_data
+
+                if not isinstance(questions, list):
+                    raise ValueError("Response is not a list")
+
+                random_patterns = ['pizza', 'burger', 'cake', 'dog', 'cat', 'apple', 'banana', 'sandwich']
+                sensible_alternatives = [
+                    "True, but only under certain conditions",
+                    "False, except in specific cases",
+                    "Partially true",
+                    "Not applicable in this context",
+                    "Both A and B"
+                ]
+
+                for q in questions:
+                    q_type = q.get('question_type', '')
+                    options = q.get('options', [])
+                    correct = q.get('correct_answer', '')
+
+                    if q_type in ['MCQ', 'True/False', 'Fill in the Blank', 'Coding']:
+                        if not isinstance(options, list):
+                            options = []
+
+                        # Gracefully ensure exactly 4 options
+                        if len(options) < 4:
+                            while len(options) < 4:
+                                options.append(sensible_alternatives[len(options) - 2] if len(options) - 2 < len(sensible_alternatives) else f"Option {len(options) + 1}")
+                        elif len(options) > 4:
+                            options = options[:4]
+
+                        if q_type == 'True/False':
+                            if len(options) >= 2:
+                                options[0] = "True"
+                                options[1] = "False"
+
+                            for i in range(2, len(options)):
+                                opt_lower = options[i].lower()
+                                if len(options[i]) < 3 or any(word in opt_lower for word in random_patterns):
+                                    options[i] = sensible_alternatives[i - 2] if i - 2 < len(sensible_alternatives) else "None of the above"
+
+                            if correct not in ["True", "False"]:
+                                if correct in ["A", "True"]:
+                                    q['correct_answer'] = "True"
+                                elif correct in ["B", "False"]:
+                                    q['correct_answer'] = "False"
+                                else:
+                                    q['correct_answer'] = "True"
+
+                            q['options'] = options
+
+                        correct = q.get('correct_answer', '')
+                        if correct not in options:
+                            if correct in ['A', 'B', 'C', 'D']:
+                                label_map = {'A': 0, 'B': 1, 'C': 2, 'D': 3}
+                                idx = label_map.get(correct, 0)
+                                if idx < len(options):
+                                    q['correct_answer'] = options[idx]
+                            else:
+                                q['correct_answer'] = options[0] if options else ""
+
+                return {
+                    "quiz_title": quiz_title,
+                    "questions": questions
+                }
 
             except requests.exceptions.RequestException as e:
                 last_error = f"{model} request error: {str(e)}"
@@ -268,64 +377,165 @@ IMPORTANT:
 
     def generate_explanations(self, prompt, num_items):
         """
-        Generate AI explanations (list of strings) using OpenRouter.
+        Generate AI explanations (list of strings) using OpenRouter or direct Gemini.
         This is a simpler version that doesn't validate question structure.
         """
-        models_to_try = [
-            "openai/gpt-3.5-turbo",
-            "anthropic/claude-3-haiku"
-        ]
+        models_to_try = []
+        if self.gemini_key:
+            models_to_try.append("direct/gemini")
+        if self.api_key:
+            models_to_try.extend([
+                "google/gemini-2.5-flash",
+                "openai/gpt-4o-mini",
+                "anthropic/claude-3-haiku",
+                "openai/gpt-3.5-turbo"
+            ])
 
         last_error = None
 
         for model in models_to_try:
             try:
-                payload = {
-                    "model": model,
-                    "messages": [{"role": "user", "content": prompt}],
-                    "temperature": 0.7,
-                    "max_tokens": 2000,
-                }
+                raw_text = None
+                if model == "direct/gemini":
+                    # Try gemini-2.5-flash and gemini-1.5-flash directly
+                    for gemini_model in ["gemini-2.5-flash", "gemini-1.5-flash"]:
+                        try:
+                            url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={self.gemini_key}"
+                            headers = {"Content-Type": "application/json"}
+                            payload = {
+                                "contents": [{"parts": [{"text": prompt}]}],
+                                "generationConfig": {
+                                    "responseMimeType": "application/json"
+                                }
+                            }
+                            response = requests.post(url, headers=headers, json=payload, timeout=30)
+                            if response.status_code == 200:
+                                res_json = response.json()
+                                raw_text = res_json['candidates'][0]['content']['parts'][0]['text']
+                                break
+                        except Exception as e:
+                            print(f"Direct Gemini ({gemini_model}) request exception in explanations: {e}")
+                    
+                    if not raw_text:
+                        raise ValueError("All direct Gemini model attempts failed for explanations")
+                else:
+                    payload = {
+                        "model": model,
+                        "messages": [{"role": "user", "content": prompt}],
+                        "temperature": 0.7,
+                        "max_tokens": 2000,
+                    }
 
-                response = requests.post(
-                    self.api_url,
-                    headers=self.headers,
-                    json=payload,
-                    timeout=60
-                )
+                    response = requests.post(
+                        self.api_url,
+                        headers=self.headers,
+                        json=payload,
+                        timeout=60
+                    )
 
-                if response.status_code == 200:
-                    data = response.json()
-                    raw_text = data['choices'][0]['message']['content'].strip()
+                    if response.status_code == 200:
+                        data = response.json()
+                        raw_text = data['choices'][0]['message']['content'].strip()
+                    else:
+                        raise ValueError(f"{model} failed with status {response.status_code}")
 
-                    # Clean markdown
-                    if raw_text.startswith('```json'):
-                        raw_text = raw_text[7:]
-                    if raw_text.startswith('```'):
-                        raw_text = raw_text[3:]
-                    if raw_text.endswith('```'):
-                        raw_text = raw_text[:-3]
-                    raw_text = raw_text.strip()
+                # Clean and parse JSON array
+                raw_text_clean = raw_text.strip()
+                explanations = None
 
-                    # Remove control characters
-                    raw_text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', raw_text)
+                # Strategy 1: Direct load
+                try:
+                    explanations = json.loads(raw_text_clean, strict=False)
+                except Exception:
+                    pass
 
-                    # Extract JSON array
-                    json_match = re.search(r'\[\s*".*"\s*\]', raw_text, re.DOTALL)
+                # Strategy 2: Code block extraction
+                if explanations is None:
+                    code_block_match = re.search(r'```(?:json)?\s*(.*?)\s*```', raw_text_clean, re.DOTALL)
+                    if code_block_match:
+                        content = code_block_match.group(1).strip()
+                        try:
+                            explanations = json.loads(content, strict=False)
+                        except Exception:
+                            raw_text_clean = content
+
+                # Strategy 3: Stack-based balanced brackets extraction
+                if explanations is None:
+                    pos = 0
+                    while True:
+                        start_idx = raw_text_clean.find('[', pos)
+                        if start_idx == -1:
+                            break
+                        
+                        in_string = False
+                        escape = False
+                        stack_count = 0
+                        end_idx = -1
+                        
+                        for i in range(start_idx, len(raw_text_clean)):
+                            char = raw_text_clean[i]
+                            if escape:
+                                escape = False
+                                continue
+                            if char == '\\':
+                                escape = True
+                                continue
+                            if char == '"':
+                                in_string = not in_string
+                                continue
+                            if not in_string:
+                                if char == '[':
+                                    stack_count += 1
+                                elif char == ']':
+                                    stack_count -= 1
+                                    if stack_count == 0:
+                                        end_idx = i
+                                        break
+                        
+                        if end_idx != -1:
+                            json_candidate = raw_text_clean[start_idx:end_idx+1]
+                            try:
+                                cleaned_candidate = re.sub(r',\s*]', ']', json_candidate)
+                                explanations = json.loads(cleaned_candidate, strict=False)
+                                break
+                            except Exception:
+                                try:
+                                    explanations = ast.literal_eval(json_candidate)
+                                    break
+                                except Exception:
+                                    pass
+                            pos = start_idx + 1
+                        else:
+                            pos = start_idx + 1
+
+                # Strategy 4: Fallback standard regex
+                if explanations is None:
+                    raw_text_clean = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', raw_text_clean)
+                    json_match = re.search(r'\[\s*".*"\s*\]', raw_text_clean, re.DOTALL)
                     if json_match:
                         json_str = json_match.group(0)
                     else:
-                        json_str = raw_text
+                        json_str = raw_text_clean
 
-                    explanations = json.loads(json_str, strict=False)
+                    try:
+                        explanations = json.loads(json_str, strict=False)
+                    except Exception:
+                        try:
+                            explanations = ast.literal_eval(json_str)
+                        except Exception:
+                            raise ValueError("Failed to parse explanations JSON")
 
-                    if isinstance(explanations, list) and len(explanations) == num_items:
-                        return explanations
-                    else:
-                        raise ValueError(f"Expected {num_items} explanations, got {len(explanations)}")
+                # Normalize to expected length and list type
+                if not isinstance(explanations, list):
+                    explanations = []
 
-                else:
-                    last_error = f"{model} failed with status {response.status_code}"
+                if len(explanations) < num_items:
+                    while len(explanations) < num_items:
+                        explanations.append("No explanation available.")
+                elif len(explanations) > num_items:
+                    explanations = explanations[:num_items]
+
+                return explanations
 
             except Exception as e:
                 last_error = f"{model} error: {str(e)}"
