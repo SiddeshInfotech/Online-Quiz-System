@@ -84,6 +84,11 @@ class GlobalLeaderboardView(APIView):
 
     def get(self, request):
         from django.core.cache import cache
+        try:
+            from apps.users.services.badge_progress import evaluate_user_badges
+            evaluate_user_badges(request.user)
+        except Exception as e:
+            print(f"[leaderboard evaluate_user_badges error]: {e}")
 
         all_rankings = cache.get("leaderboard_all_rankings")
         if not all_rankings:

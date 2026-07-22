@@ -49,13 +49,20 @@ def recalculate_user_points_and_stats(user):
     user.level = (user.xp // 100) + 1
     user.save()
 
-    # 5. Flush caches
+    # 5. Flush caches and evaluate badges
     cache.delete("leaderboard_all_rankings")
     cache.delete(f"user_badges_{user.id}")
     cache.delete(f"badges_all_{user.id}")
     cache.delete(f"badge_progress_{user.id}")
 
+    try:
+        from apps.users.services.badge_progress import evaluate_user_badges
+        evaluate_user_badges(user)
+    except Exception as e:
+        print(f"[recalculate_points evaluate_user_badges error]: {e}")
+
     return {
+
         "quiz_score_total": quiz_score_total,
         "badge_xp": badge_xp,
         "total_points": user.total_points,

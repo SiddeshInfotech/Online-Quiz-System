@@ -7,6 +7,9 @@ urlpatterns = [
     path('categories/', AchievementCategoriesView.as_view(), name='achievement-categories'),
     path('all/', AllBadgesView.as_view(), name='achievement-all'),
     path('progress/', XPProgressView.as_view(), name='achievement-progress'),
-    path('claim/<int:badge_id>/', ClaimBadgeView.as_view(), name='claim-badge'),
+    path('claim/<int:badge_id>/', ClaimBadgeView.as_view(), name='claim-badge-1'),
+    path('<int:badge_id>/claim/', ClaimBadgeView.as_view(), name='claim-badge-2'),
+    path('badges/<int:badge_id>/claim/', ClaimBadgeView.as_view(), name='claim-badge-3'),
+
     path('check-unlock/', CheckAndUnlockBadgesView.as_view(), name='check-unlock-badges'),
 ]

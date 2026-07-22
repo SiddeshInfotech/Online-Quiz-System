@@ -252,51 +252,96 @@ class GoogleAuthSerializer(serializers.Serializer):
         except ValueError as e:
             raise serializers.ValidationError(f"Invalid Google token: {str(e)}")
 
-class AllBadgeSerializer(serializers.ModelSerializer):
+class UserBadgeSerializer(serializers.ModelSerializer):
+    badge_id = serializers.IntegerField()
+    badge_name = serializers.CharField(source='name')
+    icon_url = serializers.CharField(source='image_url')
+
+    
+    is_unlocked = serializers.SerializerMethodField()
+    is_claimed = serializers.SerializerMethodField()
+    current_progress = serializers.SerializerMethodField()
+    required_target = serializers.SerializerMethodField()
+    progress_percentage = serializers.SerializerMethodField()
+    earned_at = serializers.SerializerMethodField()
+    claimed_at = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
+    
     progress = serializers.SerializerMethodField()
     target = serializers.SerializerMethodField()
     xp_reward = serializers.SerializerMethodField()
     awarded_at = serializers.SerializerMethodField()
-    claimed_at = serializers.SerializerMethodField()  # NEW
 
     class Meta:
         model = Badge
         fields = [
-            'badge_id', 'name', 'description', 'image_url',
+            'badge_id', 'badge_name', 'name', 'description', 'icon_url', 'image_url',
             'category', 'rarity', 'requirement',
-            'status', 'progress', 'target', 'xp_reward', 
-            'awarded_at', 'claimed_at'  # ADD claimed_at
+            'is_unlocked', 'is_claimed', 'status',
+            'current_progress', 'required_target', 'progress_percentage',
+            'progress', 'target', 'xp_reward',
+            'earned_at', 'claimed_at', 'awarded_at'
         ]
 
-    def get_status(self, obj):
-        # earned_ids = badges the user has a UserBadge row for (CLAIMABLE or CLAIMED)
+    def get_is_unlocked(self, obj):
         earned_ids = self.context.get('earned_ids', set())
-        if obj.badge_id not in earned_ids:
-            return "LOCKED"
-        # Check if claimed
-        claimed_ids = self.context.get('claimed_ids', set())
-        if obj.badge_id in claimed_ids:
-            return "CLAIMED"
-        return "CLAIMABLE"
+        return obj.badge_id in earned_ids
 
-    def get_awarded_at(self, obj):
+    def get_is_claimed(self, obj):
+        claimed_ids = self.context.get('claimed_ids', set())
+        return obj.badge_id in claimed_ids
+
+    def get_status(self, obj):
+        if self.get_is_claimed(obj):
+            return "CLAIMED"
+        if self.get_is_unlocked(obj):
+            return "CLAIMABLE"
+        return "LOCKED"
+
+    def get_earned_at(self, obj):
         awarded_at_map = self.context.get('awarded_at_map', {})
-        return awarded_at_map.get(obj.badge_id, None)
+        val = awarded_at_map.get(obj.badge_id, None)
+        return val.isoformat() if hasattr(val, 'isoformat') else val
 
     def get_claimed_at(self, obj):
         claimed_at_map = self.context.get('claimed_at_map', {})
-        return claimed_at_map.get(obj.badge_id, None)
+        val = claimed_at_map.get(obj.badge_id, None)
+        return val.isoformat() if hasattr(val, 'isoformat') else val
 
-    def get_progress(self, obj):
+    def get_awarded_at(self, obj):
+        return self.get_earned_at(obj)
+
+    def get_current_progress(self, obj):
         progress_map = self.context.get('progress_map', {})
-        return progress_map.get(obj.badge_id, 0)
+        val = progress_map.get(obj.badge_id, 0)
+        try:
+            return int(val)
+        except (ValueError, TypeError):
+            return 0
 
-    def get_target(self, obj):
+    def get_required_target(self, obj):
         from .services.badge_progress import BadgeProgressHelper
         return BadgeProgressHelper.get_target(obj)
 
+    def get_progress_percentage(self, obj):
+        current = self.get_current_progress(obj)
+        target = self.get_required_target(obj)
+        if not target or target <= 0:
+            return 100.0 if current > 0 else 0.0
+        pct = (current / target) * 100.0
+        return min(100.0, round(pct, 2))
+
+    def get_progress(self, obj):
+        return self.get_current_progress(obj)
+
+    def get_target(self, obj):
+        return self.get_required_target(obj)
+
     def get_xp_reward(self, obj):
         xp_map = {'COMMON': 25, 'RARE': 50, 'EPIC': 100, 'LEGENDARY': 200}
-        return xp_map.get(obj.rarity, 25)
+        return getattr(obj, 'xp_reward', xp_map.get(obj.rarity, 25))
+
+
+AllBadgeSerializer = UserBadgeSerializer
+
 

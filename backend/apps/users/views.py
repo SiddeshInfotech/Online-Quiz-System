@@ -636,45 +636,52 @@ class UserBadgesView(APIView):
     def get(self, request):
         user = request.user
         
-        
         cache_key = f"user_badges_{user.id}"
         cached_data = cache.get(cache_key)
-        
         if cached_data is not None:
             return Response(cached_data)
-        
-        user_badges = UserBadge.objects.filter(
-            user=user, 
-            status='CLAIMED'
-        ).select_related('badge').order_by('-claimed_at')  
-        
-        badges_data = [
-            {
-                "badge_id": ub.badge.badge_id,
-                "name": ub.badge.name,
-                "description": ub.badge.description,
-                "image_url": ub.badge.image_url,
-                "category": ub.badge.category,
-                "rarity": ub.badge.rarity,
-                "claimed_at": ub.claimed_at,
-                "status": ub.status
-            }
-            for ub in user_badges
-        ]
-        
+
+        # Trigger evaluator pass to ensure any newly met criteria are marked claimable
+        from apps.users.services.badge_progress import evaluate_user_badges
+        evaluate_user_badges(user)
+
+        user_badges = UserBadge.objects.filter(user=user).select_related('badge')
+        earned_ids = set()
+        claimed_ids = set()
+        awarded_at_map = {}
+        claimed_at_map = {}
+
+        for ub in user_badges:
+            earned_ids.add(ub.badge.badge_id)
+            awarded_at_map[ub.badge.badge_id] = ub.earned_at
+            if ub.status == 'CLAIMED':
+                claimed_ids.add(ub.badge.badge_id)
+                claimed_at_map[ub.badge.badge_id] = ub.claimed_at
+
+        progress_map = BadgeProgressHelper.get_all_progress(user, None)
+        claimed_badge_objs = [ub.badge for ub in user_badges if ub.status == 'CLAIMED']
+
+        context = {
+            'user': user,
+            'progress_map': progress_map,
+            'earned_ids': earned_ids,
+            'claimed_ids': claimed_ids,
+            'awarded_at_map': awarded_at_map,
+            'claimed_at_map': claimed_at_map,
+        }
+        serializer = UserBadgeSerializer(claimed_badge_objs, many=True, context=context)
+
         level = user.level
         current_xp = user.xp
         next_level_xp = level * 100
         while next_level_xp <= current_xp:
             next_level_xp += 100
-        if level == 9 and current_xp == 850:
-            next_level_xp = 1000
         current_level_xp = (level - 1) * 100
         remaining_xp = next_level_xp - current_xp
 
         response_data = {
-            "badges": badges_data,
-            "count": len(badges_data),
+            "badges": serializer.data,
+            "count": len(serializer.data),
             "level": level,
             "current_level_xp": current_level_xp,
             "current_xp": current_xp,
@@ -683,8 +690,8 @@ class UserBadgesView(APIView):
         }
         
         cache.set(cache_key, response_data, 300)
-        
         return Response(response_data)
+
 
 class AchievementStatsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -692,7 +699,6 @@ class AchievementStatsView(APIView):
     def get(self, request):
         user = request.user
         
-        # ✅ New fields for achievements page
         total_badges = Badge.objects.count()
         claimed_badges = UserBadge.objects.filter(
             user=user, status='CLAIMED'
@@ -704,18 +710,14 @@ class AchievementStatsView(APIView):
             (claimed_badges / total_badges * 100), 2
         ) if total_badges > 0 else 0
         
-        # ✅ Level from XP
-        level = (user.xp // 100) + 1  # Assuming 100 XP per level
+        level = user.level
         current_xp = user.xp
         next_level_xp = level * 100
         while next_level_xp <= current_xp:
             next_level_xp += 100
-        if level == 9 and current_xp == 850:
-            next_level_xp = 1000
         current_level_xp = (level - 1) * 100
         remaining_xp = next_level_xp - current_xp
         
-        # ✅ Existing rarity and category distributions (only CLAIMED)
         user_badges = UserBadge.objects.filter(
             user=user, status='CLAIMED'
         ).select_related('badge')
@@ -729,7 +731,6 @@ class AchievementStatsView(APIView):
             category_counts[category] = category_counts.get(category, 0) + 1
 
         return Response({
-            # ✅ New fields
             "level": level,
             "current_level_xp": current_level_xp,
             "current_xp": current_xp,
@@ -739,11 +740,11 @@ class AchievementStatsView(APIView):
             "claimed_badges": claimed_badges,
             "claimable_badges": claimable_badges,
             "completion_percentage": completion_percentage,
-            # Existing fields
             "total_badges": total_badges,
             "rarity_distribution": rarity_counts,
             "category_distribution": category_counts,
         })
+
 
 class AchievementCategoriesView(APIView):
     permission_classes = [IsAuthenticated]
@@ -751,18 +752,15 @@ class AchievementCategoriesView(APIView):
     def get(self, request):
         from django.db.models import Count
 
-        # ✅ OPTIMIZATION: Get total badge counts per category in one query
         total_counts = Badge.objects.values('category').annotate(count=Count('id'))
         total_map = {item['category']: item['count'] for item in total_counts}
 
-        # ✅ OPTIMIZATION: Get claimed badge counts per category for this user in one query
         earned_counts = UserBadge.objects.filter(
             user=request.user,
             status='CLAIMED'
         ).values('badge__category').annotate(count=Count('id'))
         earned_map = {item['badge__category']: item['count'] for item in earned_counts}
 
-        # Combine results
         categories = sorted(list(set(list(total_map.keys()) + list(earned_map.keys()))))
         category_data = []
         for cat in categories:
@@ -773,36 +771,28 @@ class AchievementCategoriesView(APIView):
             })
         return Response(category_data)
     
+
 class AllBadgesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        start_total = time.time()
         user = request.user
         
         cache_key = f"badges_all_{user.id}"
         cached_data = cache.get(cache_key)
-        
         if cached_data:
-            print(f"✅ [ALL BADGES CACHE HIT] user={user.id}")
             return Response(cached_data)
-        
-        print(f"⏳ [ALL BADGES CACHE MISS] user={user.id}, computing...")
-        
-        # ✅ Check if progress cache exists, if not compute it first
+
+        from apps.users.services.badge_progress import evaluate_user_badges
+        evaluate_user_badges(user)
+
         progress_cache_key = f"badge_progress_{user.id}"
         progress_cached = cache.get(progress_cache_key)
-        
         if not progress_cached:
-            print(f"⏳ [PROGRESS CACHE MISS] user={user.id}, computing progress first...")
-            # Compute progress and cache it (this will take 30s first time)
             progress_map = BadgeProgressHelper.get_all_progress(user, None)
-            print(f"✅ [PROGRESS CACHE SET] user={user.id}")
         else:
-            print(f"✅ [PROGRESS CACHE HIT] user={user.id}")
             progress_map = progress_cached
         
-        # Precompute UserBadge data
         user_badges = UserBadge.objects.filter(user=user).select_related('badge')
         earned_ids = set()
         claimed_ids = set()
@@ -816,12 +806,7 @@ class AllBadgesView(APIView):
                 claimed_ids.add(ub.badge.badge_id)
                 claimed_at_map[ub.badge.badge_id] = ub.claimed_at
         
-        t1 = time.time()
         badges = Badge.objects.all().order_by('badge_id')
-        print(f"  📊 Badges fetched: {time.time() - t1:.2f}s")
-        
-        # ✅ Use cached progress_map (no recomputation)
-        t2 = time.time()
         context = {
             'user': user,
             'progress_map': progress_map,
@@ -837,13 +822,11 @@ class AllBadgesView(APIView):
             "claimed": len(claimed_ids),
             "badges": serializer.data
         }
-        print(f"  📦 Serialized: {time.time() - t2:.2f}s")
         
-        # ✅ Cache the final response
         cache.set(cache_key, data, 600)
-        print(f"✅ Total time: {time.time() - start_total:.2f}s")
         return Response(data)
-    
+
+
 class XPProgressView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -854,8 +837,6 @@ class XPProgressView(APIView):
         next_level_xp = level * 100
         while next_level_xp <= current_xp:
             next_level_xp += 100
-        if level == 9 and current_xp == 850:
-            next_level_xp = 1000
         current_level_xp = (level - 1) * 100
         remaining_xp = next_level_xp - current_xp
         denom = next_level_xp - current_level_xp
@@ -868,6 +849,7 @@ class XPProgressView(APIView):
             "progress_percentage": round(((current_xp - current_level_xp) / denom) * 100, 2) if denom > 0 else 0
         })
 
+
 class ClaimBadgeView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -877,20 +859,30 @@ class ClaimBadgeView(APIView):
         try:
             badge = Badge.objects.get(badge_id=badge_id)
         except Badge.DoesNotExist:
-            return Response({"error": "Badge not found"}, status=404)
+            return Response({"error": "Badge not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        try:
-            user_badge = UserBadge.objects.get(user=user, badge=badge)
-        except UserBadge.DoesNotExist:
-            return Response({
-                "error": "You haven't unlocked this badge yet. Keep going!"
-            }, status=403)
+        user_badge = UserBadge.objects.filter(user=user, badge=badge).first()
+
+        if not user_badge or user_badge.status == 'LOCKED':
+            if BadgeProgressHelper.is_requirement_met(user, badge):
+                if not user_badge:
+                    user_badge = UserBadge.objects.create(
+                        user=user,
+                        badge=badge,
+                        status='CLAIMABLE',
+                        earned_at=timezone.now()
+                    )
+                else:
+                    user_badge.status = 'CLAIMABLE'
+                    user_badge.save()
+            else:
+                return Response({"error": "Badge criteria not yet fulfilled."}, status=status.HTTP_400_BAD_REQUEST)
 
         if user_badge.status == 'CLAIMED':
             return Response({
-                "error": "Badge already claimed",
-                "claimed_at": user_badge.claimed_at
-            }, status=400)
+                "error": "Badge has already been claimed.",
+                "claimed_at": user_badge.claimed_at.isoformat() if user_badge.claimed_at else None
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         if user_badge.status == 'CLAIMABLE':
             user_badge.status = 'CLAIMED'
@@ -900,17 +892,13 @@ class ClaimBadgeView(APIView):
             from apps.users.services.points_service import recalculate_user_points_and_stats, XP_MAP
             recalculate_user_points_and_stats(user)
 
-            xp_reward = XP_MAP.get(badge.rarity, 25)
+            xp_reward = getattr(badge, 'xp_reward', 25) or XP_MAP.get(badge.rarity, 25)
 
-            # ✅ Clear all caches
             cache.delete(f"badges_all_{user.id}")
             cache.delete(f"user_badges_{user.id}")
             cache.delete(f"badge_count_{user.id}")
             BadgeProgressHelper.clear_progress_cache(user)
 
-            # #17: create a claim notification (also drives the celebratory
-            # full-screen animation on the frontend) and return the badge
-            # metadata the animation needs.
             try:
                 from apps.notifications.services import notify_badge_claimed
                 notify_badge_claimed(user, badge, xp_reward)
@@ -921,62 +909,46 @@ class ClaimBadgeView(APIView):
                 "message": "Badge claimed successfully!",
                 "badge_id": badge.badge_id,
                 "status": "CLAIMED",
-                "claimed_at": user_badge.claimed_at,
+                "claimed_at": user_badge.claimed_at.isoformat(),
                 "xp_earned": xp_reward,
                 "new_total_xp": user.xp,
-                # extra fields so the claim animation can render the badge
+                "total_points": user.total_points,
                 "badge": {
                     "badge_id": badge.badge_id,
+                    "badge_name": badge.name,
                     "name": badge.name,
                     "description": badge.description,
+                    "icon_url": badge.image_url,
                     "image_url": badge.image_url,
                     "rarity": badge.rarity,
                     "category": badge.category,
                 },
                 "celebrate": True,
-            }, status=200)
-        else:
-            return Response({"error": "Invalid badge status"}, status=400)
+            }, status=status.HTTP_200_OK)
+
+        return Response({"error": "Badge criteria not yet fulfilled."}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class CheckAndUnlockBadgesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         user = request.user
-        unlocked_count = 0
-        unlocked_badges = []
-
-        all_badges = Badge.objects.all()
-
-        for badge in all_badges:
-            # Check if user already has a UserBadge row
-            existing = UserBadge.objects.filter(user=user, badge=badge).first()
-            if existing:
-                continue
-
-            # Check if user meets the requirement
-            if BadgeProgressHelper.is_requirement_met(user, badge):
-                user_badge = UserBadge.objects.create(
-                    user=user,
-                    badge=badge,
-                    status='CLAIMABLE',
-                    earned_at=timezone.now()
-                )
-                unlocked_count += 1
-                unlocked_badges.append({
-                    "badge_id": badge.badge_id,
-                    "name": badge.name,
-                    "status": "CLAIMABLE"
-                })
-
-        # Clear all caches
-        if unlocked_count > 0:
-            cache.delete(f"badges_all_{user.id}")
-            cache.delete(f"user_badges_{user.id}")
-            cache.delete(f"badge_count_{user.id}")
+        from apps.users.services.badge_progress import evaluate_user_badges
+        unlocked_badges_objs = evaluate_user_badges(user)
+        
+        unlocked_badges = [
+            {
+                "badge_id": b.badge_id,
+                "badge_name": b.name,
+                "name": b.name,
+                "status": "CLAIMABLE"
+            }
+            for b in unlocked_badges_objs
+        ]
 
         return Response({
-            "message": f"{unlocked_count} new badge(s) unlocked!",
-            "unlocked_count": unlocked_count,
+            "message": f"{len(unlocked_badges)} new badge(s) unlocked!",
+            "unlocked_count": len(unlocked_badges),
             "unlocked_badges": unlocked_badges
         }, status=status.HTTP_200_OK)
