@@ -83,12 +83,14 @@ class UserSerializer(serializers.ModelSerializer):
             'date_joined', 'profile_picture', 'school', 'grade',
             'subject_interests', 'profile_completion', 'missing_fields', 'badge_count',
             'quizzes_completed', 'total_points', 'xp', 'level',
-            'current_streak', 'longest_streak', 'total_attempts'
+            'current_streak', 'longest_streak', 'total_attempts',
+            'is_staff', 'is_superuser'
         ]
         read_only_fields = [
             'id', 'username', 'email', 'role', 'date_joined',
             'quizzes_completed', 'total_points', 'xp', 'level',
-            'current_streak', 'longest_streak', 'total_attempts'
+            'current_streak', 'longest_streak', 'total_attempts',
+            'is_staff', 'is_superuser'
         ]
 
     def update(self, instance, validated_data):
