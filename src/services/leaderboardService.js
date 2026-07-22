@@ -4,9 +4,8 @@
  * Fetches live leaderboard data from GET /api/leaderboard/
  * and normalises the response into the shape LeaderboardPage expects.
  *
- * Scoring rule: 1 correct answer = 1 point, wrong = 0.
- * Total points = sum of correct answers across ALL completed quizzes.
- * Users are ranked by total points (highest first).
+ * Scoring rule: Total points = Quiz score points + Achievement XP rewards.
+ * Users are ranked by total combined points (highest first).
  *
  * The adapter handles:
  *  - snake_case ↔ camelCase field names

@@ -1,4 +1,5 @@
 import { useState, useEffect, useContext, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Trophy,
@@ -80,11 +81,13 @@ const Avatar = ({ src, name, size = "md", ringColor = "" }) => {
 // Summary Cards
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SummaryCard = ({ icon: Icon, label, value, gradient, iconBg, delay = 0 }) => (
+const SummaryCard = ({ icon: Icon, label, value, gradient, iconBg, delay = 0, onClick }) => (
   <motion.div
     initial={{ opacity: 0, y: 16 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.4, delay }}
+    onClick={onClick}
+    className={onClick ? "cursor-pointer" : ""}
   >
     <Card className={`p-6 relative overflow-hidden group hover:shadow-xl transition-all duration-300 ${gradient}`}>
       {/* Decorative circle */}
@@ -463,6 +466,7 @@ const ScrollToUserBtn = ({ onClick }) => (
 
 const LeaderboardPage = () => {
   const { currentUser } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const [entries, setEntries] = useState([]);
   const [top3, setTop3] = useState([]);
@@ -630,6 +634,7 @@ const LeaderboardPage = () => {
               gradient="bg-gradient-to-br from-sky-500 to-cyan-400 text-white"
               iconBg="bg-white/20"
               delay={0.15}
+              onClick={() => navigate("/attempts")}
             />
           </div>
 

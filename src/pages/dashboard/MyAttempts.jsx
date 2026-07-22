@@ -11,6 +11,7 @@ import {
   Trophy,
   XCircle,
   RotateCcw,
+  Eye,
 } from "lucide-react";
 
 import Badge from "../../components/ui/Badge";
@@ -118,13 +119,21 @@ const AttemptCard = ({ attempt }) => {
   const difficulty = attempt.difficulty_level || attempt.difficulty || "";
   const category = attempt.category || "";
 
+  // Backend Retry Metadata
+  const retryCount = attempt.retry_count ?? 1;
+  const maxRetry = attempt.max_retry ?? 1;
+  const canRetry = attempt.can_retry ?? false;
+  const retryTooltip = `You have used ${retryCount} of ${maxRetry} allowed ${maxRetry === 1 ? "retry" : "retries"}.`;
+
   const navigate = useNavigate();
   const [isRetrying, setIsRetrying] = useState(false);
 
   const handleViewResult = () => {
-    // QuizResultsPage always fetches its own data from GET /api/attempts/{id}/result/
-    // No need to prefetch here — just navigate directly.
     navigate(`/results/${attempt.id}`);
+  };
+
+  const handleViewAnswers = () => {
+    navigate(`/results/${attempt.id}/review`);
   };
 
   const { icon: LangIcon, color: iconColor } = getLanguageIcon(attempt.category || attempt.subject);
@@ -132,6 +141,7 @@ const AttemptCard = ({ attempt }) => {
   const [retryError, setRetryError] = useState(null);
 
   const handleRetry = async () => {
+    if (!canRetry) return;
     try {
       setIsRetrying(true);
       setRetryError(null);
@@ -139,8 +149,12 @@ const AttemptCard = ({ attempt }) => {
       navigate(`/attempts/${res.attempt_id || res.id}`);
     } catch (err) {
       console.error(err);
-      setRetryError(err?.response?.data?.message || "Failed to start a new attempt. Please try again later.");
-      setTimeout(() => setRetryError(null), 4000);
+      const errorMsg =
+        err?.response?.data?.detail ??
+        err?.response?.data?.message ??
+        "Retry limit reached for this quiz.";
+      setRetryError(errorMsg);
+      setTimeout(() => setRetryError(null), 5000);
     } finally {
       setIsRetrying(false);
     }
@@ -187,6 +201,10 @@ const AttemptCard = ({ attempt }) => {
                     )}
                     {displayStatus}
                   </Badge>
+                  <Badge variant={canRetry ? "warning" : "gray"}>
+                    <RotateCcw size={11} className="mr-1" />
+                    Retry: {retryCount} / {maxRetry} Used
+                  </Badge>
                 </div>
               </div>
             </div>
@@ -208,20 +226,31 @@ const AttemptCard = ({ attempt }) => {
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center lg:w-[310px] lg:justify-end">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center lg:w-[360px] lg:justify-end">
           <ScoreRing percentage={Math.round(percentage)} />
-          <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:min-w-[168px] sm:grid-cols-1">
-            <Button size="sm" className="gap-2" onClick={handleViewResult} disabled={isRetrying}>
+          <div className="flex flex-col gap-2 w-full sm:w-auto sm:min-w-[160px]">
+            <Button size="sm" className="gap-2 w-full justify-center" onClick={handleViewResult} disabled={isRetrying}>
               <FileCheck2 size={15} />
               View Result
             </Button>
-            <Button variant="secondary" size="sm" className="gap-2" onClick={handleRetry} disabled={isRetrying}>
+            <Button variant="outline" size="sm" className="gap-2 w-full justify-center text-xs" onClick={handleViewAnswers}>
+              <Eye size={14} />
+              View Answers
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-2 w-full justify-center text-xs"
+              onClick={handleRetry}
+              disabled={isRetrying || !canRetry}
+              title={retryTooltip}
+            >
               {isRetrying ? (
                 <div className="w-3.5 h-3.5 border-2 border-slate-400/30 border-t-slate-600 rounded-full animate-spin" />
               ) : (
-                <RotateCcw size={15} />
+                <RotateCcw size={14} />
               )}
-              {isRetrying ? "Starting..." : "Retry Quiz"}
+              {isRetrying ? "Starting..." : !canRetry ? "Retry Limit Reached" : "Retry Quiz"}
             </Button>
           </div>
         </div>

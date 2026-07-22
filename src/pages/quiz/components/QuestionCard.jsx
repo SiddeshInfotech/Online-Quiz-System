@@ -169,28 +169,28 @@ const QuestionCard = ({
 
             if (reviewMode) {
               if (isCorrectOption) {
-                containerClasses = "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 shadow-md shadow-emerald-100 dark:shadow-none";
+                containerClasses = "border-emerald-500 bg-emerald-500/10 shadow-md shadow-emerald-500/5";
                 circleClasses = "bg-emerald-500 border-emerald-500 text-white";
-                textClasses = "font-semibold text-emerald-900 dark:text-emerald-400";
+                textClasses = "font-semibold text-emerald-800 dark:text-emerald-300";
                 indicatorClasses = "border-emerald-500";
                 indicatorInnerClasses = "bg-emerald-500";
               } else if (isSelected && !isCorrectOption) {
-                containerClasses = "border-red-500 bg-red-50 dark:bg-red-500/10 shadow-md shadow-red-100 dark:shadow-none";
+                containerClasses = "border-red-500 bg-red-500/10 shadow-md shadow-red-500/5";
                 circleClasses = "bg-red-500 border-red-500 text-white";
-                textClasses = "font-semibold text-red-900 dark:text-red-400";
+                textClasses = "font-semibold text-red-800 dark:text-red-300";
                 indicatorClasses = "border-red-500";
                 indicatorInnerClasses = "bg-red-500";
               } else {
-                containerClasses = "border-slate-100 dark:border-slate-800 surface opacity-60";
+                containerClasses = "border-app surface opacity-60";
                 circleClasses = "border-app text-app-muted";
                 textClasses = "text-app-muted";
-                indicatorClasses = "border-slate-300 dark:border-slate-700";
+                indicatorClasses = "border-app";
               }
             } else {
               if (isSelected) {
-                containerClasses = "border-violet-500 bg-violet-50 dark:bg-violet-500/10 shadow-md";
+                containerClasses = "border-violet-500 bg-violet-500/10 shadow-md";
                 circleClasses = "bg-violet-500 border-violet-500 text-white";
-                textClasses = "font-semibold text-violet-900 dark:text-violet-300";
+                textClasses = "font-semibold text-violet-700 dark:text-violet-300";
                 indicatorClasses = "border-violet-500";
                 indicatorInnerClasses = "bg-violet-500";
               } else {

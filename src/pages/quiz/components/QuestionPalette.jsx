@@ -14,7 +14,7 @@ const QuestionPalette = ({
   if (isLoading) {
     return (
       <div className="surface rounded-3xl p-6 shadow-sm border border-app">
-        <div className="animate-pulse bg-slate-200 h-6 w-32 rounded mb-6"></div>
+        <div className="animate-pulse surface-elev h-6 w-32 rounded mb-6"></div>
         <div className="grid grid-cols-5 gap-2">
           {[...Array(15)].map((_, i) => (
             <div key={i} className="animate-pulse surface-elev h-10 w-10 rounded-xl"></div>
@@ -30,7 +30,7 @@ const QuestionPalette = ({
     { label: "Incorrect", className: "bg-red-500" },
   ] : [
     { label: "Answered", className: "bg-emerald-500" },
-    { label: "Unanswered", className: "bg-slate-200 dark:bg-slate-700" },
+    { label: "Unanswered", className: "surface-elev border border-app" },
     { label: "Marked", className: "bg-amber-500" },
   ];
 
@@ -54,7 +54,7 @@ const QuestionPalette = ({
           if (reviewMode) {
              const isCorrect = questions[i]?.is_correct;
              if (isCurrent) {
-               btnClass = "border-2 border-violet-500 bg-violet-50 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300 font-bold shadow-sm ring-2 ring-violet-200 dark:ring-violet-500/30";
+               btnClass = "border-2 border-violet-500 bg-violet-500/15 text-violet-700 dark:text-violet-300 font-bold shadow-sm ring-2 ring-violet-500/30";
              } else if (isCorrect) {
                btnClass = "border-2 border-emerald-500 bg-emerald-500 text-white font-medium";
              } else {
@@ -62,13 +62,13 @@ const QuestionPalette = ({
              }
           } else {
             if (isCurrent) {
-              btnClass = "border-2 border-violet-500 bg-violet-50 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300 font-bold shadow-sm ring-2 ring-violet-200 dark:ring-violet-500/30";
+              btnClass = "border-2 border-violet-500 bg-violet-500/15 text-violet-700 dark:text-violet-300 font-bold shadow-sm ring-2 ring-violet-500/30";
             } else if (isAnswered && isMarked) {
-              btnClass = "border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 shadow-[inset_0_-4px_0_rgba(245,158,11,1)]"; // Green with orange bottom border
+              btnClass = "border-2 border-emerald-500 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 shadow-[inset_0_-4px_0_rgba(245,158,11,1)]";
             } else if (isAnswered) {
               btnClass = "border-2 border-emerald-500 bg-emerald-500 text-white font-medium";
             } else if (isMarked) {
-              btnClass = "border-2 border-amber-500 bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-medium";
+              btnClass = "border-2 border-amber-500 bg-amber-500/15 text-amber-700 dark:text-amber-300 font-medium";
             }
             showMarked = isMarked && !isCurrent;
           }

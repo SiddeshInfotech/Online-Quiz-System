@@ -1,9 +1,10 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Outlet } from "react-router-dom";
 
 import LandingPage from "../pages/LandingPage";
 import DashboardLayout from "../layouts/DashboardLayout";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
+import { AdminAuthProvider } from "../context/AdminAuthContext";
 
 // Lazy-loaded pages for bundle optimization
 const TermsOfServicePage = lazy(() => import("../pages/legal/TermsOfServicePage"));
@@ -28,10 +29,27 @@ const AchievementPage = lazy(() => import("../pages/Achievements/AchievementPage
 const BadgeDetailsPage = lazy(() => import("../pages/Achievements/BadgeDetailsPage"));
 const UserBadgesPage = lazy(() => import("../pages/Achievements/UserBadgesPage"));
 
+// Admin Panel Lazy Components
+const AdminLoginPage = lazy(() => import("../pages/admin/AdminLoginPage"));
+const AdminDashboardPage = lazy(() => import("../pages/admin/AdminDashboardPage"));
+const AdminUsersPage = lazy(() => import("../pages/admin/AdminUsersPage"));
+const AdminQuizzesPage = lazy(() => import("../pages/admin/AdminQuizzesPage"));
+const AdminPenaltiesPage = lazy(() => import("../pages/admin/AdminPenaltiesPage"));
+const AdminSupportPage = lazy(() => import("../pages/admin/AdminSupportPage"));
+const AdminLayout = lazy(() => import("../layouts/AdminLayout"));
+const AdminProtectedRoute = lazy(() => import("../components/admin/AdminProtectedRoute"));
+
 const PageFallback = () => (
   <div className="min-h-[50vh] flex items-center justify-center p-8">
     <div className="w-9 h-9 border-3 border-violet-600 border-t-transparent rounded-full animate-spin"></div>
   </div>
+);
+
+/** Wrapper ensuring AdminAuthProvider surrounds all /admin routes */
+const AdminProviderLayout = () => (
+  <AdminAuthProvider>
+    <Outlet />
+  </AdminAuthProvider>
 );
 
 const AppRoutes = () => {
@@ -75,6 +93,20 @@ const AppRoutes = () => {
           <Route path="/attempts/:attemptId" element={<QuizAttemptPage />} />
           <Route path="/results/:attemptId" element={<QuizResultsPage />} />
           <Route path="/results/:attemptId/review" element={<QuizReviewPage />} />
+        </Route>
+
+        {/* Custom Admin Panel (Completely Isolated State & Layout) */}
+        <Route element={<AdminProviderLayout />}>
+          <Route path="/admin" element={<AdminLoginPage />} />
+          <Route element={<AdminProtectedRoute />}>
+            <Route element={<AdminLayout />}>
+              <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+              <Route path="/admin/users" element={<AdminUsersPage />} />
+              <Route path="/admin/quizzes" element={<AdminQuizzesPage />} />
+              <Route path="/admin/penalties" element={<AdminPenaltiesPage />} />
+              <Route path="/admin/support" element={<AdminSupportPage />} />
+            </Route>
+          </Route>
         </Route>
       </Routes>
     </Suspense>

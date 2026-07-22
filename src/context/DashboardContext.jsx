@@ -31,6 +31,16 @@ export const DashboardProvider = ({ children }) => {
     const authUser = currentUser || {};
     const resolvedPicture = authUser.profile_picture || dashboard.data.user?.profile_picture || null;
 
+    const profileCompletion = Number(
+      authUser.profile_completion ?? dashboard.data.user?.profile_completion ?? 100
+    );
+
+    const missingFields = Array.isArray(authUser.missing_fields)
+      ? authUser.missing_fields
+      : Array.isArray(dashboard.data.user?.missing_fields)
+      ? dashboard.data.user.missing_fields
+      : [];
+
     const mergedUser = {
       ...dashboard.data.user,
       full_name: authUser.full_name ?? dashboard.data.user.full_name ?? dashboard.data.user.name,
@@ -39,6 +49,8 @@ export const DashboardProvider = ({ children }) => {
       role: authUser.role ?? dashboard.data.user.role,
       profile_picture: resolvedPicture,
       avatar: resolvedPicture,
+      profile_completion: profileCompletion,
+      missing_fields: missingFields,
     };
 
     // Only apply ui-avatars fallback when there is genuinely no real image URL.
@@ -49,6 +61,30 @@ export const DashboardProvider = ({ children }) => {
       mergedUser.avatar = fallbackUrl;
     }
 
+    // Build or update pinned profile completion notification using merged profile data
+    let notifications = [...(dashboard.data.notifications || [])];
+    notifications = notifications.filter((n) => n.id !== "profile_completion_reminder");
+
+    if (profileCompletion < 100) {
+      const formatFieldName = (field) =>
+        String(field)
+          .split("_")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
+
+      const formattedMissing = missingFields.map(formatFieldName).join(", ");
+
+      notifications.unshift({
+        id: "profile_completion_reminder",
+        text: `Profile Completion: ${profileCompletion}%\nMissing: ${formattedMissing || "Profile information"}`,
+        title: "Profile Completion Reminder",
+        time: "Pinned",
+        isRead: false,
+        iconType: "target",
+        actionUrl: "/profile",
+      });
+    }
+
     return {
       ...dashboard,
       refetch: dashboard.refetch,
@@ -56,6 +92,7 @@ export const DashboardProvider = ({ children }) => {
       data: {
         ...dashboard.data,
         user: mergedUser,
+        notifications,
       },
     };
   }, [dashboard, currentUser]);

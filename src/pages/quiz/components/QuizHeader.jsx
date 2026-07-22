@@ -13,15 +13,15 @@ const QuizHeader = ({
   // Skeleton loader
   if (isLoading) {
     return (
-      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-app px-4 py-4 md:px-8">
+      <div className="sticky top-0 z-40 surface border-b border-app px-4 py-4 md:px-8">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div className="flex-1">
-            <div className="animate-pulse bg-slate-200 h-6 w-1/3 rounded mb-2"></div>
-            <div className="animate-pulse bg-slate-200 h-3 w-1/4 rounded"></div>
+            <div className="animate-pulse surface-elev h-6 w-1/3 rounded mb-2"></div>
+            <div className="animate-pulse surface-elev h-3 w-1/4 rounded"></div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="animate-pulse bg-slate-200 h-10 w-24 rounded-lg"></div>
-            <div className="animate-pulse bg-slate-200 h-10 w-10 rounded-full"></div>
+            <div className="animate-pulse surface-elev h-10 w-24 rounded-lg"></div>
+            <div className="animate-pulse surface-elev h-10 w-10 rounded-full"></div>
           </div>
         </div>
       </div>
@@ -44,7 +44,7 @@ const QuizHeader = ({
   const isLowTime = remainingSeconds !== null && remainingSeconds < 300; // Less than 5 mins
 
   return (
-    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-app px-4 py-3 md:px-8 shadow-sm">
+    <header className="sticky top-0 z-40 surface border-b border-app px-4 py-3 md:px-8 shadow-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         {/* Left: Title & Progress */}
         <div className="flex flex-col flex-1 min-w-0">
@@ -61,7 +61,7 @@ const QuizHeader = ({
                 style={{ width: `${percentComplete}%` }}
               />
             </div>
-            <span className="text-xs font-medium text-violet-600 hidden sm:block">
+            <span className="text-xs font-medium text-violet-600 dark:text-violet-400 hidden sm:block">
               {percentComplete}% Completed
             </span>
           </div>
@@ -73,7 +73,7 @@ const QuizHeader = ({
             <div
               className={`flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-xl border ${
                 isLowTime
-                  ? "bg-red-50 border-red-200 text-red-600"
+                  ? "bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400"
                   : "surface-subtle border-app text-app-2"
               }`}
             >

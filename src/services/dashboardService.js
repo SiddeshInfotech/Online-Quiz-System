@@ -124,6 +124,14 @@ const adaptResponse = (raw = {}) => {
         raw?.quizzes_completed
       ) ?? 0
     ),
+    profile_completion: Number(
+      pick(rawUser?.profile_completion, raw?.profile_completion) ?? 100
+    ),
+    missing_fields: Array.isArray(rawUser?.missing_fields)
+      ? rawUser.missing_fields
+      : Array.isArray(raw?.missing_fields)
+      ? raw.missing_fields
+      : [],
   };
 
   // ── Daily Goal ────────────────────────────────────────────────────────────
@@ -247,6 +255,33 @@ const adaptResponse = (raw = {}) => {
           iconType: "star",
         },
       ];
+
+  // ── Profile Completion Reminder ───────────────────────────────────────────
+  // Pin notification until completion reaches 100%
+  const profileCompletion = Number(
+    pick(rawUser?.profile_completion, raw?.profile_completion) ?? 100
+  );
+  const missingFieldsList = Array.isArray(rawUser?.missing_fields)
+    ? rawUser.missing_fields
+    : Array.isArray(raw?.missing_fields)
+    ? raw.missing_fields
+    : [];
+
+  if (profileCompletion < 100) {
+    const formattedMissing = missingFieldsList
+      .map((f) => String(f).split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" "))
+      .join(", ");
+
+    notifications.unshift({
+      id: "profile_completion_reminder",
+      text: `Profile Completion: ${profileCompletion}%\nMissing: ${formattedMissing || "Profile information"}`,
+      title: "Profile Completion Reminder",
+      time: "Pinned",
+      isRead: false,
+      iconType: "target",
+      actionUrl: "/profile",
+    });
+  }
 
   return {
     user,

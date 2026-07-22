@@ -103,8 +103,8 @@ const StartQuizModal = ({ quiz, onConfirm, onCancel }) => {
               <X size={18} />
             </button>
 
-            <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-violet-100 mb-5 mx-auto">
-              <Play size={26} className="text-violet-600 translate-x-0.5" />
+            <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-violet-500/15 border border-violet-500/20 text-violet-600 dark:text-violet-400 mb-5 mx-auto">
+              <Play size={26} className="translate-x-0.5" />
             </div>
 
             <h2 className="text-xl font-bold font-space-grotesk text-app text-center mb-1">
@@ -135,9 +135,9 @@ const StartQuizModal = ({ quiz, onConfirm, onCancel }) => {
               </div>
             )}
 
-            <div className="flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-xl p-3 mb-6">
-              <AlertTriangle size={16} className="text-amber-500 mt-0.5 flex-shrink-0" />
-              <p className="text-amber-700 text-xs leading-relaxed">
+            <div className="flex items-start gap-3 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 mb-6">
+              <AlertTriangle size={16} className="text-amber-500 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+              <p className="text-amber-700 dark:text-amber-300 text-xs leading-relaxed">
                 Make sure you have a stable internet connection and are in a distraction-free environment before starting.
               </p>
             </div>
@@ -237,7 +237,11 @@ const QuizDetailsPage = () => {
       navigate(`/attempts/${res.attempt_id || res.id}`, { state: { from_ai: fromAi } });
     } catch (err) {
       console.error("Error starting quiz:", err);
-      setError("Failed to start quiz. Please try again.");
+      setError(
+        err?.response?.data?.detail ||
+        err?.response?.data?.message ||
+        "Failed to start quiz. Please try again."
+      );
     } finally {
       setStartingQuiz(false);
       setShowModal(false);
@@ -338,12 +342,12 @@ const QuizDetailsPage = () => {
 
                 {/* Badges */}
                 <div className="flex flex-wrap items-center gap-2 mb-4">
-                  <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-violet-100 to-purple-100 text-violet-700 border border-violet-200 px-3 py-1 rounded-full text-xs font-bold tracking-wide">
+                  <span className="inline-flex items-center gap-1.5 bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-500/30 px-3 py-1 rounded-full text-xs font-bold tracking-wide">
                     <Sparkles size={11} />
                     AI Generated
                   </span>
                   {subject && (
-                    <span className="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">
+                    <span className="inline-flex items-center gap-1.5 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">
                       <LangIcon size={12} />
                       {subject}
                     </span>
@@ -354,7 +358,7 @@ const QuizDetailsPage = () => {
                     </span>
                   )}
                   {questionType && (
-                    <span className="inline-flex items-center gap-1 surface-elev text-app-2 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">
+                    <span className="inline-flex items-center gap-1 surface-elev text-app-2 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase border border-app">
                       {questionType}
                     </span>
                   )}
@@ -429,7 +433,7 @@ const QuizDetailsPage = () => {
 
             {/* ── Instructions ── */}
             <motion.div
-              className="bg-violet-50/60 border border-violet-100 rounded-2xl p-6 mb-8"
+              className="surface-subtle border border-app rounded-2xl p-6 mb-8"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.45, duration: 0.35 }}

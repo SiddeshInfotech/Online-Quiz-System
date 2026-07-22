@@ -1,5 +1,6 @@
 import { useDashboardContext } from "../../context/DashboardContext";
 import WelcomeBanner from "../../components/dashboard/WelcomeBanner";
+import ProfileCompletionCard from "../../components/dashboard/ProfileCompletionCard";
 import StatsOverview from "../../components/dashboard/StatsOverview";
 import QuizActivityCards from "../../components/dashboard/QuizActivityCards";
 import RecentAttempts from "../../components/dashboard/RecentAttempts";
@@ -34,6 +35,11 @@ const Dashboard = () => {
     <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
       {/* Main Left Area (3 columns on extra large screens) */}
       <div className="xl:col-span-3 flex flex-col gap-6">
+
+        {/* Profile Completion Reminder (Disappears automatically at 100%) */}
+        {user?.profile_completion < 100 && (
+          <ProfileCompletionCard user={user} />
+        )}
 
         {/* Row 1: Welcome & Stats */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

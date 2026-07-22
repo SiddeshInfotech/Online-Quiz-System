@@ -83,17 +83,17 @@ const SubmitModal = ({
 
             {/* Error Message */}
             {error && (
-              <div className="mb-6 p-3 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-xl flex items-start gap-2">
-                <AlertCircle size={16} className="text-red-500 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+              <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-2">
+                <AlertCircle size={16} className="text-red-500 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
               </div>
             )}
 
             {/* Unanswered warning */}
             {stats.unanswered > 0 && !error && (
-              <div className="mb-6 p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 rounded-xl flex items-start gap-2">
-                <AlertCircle size={16} className="text-amber-500 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-amber-700 font-medium">
+              <div className="mb-6 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-2">
+                <AlertCircle size={16} className="text-amber-500 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
                   You still have {stats.unanswered} unanswered questions.
                 </p>
               </div>
