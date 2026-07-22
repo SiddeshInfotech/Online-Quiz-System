@@ -124,9 +124,9 @@ const ContactPage = () => {
 
       await supportService.contactSupport(payload);
 
-      // Show modern success toast
+      // Show success toast
       setSuccessToast(
-        "Thank you for reaching out! Your message has been sent successfully. We will get back to you shortly."
+        "Your message has been sent successfully. Our support team will get back to you soon."
       );
 
       // Clear all form fields & reset dropdown to General Inquiry
@@ -140,16 +140,24 @@ const ContactPage = () => {
       setFieldErrors({});
     } catch (err) {
       console.error("Contact support submit failed:", err);
-      if (err.response && err.response.status === 400 && err.response.data) {
+      if (err.response && (err.response.status === 400 || err.response.status === 422) && err.response.data) {
         // Backend validation errors (e.g. { email: ["..."], message: ["..."] })
         const backendErrs = {};
-        Object.entries(err.response.data).forEach(([key, msgs]) => {
-          backendErrs[key] = Array.isArray(msgs) ? msgs.join(" ") : String(msgs);
-        });
+        if (typeof err.response.data === "object") {
+          Object.entries(err.response.data).forEach(([key, msgs]) => {
+            backendErrs[key] = Array.isArray(msgs) ? msgs.join(" ") : String(msgs);
+          });
+        } else {
+          setNetworkError(String(err.response.data));
+        }
         setFieldErrors(backendErrs);
       } else {
         // Network / 500 error: Do not clear form data
-        setNetworkError("Unable to send your message right now. Please try again later.");
+        setNetworkError(
+          err.response?.data?.message ||
+          err.response?.data?.detail ||
+          "Unable to send your message right now. Please try again later."
+        );
       }
     } finally {
       setIsSubmitting(false);

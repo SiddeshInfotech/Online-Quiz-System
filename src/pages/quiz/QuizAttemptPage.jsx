@@ -42,7 +42,6 @@ const QuizAttemptPage = () => {
   const [submitError, setSubmitError] = useState(null);
 
   // Anti-Cheating State
-  const [warningModalData, setWarningModalData] = useState(null); // { count, maxAllowed }
   const [forcedAutoSubmitted, setForcedAutoSubmitted] = useState(false);
 
   // Autosave status state
@@ -55,7 +54,6 @@ const QuizAttemptPage = () => {
   const currentQIdRef = useRef(null);
   const answersRef = useRef(answers);
   const isLoggingViolationRef = useRef(false);
-  const lastViolationTimeRef = useRef(0);
 
   useEffect(() => {
     answersRef.current = answers;
@@ -154,60 +152,32 @@ const QuizAttemptPage = () => {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
-  // Anti-Cheating: Tab Switch & Window Blur Detection
+  // Anti-Cheating: Immediate Auto-Submit on Tab Switch & Window Blur
   useEffect(() => {
     if (isLoading || !attempt || isSubmitting || isTimeUp || forcedAutoSubmitted) return;
 
     const triggerViolationLog = async () => {
-      const now = Date.now();
-      // Ignore duplicate calls within 1500ms or while API is in-flight
-      if (isLoggingViolationRef.current || (now - lastViolationTimeRef.current < 1500)) {
+      // Prevent duplicate API calls if already triggered or auto-submitted
+      if (isLoggingViolationRef.current || forcedAutoSubmitted) {
         return;
       }
 
       isLoggingViolationRef.current = true;
-      lastViolationTimeRef.current = now;
+
+      // Stop timer and set forced auto-submitted immediately to prevent race conditions
+      setIsTimerRunning(false);
+      setIsTimeUp(true);
+      setForcedAutoSubmitted(true);
 
       try {
-        const res = await attemptsService.logViolation(attemptId);
-        const { status, tab_switch_count, max_allowed, is_auto_submitted, message } = res || {};
-
-        if (status === "auto_submitted" || is_auto_submitted === true) {
-          setIsTimerRunning(false);
-          setIsTimeUp(true);
-          setForcedAutoSubmitted(true);
-          
-          // Submit current answer snapshot
-          const actualAnswers = answersRef.current || answers;
-          const payload = {
-            answers: Object.entries(actualAnswers).map(([qId, optId]) => ({
-              question_id: parseInt(qId, 10),
-              selected_option_id: optId
-            }))
-          };
-          try {
-            await attemptsService.submitAttempt(attemptId, payload);
-          } catch (e) {
-            console.error("Auto submit failed during violation log:", e);
-          }
-          
-          // Redirect immediately to result
-          setTimeout(() => {
-            navigate(`/results/${attemptId}`, { replace: true, state: { from_ai: fromAi } });
-          }, 1200);
-        } else if (status === "warning_logged" || !is_auto_submitted) {
-          setWarningModalData({
-            count: tab_switch_count ?? 1,
-            maxAllowed: max_allowed ?? 2,
-            message: message || "Switching tabs or leaving the quiz screen is strictly monitored."
-          });
-        }
+        await attemptsService.logViolation(attemptId);
       } catch (err) {
         console.error("Anti-cheating violation log failed:", err);
       } finally {
+        // Automatically redirect to result page after 1.5 seconds
         setTimeout(() => {
-          isLoggingViolationRef.current = false;
-        }, 1000);
+          navigate(`/results/${attemptId}`, { replace: true, state: { from_ai: fromAi } });
+        }, 1500);
       }
     };
 
@@ -228,7 +198,7 @@ const QuizAttemptPage = () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("blur", handleWindowBlur);
     };
-  }, [isLoading, attempt, isSubmitting, isTimeUp, forcedAutoSubmitted, attemptId, navigate, fromAi, answers]);
+  }, [isLoading, attempt, isSubmitting, isTimeUp, forcedAutoSubmitted, attemptId, navigate, fromAi]);
 
   // -- Actions --
   const performAutosave = useCallback(async (questionId, optionId, marked) => {
@@ -559,42 +529,6 @@ const QuizAttemptPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Anti-Cheating Warning Alert Modal */}
-      <AnimatePresence>
-        {warningModalData && !forcedAutoSubmitted && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="surface rounded-3xl p-8 max-w-md w-full border border-amber-500/40 text-center shadow-2xl space-y-5"
-            >
-              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto border border-amber-500/20">
-                <AlertTriangle size={32} className="animate-bounce" />
-              </div>
-              <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
-                  Tab-Switch Warning ({warningModalData.count} / {warningModalData.maxAllowed})
-                </span>
-                <h3 className="text-2xl font-bold font-space-grotesk text-app mt-3">
-                  ⚠️ Anti-Cheating Alert
-                </h3>
-              </div>
-              <p className="text-sm text-app-2 leading-relaxed">
-                Switching tabs or leaving the quiz screen is strictly monitored. Continuing to do so will result in immediate automatic quiz submission!
-              </p>
-              <Button
-                variant="primary"
-                className="w-full justify-center bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm"
-                onClick={() => setWarningModalData(null)}
-              >
-                I Understand & Resume Quiz
-              </Button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
       {/* Anti-Cheating Forced Auto-Submission Modal */}
       <AnimatePresence>
         {forcedAutoSubmitted && (
@@ -608,19 +542,25 @@ const QuizAttemptPage = () => {
                 <ShieldAlert size={36} className="animate-pulse" />
               </div>
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-red-500 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20">
-                  Violation Limit Exceeded
-                </span>
-                <h3 className="text-2xl font-bold font-space-grotesk text-app mt-3">
-                  🚨 Quiz Auto-Submitted!
+                <h3 className="text-2xl font-bold font-space-grotesk text-app">
+                  Quiz Auto-Submitted
                 </h3>
               </div>
               <p className="text-sm text-app-2 leading-relaxed">
-                You have exceeded the maximum allowed tab switches. Your current answers have been evaluated and submitted.
+                Your quiz has been automatically submitted because you switched tabs or left the quiz window. This action violates the quiz rules.
               </p>
-              <div className="flex items-center justify-center gap-2 text-red-500 font-semibold text-sm pt-2">
-                <Loader2 size={20} className="animate-spin" />
-                Evaluating and redirecting to results...
+              <div className="pt-2 flex flex-col gap-3">
+                <Button
+                  variant="primary"
+                  className="w-full justify-center bg-red-600 hover:bg-red-700 text-white font-semibold text-sm"
+                  onClick={() => navigate(`/results/${attemptId}`, { replace: true, state: { from_ai: fromAi } })}
+                >
+                  View Results
+                </Button>
+                <div className="flex items-center justify-center gap-2 text-red-500 font-medium text-xs">
+                  <Loader2 size={16} className="animate-spin" />
+                  Redirecting automatically...
+                </div>
               </div>
             </motion.div>
           </div>

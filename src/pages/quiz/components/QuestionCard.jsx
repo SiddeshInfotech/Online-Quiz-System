@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bookmark, BookmarkCheck, XCircle } from "lucide-react";
+import { Bookmark, BookmarkCheck, XCircle, AlertTriangle } from "lucide-react";
 
 const QuestionCard = ({
   question,
@@ -14,6 +14,12 @@ const QuestionCard = ({
   reviewMode = false,
   disabled = false,
 }) => {
+  useEffect(() => {
+    if (question && (!question.options || !Array.isArray(question.options) || question.options.length === 0)) {
+      console.error(`[QuestionCard] Question (ID: ${question.id || index}) has no options:`, question);
+    }
+  }, [question, index]);
+
   if (isLoading) {
     return (
       <div className="surface rounded-3xl p-6 md:p-8 shadow-sm border border-app">
@@ -142,9 +148,11 @@ const QuestionCard = ({
 
       {/* Options */}
       <div className="space-y-3">
-        {!question.options || question.options.length === 0 ? (
-          <div className="p-6 rounded-2xl border-2 border-dashed border-app text-center text-app-muted font-medium">
-            Waiting for options from the backend...
+        {!question.options || !Array.isArray(question.options) || question.options.length === 0 ? (
+          <div className="p-6 rounded-2xl border-2 border-dashed border-amber-500/30 bg-amber-500/5 text-center text-amber-700 dark:text-amber-400 font-medium space-y-1">
+            <AlertTriangle size={24} className="mx-auto mb-1 opacity-80" />
+            <p className="text-sm font-semibold">No options available for this question.</p>
+            <p className="text-xs opacity-75">If this issue persists, please contact support or try refreshing.</p>
           </div>
         ) : (
           question.options.map((option, i) => {
