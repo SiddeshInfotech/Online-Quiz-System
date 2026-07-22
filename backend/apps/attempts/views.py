@@ -306,11 +306,17 @@ class UserAttemptsHistoryView(APIView):
             submitted_at__isnull=False
         ).order_by('-submitted_at')
 
-        total_attempts = attempts_qs.count()
-        avg_score = attempts_qs.aggregate(Avg('percentage'))['percentage__avg'] or 0
-        best_score = attempts_qs.aggregate(Max('percentage'))['percentage__max'] or 0
-
-        passed_count = attempts_qs.filter(percentage__gte=50).count()
+        # ✅ OPTIMIZATION: Batch attempts history statistics in a single aggregate query
+        stats = attempts_qs.aggregate(
+            total_attempts=Count('id'),
+            avg_score=Avg('percentage'),
+            best_score=Max('percentage'),
+            passed_count=Count('id', filter=Q(percentage__gte=50))
+        )
+        total_attempts = stats['total_attempts'] or 0
+        avg_score = stats['avg_score'] or 0
+        best_score = stats['best_score'] or 0
+        passed_count = stats['passed_count'] or 0
         success_rate = round((passed_count / total_attempts * 100), 2) if total_attempts > 0 else 0
 
         # Implement limit-offset pagination

@@ -105,7 +105,7 @@ class DashboardSummaryView(APIView):
 
         recent_attempts = QuizAttempt.objects.filter(
             user=user, submitted_at__isnull=False
-        ).order_by('-submitted_at')[:5]
+        ).select_related('quiz').order_by('-submitted_at')[:5]
 
         recent_attempts_data = []
         for attempt in recent_attempts:
@@ -119,29 +119,41 @@ class DashboardSummaryView(APIView):
                 "quiz_id": attempt.quiz.id
             })
 
-        total_attempts = completed_attempts.count()
-        avg_score = completed_attempts.aggregate(Avg('percentage'))['percentage__avg'] or 0
+        # ✅ OPTIMIZATION: Batch completed attempts statistics in a single aggregate query
+        completed_stats = completed_attempts.aggregate(
+            total_attempts=Count('id'),
+            avg_score=Avg('percentage'),
+            total_time=Sum('time_spent_seconds')
+        )
+        total_attempts = completed_stats['total_attempts'] or 0
+        avg_score = completed_stats['avg_score'] or 0
+        total_time_spent = completed_stats['total_time'] or 0
 
-        user_answers = UserAnswer.objects.filter(attempt__user=user)
-        total_answered = user_answers.exclude(selected_option_id__isnull=True).count()
-        correct_answers = user_answers.filter(is_correct=True).count()
+        # ✅ OPTIMIZATION: Batch user answers statistics in a single aggregate query
+        user_answers_stats = UserAnswer.objects.filter(attempt__user=user).aggregate(
+            total_answered=Count('id', filter=~Q(selected_option_id__isnull=True)),
+            correct_answers=Count('id', filter=Q(is_correct=True))
+        )
+        total_answered = user_answers_stats['total_answered'] or 0
+        correct_answers = user_answers_stats['correct_answers'] or 0
         accuracy = round((correct_answers / total_answered * 100), 2) if total_answered > 0 else 0
 
-        total_time_spent = completed_attempts.aggregate(
-            total=Sum('time_spent_seconds')
-        )['total'] or 0
-
+        # ✅ OPTIMIZATION: Fetch and construct weekly scores chart in-memory with a single query
         week_ago = timezone.now() - timedelta(days=7)
-        weekly_attempts = completed_attempts.filter(
-            submitted_at__gte=week_ago
-        )
+        weekly_attempts_list = list(completed_attempts.filter(submitted_at__gte=week_ago).values('submitted_at', 'percentage'))
+        
+        # Initialize scores buckets for the last 7 days
+        day_scores = { (timezone.now().date() - timedelta(days=i)): [] for i in range(7) }
+        for att in weekly_attempts_list:
+            dt_local = timezone.localdate(att['submitted_at'])
+            if dt_local in day_scores:
+                day_scores[dt_local].append(float(att['percentage']))
+        
         weekly_data = []
         for i in range(6, -1, -1):
             day = timezone.now().date() - timedelta(days=i)
-            day_start = timezone.make_aware(datetime.combine(day, datetime.min.time()))
-            day_end = timezone.make_aware(datetime.combine(day, datetime.max.time()))
-            day_attempts = weekly_attempts.filter(submitted_at__range=(day_start, day_end))
-            day_avg = day_attempts.aggregate(Avg('percentage'))['percentage__avg'] or 0
+            percentages = day_scores.get(day, [])
+            day_avg = sum(percentages) / len(percentages) if percentages else 0
             weekly_data.append({
                 "day": day.strftime("%a"),
                 "score": round(day_avg, 1)

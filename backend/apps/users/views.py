@@ -714,19 +714,27 @@ class AchievementCategoriesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        categories = Badge.objects.values_list('category', flat=True).distinct().order_by('category')
+        from django.db.models import Count
+
+        # ✅ OPTIMIZATION: Get total badge counts per category in one query
+        total_counts = Badge.objects.values('category').annotate(count=Count('id'))
+        total_map = {item['category']: item['count'] for item in total_counts}
+
+        # ✅ OPTIMIZATION: Get claimed badge counts per category for this user in one query
+        earned_counts = UserBadge.objects.filter(
+            user=request.user,
+            status='CLAIMED'
+        ).values('badge__category').annotate(count=Count('id'))
+        earned_map = {item['badge__category']: item['count'] for item in earned_counts}
+
+        # Combine results
+        categories = sorted(list(set(list(total_map.keys()) + list(earned_map.keys()))))
         category_data = []
         for cat in categories:
-            total = Badge.objects.filter(category=cat).count()
-            earned = UserBadge.objects.filter(
-                user=request.user, 
-                badge__category=cat,
-                status='CLAIMED'
-            ).count()
             category_data.append({
                 "name": cat,
-                "total": total,
-                "earned": earned,
+                "total": total_map.get(cat, 0),
+                "earned": earned_map.get(cat, 0),
             })
         return Response(category_data)
     

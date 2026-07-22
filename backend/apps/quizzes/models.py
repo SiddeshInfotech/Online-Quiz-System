@@ -20,18 +20,18 @@ class Quiz(models.Model):
 
     title = models.CharField(max_length=150)
     description = models.TextField(blank=True, null=True)
-    subject = models.CharField(max_length=100, blank=True, null=True)
-    topic = models.CharField(max_length=150, blank=True, null=True)
-    difficulty = models.CharField(max_length=20, choices=DIFFICULTY)
+    subject = models.CharField(max_length=100, blank=True, null=True, db_index=True)
+    topic = models.CharField(max_length=150, blank=True, null=True, db_index=True)
+    difficulty = models.CharField(max_length=20, choices=DIFFICULTY, db_index=True)
     question_type = models.CharField(max_length=50, choices=TYPE)
-    visibility = models.CharField(max_length=20, choices=VISIBILITY, default='Public')
-    status = models.CharField(max_length=20, choices=STATUS, default='Draft')
+    visibility = models.CharField(max_length=20, choices=VISIBILITY, default='Public', db_index=True)
+    status = models.CharField(max_length=20, choices=STATUS, default='Draft', db_index=True)
     duration_minutes = models.IntegerField()
     total_marks = models.IntegerField(default=0)
     is_ai_generated = models.BooleanField(default=False)
     join_code = models.CharField(max_length=20, unique=True, blank=True, null=True)
     share_link = models.CharField(max_length=255, blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
     GRADE_CHOICES = [
         ('8', 'Class 8'),
@@ -45,8 +45,8 @@ class Quiz(models.Model):
         ('published', 'Published'),
     ]
     
-    grade_level = models.CharField(max_length=10, choices=GRADE_CHOICES, blank=True, null=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    grade_level = models.CharField(max_length=10, choices=GRADE_CHOICES, blank=True, null=True, db_index=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft', db_index=True)
 
     def __str__(self):
         return self.title

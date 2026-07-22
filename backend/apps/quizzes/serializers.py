@@ -23,6 +23,8 @@ class QuizLibrarySerializer(serializers.ModelSerializer):
         ]
 
     def get_progress_percentage(self, obj):
+        if hasattr(obj, 'annotated_progress'):
+            return obj.annotated_progress or 0
         request = self.context.get('request')
         user = request.user if request else None
         if user and user.is_authenticated:
@@ -33,6 +35,8 @@ class QuizLibrarySerializer(serializers.ModelSerializer):
         return 0
 
     def get_total_questions(self, obj):
+        if hasattr(obj, 'annotated_total_questions'):
+            return obj.annotated_total_questions or 0
         return obj.question_set.count()
 
     def get_created_by_me(self, obj):
@@ -60,6 +64,8 @@ class QuizSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_by', 'created_at', 'updated_at', 'join_code', 'share_link']
 
     def get_question_count(self, obj):
+        if hasattr(obj, 'annotated_total_questions'):
+            return obj.annotated_total_questions or 0
         return obj.question_set.count()
 
     def get_created_by_me(self, obj):

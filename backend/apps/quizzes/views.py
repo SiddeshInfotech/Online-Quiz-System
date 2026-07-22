@@ -120,7 +120,20 @@ class QuizLibraryListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return apply_quiz_filters(Quiz.objects.all(), self.request)
+        user = self.request.user
+        queryset = apply_quiz_filters(Quiz.objects.all(), self.request).select_related('category')
+        from django.db.models import OuterRef, Subquery, Count
+        
+        latest_attempt = QuizAttempt.objects.filter(
+            user=user,
+            quiz=OuterRef('pk'),
+            submitted_at__isnull=False
+        ).order_by('-submitted_at')
+        
+        return queryset.annotate(
+            annotated_progress=Subquery(latest_attempt.values('percentage')[:1]),
+            annotated_total_questions=Count('question', distinct=True)
+        )
 
 class RecommendedQuizzesListView(generics.ListAPIView):
     serializer_class = QuizLibrarySerializer
@@ -130,7 +143,20 @@ class RecommendedQuizzesListView(generics.ListAPIView):
         user = self.request.user
         user_grade = user.grade_level if hasattr(user, 'grade_level') else None
         
-        queryset = Quiz.objects.filter(status='published')
+        queryset = Quiz.objects.filter(status='published').select_related('category')
+        from django.db.models import OuterRef, Subquery, Count
+        
+        latest_attempt = QuizAttempt.objects.filter(
+            user=user,
+            quiz=OuterRef('pk'),
+            submitted_at__isnull=False
+        ).order_by('-submitted_at')
+        
+        queryset = queryset.annotate(
+            annotated_progress=Subquery(latest_attempt.values('percentage')[:1]),
+            annotated_total_questions=Count('question', distinct=True)
+        )
+        
         if user_grade:
             return queryset.filter(grade_level=user_grade)[:5]
         return queryset.order_by('?')[:5]
@@ -155,7 +181,11 @@ class QuizListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return apply_quiz_filters(Quiz.objects.all(), self.request)
+        queryset = apply_quiz_filters(Quiz.objects.all(), self.request).select_related('category', 'created_by')
+        from django.db.models import Count
+        return queryset.annotate(
+            annotated_total_questions=Count('question', distinct=True)
+        )
 
     def create(self, request, *args, **kwargs):
         return Response(
