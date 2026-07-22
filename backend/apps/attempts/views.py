@@ -81,6 +81,9 @@ class StartAttemptView(APIView):
                     started_at=timezone.now()
                 )
 
+                questions = quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order')
+                question_data = AttemptQuestionSerializer(questions, many=True).data
+
                 return Response(
                     {
                         "message": "Previous attempt expired. New attempt started.",
@@ -88,10 +91,13 @@ class StartAttemptView(APIView):
                         "quiz_title": quiz.title,
                         "started_at": attempt.started_at,
                         "duration_minutes": quiz.duration_minutes,
+                        "questions": question_data,
                     },
                     status=status.HTTP_201_CREATED
                 )
 
+            questions = quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order')
+            question_data = AttemptQuestionSerializer(questions, many=True).data
 
             return Response(
                 {
@@ -99,6 +105,7 @@ class StartAttemptView(APIView):
                     "attempt_id": existing_attempt.id,
                     "started_at": existing_attempt.started_at,
                     "duration_minutes": quiz.duration_minutes,
+                    "questions": question_data,
                 },
                 status=status.HTTP_200_OK
             )
@@ -109,6 +116,9 @@ class StartAttemptView(APIView):
             started_at=timezone.now()
         )
 
+        questions = quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order')
+        question_data = AttemptQuestionSerializer(questions, many=True).data
+
         return Response(
             {
                 "message": "Quiz attempt started successfully.",
@@ -116,6 +126,7 @@ class StartAttemptView(APIView):
                 "quiz_title": quiz.title,
                 "started_at": attempt.started_at,
                 "duration_minutes": quiz.duration_minutes,
+                "questions": question_data,
             },
             status=status.HTTP_201_CREATED
         )
@@ -701,9 +712,10 @@ class LogViolationView(APIView):
             )
 
         attempt.tab_switch_count += 1
-        max_allowed = 2
+        max_allowed = 0
 
-        if attempt.tab_switch_count >= max_allowed:
+        # Zero-tolerance policy: auto submit immediately on 1st tab switch (tab_switch_count >= 1)
+        if attempt.tab_switch_count >= 1:
             # Auto submit!
             quiz = attempt.quiz
             questions = Question.objects.filter(quiz=quiz).prefetch_related('questionoption_set')

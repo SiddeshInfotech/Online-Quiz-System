@@ -102,18 +102,23 @@ if SENDGRID_API_KEY:
     EMAIL_USE_SSL = False
     EMAIL_HOST_USER = 'apikey'
     EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
-    DEFAULT_FROM_EMAIL = os.environ.get('FROM_EMAIL', 'zeeshanansari1081015@gmail.com')
+    DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL') or os.environ.get('FROM_EMAIL') or 'uidssvps@gmail.com'
 else:
-    EMAIL_HOST = 'smtp.gmail.com'
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
-    EMAIL_USE_SSL = False
-    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
-    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
-    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+    EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+    EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+    EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ['true', '1', 't']
+    EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False').lower() in ['true', '1', 't']
+    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+    DEFAULT_FROM_EMAIL = (
+        os.environ.get('DEFAULT_FROM_EMAIL') or 
+        os.environ.get('EMAIL_HOST_USER') or 
+        os.environ.get('FROM_EMAIL') or 
+        'uidssvps@gmail.com'
+    )
 
 FROM_EMAIL = DEFAULT_FROM_EMAIL
-ADMIN_EMAIL = os.environ.get('FROM_EMAIL', 'zeeshanansari1081015@gmail.com')
+ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL') or os.environ.get('FROM_EMAIL') or 'uidssvps@gmail.com'
     
     
 

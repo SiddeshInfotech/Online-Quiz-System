@@ -17,6 +17,7 @@ def send_contact_notification_email(contact_instance):
     """
     Sends email notification strictly to uidssvps@gmail.com in a fail-safe manner.
     """
+    import traceback
     try:
         subject = f"[QuizGen Support - {contact_instance.category}] {contact_instance.subject}"
         body = (
@@ -31,7 +32,9 @@ def send_contact_notification_email(contact_instance):
             f"--------------------------------------------------\n"
             f"This message was saved to the database (ID: {contact_instance.id})."
         )
-        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None) or 'noreply@quizgen.com'
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None) or getattr(settings, 'EMAIL_HOST_USER', None) or 'uidssvps@gmail.com'
+
+        logger.info(f"Attempting email delivery to {TARGET_SUPPORT_EMAIL} from {from_email} via host {getattr(settings, 'EMAIL_HOST', 'default')}")
 
         send_mail(
             subject=subject,
@@ -43,6 +46,8 @@ def send_contact_notification_email(contact_instance):
         logger.info(f"Support notification email sent successfully to {TARGET_SUPPORT_EMAIL} for message ID {contact_instance.id}")
     except Exception as e:
         logger.error(f"Failed to send support notification email for message ID {contact_instance.id}: {e}")
+        print(f"❌ [Email Delivery Error] Failed to send support email: {e}")
+        traceback.print_exc()
 
 
 class ContactCreateView(APIView):
