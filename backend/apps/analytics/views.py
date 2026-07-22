@@ -184,15 +184,18 @@ class DashboardSummaryView(APIView):
             next_level_xp += 100
         if level == 9 and current_xp == 850:
             next_level_xp = 1000
+        current_level_xp = (level - 1) * 100
         remaining_xp = next_level_xp - current_xp
 
         return Response({
             "level": level,
+            "current_level_xp": current_level_xp,
             "current_xp": current_xp,
             "next_level_xp": next_level_xp,
             "remaining_xp": remaining_xp,
             "achievements": {
                 "level": level,
+                "current_level_xp": current_level_xp,
                 "current_xp": current_xp,
                 "next_level_xp": next_level_xp,
                 "remaining_xp": remaining_xp

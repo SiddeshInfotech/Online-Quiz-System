@@ -47,8 +47,15 @@ class StartAttemptView(APIView):
         ).count()
 
         if completed_attempts_count >= 2:
+            retry_count = max(0, completed_attempts_count - 1)
+            max_retry = 1
             return Response(
-                {"detail": "Retry limit reached for this quiz. You can only attempt a quiz a maximum of 2 times."},
+                {
+                    "detail": "Retry limit reached for this quiz. You can only attempt a quiz a maximum of 2 times.",
+                    "retry_count": retry_count,
+                    "max_retry": max_retry,
+                    "can_retry": retry_count < max_retry
+                },
                 status=status.HTTP_403_FORBIDDEN
             )
 
@@ -369,8 +376,9 @@ class UserAttemptsHistoryView(APIView):
 
             quiz_id = attempt.quiz.id
             total_completed = completed_counts.get(quiz_id, 0)
-            can_retry = total_completed < 2
             retry_count = max(0, total_completed - 1)
+            max_retry = 1
+            can_retry = retry_count < max_retry
 
             history_list.append({
                 "id": attempt.id,
@@ -386,7 +394,7 @@ class UserAttemptsHistoryView(APIView):
                 "status": "Passed" if attempt.percentage >= 50 else "Failed",
                 "can_retry": can_retry,
                 "retry_count": retry_count,
-                "max_retry": 1
+                "max_retry": max_retry
             })
 
         return Response({

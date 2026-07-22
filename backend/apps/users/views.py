@@ -661,12 +661,14 @@ class UserBadgesView(APIView):
             next_level_xp += 100
         if level == 9 and current_xp == 850:
             next_level_xp = 1000
+        current_level_xp = (level - 1) * 100
         remaining_xp = next_level_xp - current_xp
 
         response_data = {
             "badges": badges_data,
             "count": len(badges_data),
             "level": level,
+            "current_level_xp": current_level_xp,
             "current_xp": current_xp,
             "next_level_xp": next_level_xp,
             "remaining_xp": remaining_xp
@@ -702,6 +704,7 @@ class AchievementStatsView(APIView):
             next_level_xp += 100
         if level == 9 and current_xp == 850:
             next_level_xp = 1000
+        current_level_xp = (level - 1) * 100
         remaining_xp = next_level_xp - current_xp
         
         # ✅ Existing rarity and category distributions (only CLAIMED)
@@ -720,6 +723,7 @@ class AchievementStatsView(APIView):
         return Response({
             # ✅ New fields
             "level": level,
+            "current_level_xp": current_level_xp,
             "current_xp": current_xp,
             "next_level_xp": next_level_xp,
             "remaining_xp": remaining_xp,
@@ -844,13 +848,16 @@ class XPProgressView(APIView):
             next_level_xp += 100
         if level == 9 and current_xp == 850:
             next_level_xp = 1000
+        current_level_xp = (level - 1) * 100
         remaining_xp = next_level_xp - current_xp
+        denom = next_level_xp - current_level_xp
         return Response({
             "level": level,
+            "current_level_xp": current_level_xp,
             "current_xp": current_xp,
             "next_level_xp": next_level_xp,
             "remaining_xp": remaining_xp,
-            "progress_percentage": round((current_xp / next_level_xp) * 100, 2) if next_level_xp > 0 else 0
+            "progress_percentage": round(((current_xp - current_level_xp) / denom) * 100, 2) if denom > 0 else 0
         })
 
 class ClaimBadgeView(APIView):

@@ -72,6 +72,7 @@ class LoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     profile_picture = serializers.SerializerMethodField()
     profile_completion = serializers.SerializerMethodField()
+    missing_fields = serializers.SerializerMethodField()
     badge_count = serializers.SerializerMethodField()
     total_attempts = serializers.SerializerMethodField()
 
@@ -80,7 +81,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'email', 'full_name', 'role', 'bio',
             'date_joined', 'profile_picture', 'school', 'grade',
-            'subject_interests', 'profile_completion', 'badge_count',
+            'subject_interests', 'profile_completion', 'missing_fields', 'badge_count',
             'quizzes_completed', 'total_points', 'xp', 'level',
             'current_streak', 'longest_streak', 'total_attempts'
         ]
@@ -147,6 +148,22 @@ class UserSerializer(serializers.ModelSerializer):
         if obj.subject_interests and len(obj.subject_interests) > 0:
             filled += 1
         return int((filled / total_fields) * 100)
+
+    def get_missing_fields(self, obj):
+        missing = []
+        if not obj.full_name:
+            missing.append("full_name")
+        if not obj.bio:
+            missing.append("bio")
+        if not obj.profile_picture:
+            missing.append("profile_picture")
+        if not obj.school:
+            missing.append("school")
+        if not obj.grade:
+            missing.append("grade")
+        if not (obj.subject_interests and len(obj.subject_interests) > 0):
+            missing.append("subject_interests")
+        return missing
 
     def get_badge_count(self, obj):
         return UserBadge.objects.filter(user=obj, status='CLAIMED').count()

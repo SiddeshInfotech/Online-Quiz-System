@@ -71,7 +71,9 @@ class AttemptSerializer(serializers.ModelSerializer):
             quiz=obj.quiz,
             submitted_at__isnull=False
         ).count()
-        return completed_count < 2
+        retry_count = max(0, completed_count - 1)
+        max_retry = 1
+        return retry_count < max_retry
 
     def get_retry_count(self, obj):
         completed_count = QuizAttempt.objects.filter(
