@@ -38,6 +38,7 @@ urlpatterns = [
     path('api/ai/', include('apps.ai_generator.urls')),
     path('api/feedback/', include('apps.feedback.urls')),
     path('api/support/', include('apps.support.urls')),
+    path('api/custom_admin/', include('apps.custom_admin.urls')),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

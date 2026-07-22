@@ -122,6 +122,17 @@ class QuizLibraryListView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         queryset = apply_quiz_filters(Quiz.objects.all(), self.request).select_related('category')
+        
+        # Enforce Library Visibility rules:
+        # A normal user MUST only see:
+        # 1. Quizzes created by themselves (created_by = user)
+        # 2. Quizzes created by an Admin/Staff user that are published (created_by__is_staff=True, is_published=True)
+        if not user.is_staff:
+            queryset = queryset.filter(
+                Q(created_by=user) |
+                Q(created_by__is_staff=True, is_published=True)
+            )
+
         from django.db.models import OuterRef, Subquery, Count
         
         latest_attempt = QuizAttempt.objects.filter(
@@ -144,6 +155,12 @@ class RecommendedQuizzesListView(generics.ListAPIView):
         user_grade = user.grade_level if hasattr(user, 'grade_level') else None
         
         queryset = Quiz.objects.filter(status='published').select_related('category')
+        if not user.is_staff:
+            queryset = queryset.filter(
+                Q(created_by=user) |
+                Q(created_by__is_staff=True, is_published=True)
+            )
+
         from django.db.models import OuterRef, Subquery, Count
         
         latest_attempt = QuizAttempt.objects.filter(

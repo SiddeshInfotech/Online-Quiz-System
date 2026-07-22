@@ -5,7 +5,7 @@ from django.utils import timezone
 from datetime import datetime
 from .models import QuizAttempt, UserAnswer, Result
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Avg, Max, Count
+from django.db.models import Avg, Max, Count, Q
 from .serializers import StartAttemptSerializer, SubmitAnswerSerializer, AttemptSerializer, ResultSerializer
 from apps.quizzes.models import Quiz
 from apps.questions.models import Question, QuestionOption
@@ -811,6 +811,38 @@ class LogViolationView(APIView):
                 attempt.time_spent_seconds = total_seconds
 
                 attempt.save()
+
+                # Calculate user's total auto-submitted violations
+                violations_count = QuizAttempt.objects.filter(
+                    user=request.user, 
+                    is_auto_submitted=True, 
+                    tab_switch_count__gt=0
+                ).count()
+
+                penalty_points = 0
+                reason = ""
+                if violations_count in [3, 4, 5]:
+                    penalty_points = 50
+                    reason = f"Tab-switch violation limit reached ({violations_count} auto-submitted violations)"
+                elif violations_count > 5:
+                    penalty_points = 100
+                    reason = f"Tab-switch violations exceeded 5 times ({violations_count} auto-submitted violations)"
+
+                if penalty_points > 0:
+                    user = request.user
+                    user.total_points = max(0, user.total_points - penalty_points)
+                    user.xp = max(0, user.xp - penalty_points)
+                    user.save(update_fields=['total_points', 'xp'])
+
+                    # Log the penalty deduction event in UserPenaltyLog
+                    from apps.custom_admin.models import UserPenaltyLog
+                    UserPenaltyLog.objects.create(
+                        user=user,
+                        attempt=attempt,
+                        violations_count=violations_count,
+                        points_deducted=penalty_points,
+                        reason=reason
+                    )
 
                 Result.objects.update_or_create(
                     attempt=attempt,

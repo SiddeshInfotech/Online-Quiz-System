@@ -47,6 +47,17 @@ class Quiz(models.Model):
     
     grade_level = models.CharField(max_length=10, choices=GRADE_CHOICES, blank=True, null=True, db_index=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft', db_index=True)
+    is_published = models.BooleanField(default=False, db_index=True)
+
+    def save(self, *args, **kwargs):
+        if self.is_published:
+            self.status = 'published'
+        elif self.status == 'published':
+            self.is_published = True
+        else:
+            self.status = 'draft'
+            self.is_published = False
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title

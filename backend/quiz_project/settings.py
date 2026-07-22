@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'apps.analytics',
     'apps.feedback',
     'apps.support',
+    'apps.custom_admin',
 ]
 
 MIDDLEWARE = [
