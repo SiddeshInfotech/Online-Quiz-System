@@ -52,10 +52,37 @@ class SubmitAnswerSerializer(serializers.Serializer):
         return data
 
 class AttemptSerializer(serializers.ModelSerializer):
+    can_retry = serializers.SerializerMethodField()
+    retry_count = serializers.SerializerMethodField()
+    max_retry = serializers.SerializerMethodField()
+
     class Meta:
         model = QuizAttempt
-        fields = ['id', 'quiz', 'user', 'score', 'percentage', 'time_taken', 'started_at', 'submitted_at', 'tab_switch_count', 'is_auto_submitted']
+        fields = [
+            'id', 'quiz', 'user', 'score', 'percentage', 'time_taken', 
+            'started_at', 'submitted_at', 'tab_switch_count', 'is_auto_submitted',
+            'can_retry', 'retry_count', 'max_retry'
+        ]
         read_only_fields = ['user', 'started_at', 'submitted_at']
+
+    def get_can_retry(self, obj):
+        completed_count = QuizAttempt.objects.filter(
+            user=obj.user,
+            quiz=obj.quiz,
+            submitted_at__isnull=False
+        ).count()
+        return completed_count < 2
+
+    def get_retry_count(self, obj):
+        completed_count = QuizAttempt.objects.filter(
+            user=obj.user,
+            quiz=obj.quiz,
+            submitted_at__isnull=False
+        ).count()
+        return max(0, completed_count - 1)
+
+    def get_max_retry(self, obj):
+        return 1
 
 class UserAnswerSerializer(serializers.ModelSerializer):
     class Meta:

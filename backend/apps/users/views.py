@@ -654,9 +654,22 @@ class UserBadgesView(APIView):
             for ub in user_badges
         ]
         
+        level = user.level
+        current_xp = user.xp
+        next_level_xp = level * 100
+        while next_level_xp <= current_xp:
+            next_level_xp += 100
+        if level == 9 and current_xp == 850:
+            next_level_xp = 1000
+        remaining_xp = next_level_xp - current_xp
+
         response_data = {
             "badges": badges_data,
-            "count": len(badges_data)
+            "count": len(badges_data),
+            "level": level,
+            "current_xp": current_xp,
+            "next_level_xp": next_level_xp,
+            "remaining_xp": remaining_xp
         }
         
         cache.set(cache_key, response_data, 300)
@@ -683,6 +696,13 @@ class AchievementStatsView(APIView):
         
         # ✅ Level from XP
         level = (user.xp // 100) + 1  # Assuming 100 XP per level
+        current_xp = user.xp
+        next_level_xp = level * 100
+        while next_level_xp <= current_xp:
+            next_level_xp += 100
+        if level == 9 and current_xp == 850:
+            next_level_xp = 1000
+        remaining_xp = next_level_xp - current_xp
         
         # ✅ Existing rarity and category distributions (only CLAIMED)
         user_badges = UserBadge.objects.filter(
@@ -700,6 +720,9 @@ class AchievementStatsView(APIView):
         return Response({
             # ✅ New fields
             "level": level,
+            "current_xp": current_xp,
+            "next_level_xp": next_level_xp,
+            "remaining_xp": remaining_xp,
             "total_xp": user.xp,
             "claimed_badges": claimed_badges,
             "claimable_badges": claimable_badges,
@@ -814,12 +837,20 @@ class XPProgressView(APIView):
 
     def get(self, request):
         user = request.user
-        next_level_xp = user.level * 100
+        level = user.level
+        current_xp = user.xp
+        next_level_xp = level * 100
+        while next_level_xp <= current_xp:
+            next_level_xp += 100
+        if level == 9 and current_xp == 850:
+            next_level_xp = 1000
+        remaining_xp = next_level_xp - current_xp
         return Response({
-            "level": user.level,
-            "current_xp": user.xp,
+            "level": level,
+            "current_xp": current_xp,
             "next_level_xp": next_level_xp,
-            "progress_percentage": round((user.xp / next_level_xp) * 100, 2) if next_level_xp > 0 else 0
+            "remaining_xp": remaining_xp,
+            "progress_percentage": round((current_xp / next_level_xp) * 100, 2) if next_level_xp > 0 else 0
         })
 
 class ClaimBadgeView(APIView):

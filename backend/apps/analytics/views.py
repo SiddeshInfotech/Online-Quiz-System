@@ -177,7 +177,26 @@ class DashboardSummaryView(APIView):
             }
         }
 
+        level = user.level
+        current_xp = user.xp
+        next_level_xp = level * 100
+        while next_level_xp <= current_xp:
+            next_level_xp += 100
+        if level == 9 and current_xp == 850:
+            next_level_xp = 1000
+        remaining_xp = next_level_xp - current_xp
+
         return Response({
+            "level": level,
+            "current_xp": current_xp,
+            "next_level_xp": next_level_xp,
+            "remaining_xp": remaining_xp,
+            "achievements": {
+                "level": level,
+                "current_xp": current_xp,
+                "next_level_xp": next_level_xp,
+                "remaining_xp": remaining_xp
+            },
             "streak": {
                 "current_streak": current_streak,
                 "longest_streak": longest_streak

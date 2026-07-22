@@ -121,6 +121,7 @@ class GlobalLeaderboardView(APIView):
                     "full_name": user.full_name or user.username,
                     "username": user.username,
                     "points": user.total_points,
+                    "total_points": user.total_points,
                     "quizzes_count": user.quizzes_completed,
                     "profile_picture": profile_picture_url,
                     "user_id": user.id,
@@ -153,6 +154,7 @@ class GlobalLeaderboardView(APIView):
             "personal_stats": {
                 "your_rank": current_user["rank"] if current_user else None,
                 "your_points": request.user.total_points,
+                "total_points": request.user.total_points,
                 "quizzes_completed": request.user.quizzes_completed,
                 "profile_picture": current_user_profile_pic,
                 "full_name": request.user.full_name or request.user.username,

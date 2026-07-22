@@ -39,6 +39,19 @@ class StartAttemptView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
+        # Enforce retry limit (maximum 2 completed attempts per quiz: 1 initial + 1 retry)
+        completed_attempts_count = QuizAttempt.objects.filter(
+            user=request.user,
+            quiz=quiz,
+            submitted_at__isnull=False
+        ).count()
+
+        if completed_attempts_count >= 2:
+            return Response(
+                {"detail": "Retry limit reached for this quiz. You can only attempt a quiz a maximum of 2 times."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         existing_attempt = QuizAttempt.objects.filter(
             user=request.user,
             quiz=quiz,
@@ -337,6 +350,15 @@ class UserAttemptsHistoryView(APIView):
         # Optimization: Fetch only the requested page of attempts and join related models in a single query
         paginated_qs = attempts_qs.select_related('quiz', 'quiz__category', 'result')[offset:offset + limit]
 
+        # Pre-aggregate completed attempt counts per quiz for the user to avoid N+1 queries
+        completed_counts = {
+            item['quiz_id']: item['count']
+            for item in QuizAttempt.objects.filter(
+                user=user,
+                submitted_at__isnull=False
+            ).values('quiz_id').annotate(count=Count('id'))
+        }
+
         history_list = []
         for attempt in paginated_qs:
             result = getattr(attempt, 'result', None)
@@ -345,9 +367,14 @@ class UserAttemptsHistoryView(APIView):
             unanswered = result.unanswered_questions if result else 0
             total_questions = correct_answers + wrong_answers + unanswered
 
+            quiz_id = attempt.quiz.id
+            total_completed = completed_counts.get(quiz_id, 0)
+            can_retry = total_completed < 2
+            retry_count = max(0, total_completed - 1)
+
             history_list.append({
                 "id": attempt.id,
-                "quiz_id": attempt.quiz.id,  
+                "quiz_id": quiz_id,  
                 "quiz_title": attempt.quiz.title,
                 "category": attempt.quiz.category.category_name if attempt.quiz.category else "Uncategorized",
                 "difficulty_level": attempt.quiz.difficulty,
@@ -356,7 +383,10 @@ class UserAttemptsHistoryView(APIView):
                 "total_questions": total_questions,
                 "time_spent_seconds": attempt.time_spent_seconds or 0,
                 "score": attempt.percentage,
-                "status": "Passed" if attempt.percentage >= 50 else "Failed"
+                "status": "Passed" if attempt.percentage >= 50 else "Failed",
+                "can_retry": can_retry,
+                "retry_count": retry_count,
+                "max_retry": 1
             })
 
         return Response({

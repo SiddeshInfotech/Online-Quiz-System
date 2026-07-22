@@ -11,6 +11,7 @@ from .views import (
 )
 
 urlpatterns = [
+    path('', UserAttemptsHistoryView.as_view(), name='user-attempts-list'),
     path('start/', StartAttemptView.as_view(), name='start-attempt'),
     path('<int:attempt_id>/submit/', SubmitAttemptView.as_view(), name='submit-attempt'),
     path('<int:attempt_id>/review/', AttemptReviewView.as_view(), name='attempt-review'),
