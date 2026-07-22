@@ -217,7 +217,7 @@ const ContactPage = () => {
                   <div>
                     <p className="text-xs font-bold text-app-muted uppercase tracking-wider">Email Us</p>
                     <a
-                      href="mailto:support@quizgen.ai"
+                      href="mailto:uidssvps@gmail.com"
                       className="text-sm font-semibold text-app hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
                     >
                       uidssvps
