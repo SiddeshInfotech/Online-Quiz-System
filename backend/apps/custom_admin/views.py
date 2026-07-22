@@ -17,33 +17,30 @@ from .serializers import (
 
 User = get_user_model()
 
-# A. Dashboard Analytics View
-class AdminDashboardAnalyticsView(APIView):
+# 🛠️ 1. Real Dynamic Analytics View (GET /api/custom_admin/analytics/)
+class AdminAnalyticsView(APIView):
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
     def get(self, request):
-        total_users = User.objects.count()
-        
+        # 1. Total actual registered non-superuser accounts currently in DB
+        total_users = User.objects.filter(is_superuser=False).count()
+
+        # 2. Total actual quizzes created by admins vs students
         admin_quizzes = Quiz.objects.filter(created_by__is_staff=True).count()
         user_quizzes = Quiz.objects.filter(created_by__is_staff=False).count()
-        
-        total_attempts = QuizAttempt.objects.count()
-        
-        total_points_deducted = UserPenaltyLog.objects.aggregate(
-            total=Sum('points_deducted')
-        )['total'] or 0
 
-        # Top Subjects distribution of attempts
-        subject_counts = QuizAttempt.objects.filter(
-            quiz__subject__isnull=False
-        ).values('quiz__subject').annotate(
-            count=Count('id')
-        ).order_by('-count')[:10]
-        
-        top_subjects = [
-            {"subject": item['quiz__subject'] or 'General', "attempts": item['count']} 
-            for item in subject_counts
-        ]
+        # 3. Total actual attempts taken by real students in DB
+        total_attempts = QuizAttempt.objects.count()
+
+        # 4. Total points deducted in actual penalty logs
+        penalty_points = UserPenaltyLog.objects.aggregate(total=Sum('points_deducted'))['total'] or 0
+
+        # 5. Dynamic subject breakdown based ONLY on real existing quizzes/attempts in DB
+        subject_distribution = list(
+            Quiz.objects.values('subject')
+            .annotate(attempts=Count('quizattempt'))
+            .order_by('-attempts')
+        )
 
         return Response({
             "overview": {
@@ -51,22 +48,35 @@ class AdminDashboardAnalyticsView(APIView):
                 "admin_quizzes": admin_quizzes,
                 "user_quizzes": user_quizzes,
                 "total_attempts": total_attempts,
-                "total_points_deducted": total_points_deducted
+                "penalty_points": penalty_points,
+                "total_points_deducted": penalty_points
             },
-            "top_subjects": top_subjects
+            "subject_distribution": subject_distribution,
+            "top_subjects": [
+                {"subject": item['subject'] or 'General', "attempts": item['attempts']}
+                for item in subject_distribution
+            ]
         }, status=status.HTTP_200_OK)
 
+# Alias for backwards compatibility
+AdminDashboardAnalyticsView = AdminAnalyticsView
 
-# B. User Management Views
-class AdminUserListView(generics.ListAPIView):
-    serializer_class = AdminUserSerializer
+
+# 🛠️ 2. Real Users Endpoint (GET /api/custom_admin/users/)
+class AdminUsersListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    serializer_class = AdminUserSerializer
 
     def get_queryset(self):
-        return User.objects.annotate(
+        # Return ALL actual registered non-superuser accounts from DB
+        return User.objects.filter(is_superuser=False).annotate(
             total_attempts=Count('quizattempt', distinct=True),
             penalty_count=Count('penalties', distinct=True)
         ).order_by('-date_joined')
+
+# Alias for backwards compatibility
+AdminUserListView = AdminUsersListView
+
 
 class AdminUserToggleStatusView(APIView):
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
@@ -99,7 +109,6 @@ class AdminQuizListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
     def perform_create(self, serializer):
-        # Admin can create directly, we can respect is_published passed in data or default to False
         serializer.save(created_by=self.request.user)
 
 class AdminQuizDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
@@ -149,3 +158,4 @@ class AdminSupportMessageToggleResolveView(APIView):
             "is_resolved": message.is_resolved,
             "message": f"Support message status updated to {'Resolved' if message.is_resolved else 'Unresolved'}."
         }, status=status.HTTP_200_OK)
+

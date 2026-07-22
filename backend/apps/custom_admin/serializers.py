@@ -42,15 +42,20 @@ class AdminQuizSerializer(serializers.ModelSerializer):
 
 class UserPenaltyLogSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source='user.username')
+    student_name = serializers.SerializerMethodField()
     email = serializers.ReadOnlyField(source='user.email')
     quiz_title = serializers.ReadOnlyField(source='attempt.quiz.title')
+    violations = serializers.ReadOnlyField(source='violations_count')
 
     class Meta:
         model = UserPenaltyLog
         fields = [
-            'id', 'user', 'username', 'email', 'attempt', 'quiz_title',
-            'violations_count', 'points_deducted', 'reason', 'created_at'
+            'id', 'user', 'username', 'student_name', 'email', 'attempt', 'quiz_title',
+            'violations_count', 'violations', 'points_deducted', 'reason', 'created_at'
         ]
+
+    def get_student_name(self, obj):
+        return obj.user.full_name or obj.user.username
 
 class AdminSupportMessageSerializer(serializers.ModelSerializer):
     class Meta:

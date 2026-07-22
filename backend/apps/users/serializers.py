@@ -53,18 +53,28 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    email = serializers.CharField(required=False, allow_blank=True)
+    username = serializers.CharField(required=False, allow_blank=True)
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):
         email = data.get('email')
+        username = data.get('username')
         password = data.get('password')
+
+        login_id = email or username
+        if not login_id:
+            raise serializers.ValidationError("An email or username is required.")
+
+        from django.db.models import Q
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.get(Q(email__iexact=login_id) | Q(username__iexact=login_id))
         except User.DoesNotExist:
             raise serializers.ValidationError("Invalid credentials")
+
         if not user.check_password(password):
             raise serializers.ValidationError("Invalid credentials")
+
         data['user'] = user
         return data
 
