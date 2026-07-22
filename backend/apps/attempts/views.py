@@ -598,7 +598,7 @@ class AttemptResultView(APIView):
             return "D"
         else:
             return "F"
-    
+
 class AttemptReviewView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -616,38 +616,59 @@ class AttemptReviewView(APIView):
             return Response({"error": "Attempt not submitted yet."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Get all user answers
-        user_answers = UserAnswer.objects.filter(attempt=attempt).select_related('question')
+        user_answers = UserAnswer.objects.filter(attempt=attempt).select_related('question', 'selected_option')
         user_answers.update(reviewed=True)
-        questions = attempt.quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order')
+        answer_map = {ua.question_id: ua for ua in user_answers}
+
+        # Query all questions linked to attempt's quiz or user_answers
+        questions = Question.objects.filter(quiz=attempt.quiz).prefetch_related('questionoption_set').order_by('question_order', 'id')
+        if not questions.exists():
+            questions = Question.objects.filter(id__in=user_answers.values_list('question_id', flat=True)).prefetch_related('questionoption_set')
 
         # Build question data
         questions_data = []
         for question in questions:
-            user_answer = user_answers.filter(question=question).first()
-            selected_option_id = user_answer.selected_option_id if user_answer else None
-            is_correct = user_answer.is_correct if user_answer else False
+            user_answer = answer_map.get(question.id)
 
-            # Prefetch-friendly option retrieval
+            # Option retrieval
             if hasattr(question, '_prefetched_objects_cache') and 'questionoption_set' in question._prefetched_objects_cache:
-                options = list(question._prefetched_objects_cache['questionoption_set'].all())
-                options = sorted(options, key=lambda x: x.id)
+                options_objs = list(question._prefetched_objects_cache['questionoption_set'].all())
+                options_objs = sorted(options_objs, key=lambda x: x.id)
             else:
-                options = list(question.questionoption_set.all().order_by('id'))
+                options_objs = list(question.questionoption_set.all().order_by('id'))
 
-            correct_option = next((opt for opt in options if opt.is_correct), None)
+            options_list = [opt.option_text for opt in options_objs]
+
+            correct_option = next((opt for opt in options_objs if opt.is_correct), None)
             correct_option_id = correct_option.id if correct_option else None
+            correct_answer_text = question.correct_answer or (correct_option.option_text if correct_option else "")
+
+            # Selected answer retrieval
+            selected_option_id = user_answer.selected_option_id if user_answer else None
+            selected_answer_text = None
+            is_correct = False
+
+            if user_answer:
+                is_correct = bool(user_answer.is_correct)
+                if user_answer.selected_option:
+                    selected_answer_text = user_answer.selected_option.option_text
+                elif user_answer.answer_text:
+                    selected_answer_text = user_answer.answer_text
+            else:
+                selected_answer_text = None
+                is_correct = False
 
             questions_data.append({
                 "question_id": question.id,
                 "question_text": question.question_text,
                 "question_type": question.question_type,
-                "options": [
-                    {"id": opt.id, "text": opt.option_text}
-                    for opt in options
-                ],
+                "options": options_list,
+                "selected_answer": selected_answer_text,
                 "selected_option_id": selected_option_id,
+                "correct_answer": correct_answer_text,
                 "correct_option_id": correct_option_id,
                 "is_correct": is_correct,
+                "explanation": "",
                 "ai_explanation": None
             })
 
@@ -656,14 +677,23 @@ class AttemptReviewView(APIView):
             try:
                 explanations = self._generate_ai_explanations(attempt, questions_data)
                 for i, q_data in enumerate(questions_data):
-                    q_data["ai_explanation"] = explanations[i] if i < len(explanations) else ""
+                    ai_exp = explanations[i] if (explanations and i < len(explanations)) else ""
+                    if not ai_exp and q_data["correct_answer"]:
+                        ai_exp = f"The correct answer is '{q_data['correct_answer']}'."
+                    q_data["explanation"] = ai_exp
+                    q_data["ai_explanation"] = ai_exp
             except Exception as e:
                 print(f"AI explanation generation failed: {e}")
+                for q_data in questions_data:
+                    if not q_data["explanation"] and q_data["correct_answer"]:
+                        q_data["explanation"] = f"The correct answer is '{q_data['correct_answer']}'."
 
         return Response({
             "attempt_id": attempt.id,
             "quiz_title": attempt.quiz.title,
             "submitted_at": attempt.submitted_at,
+            "score": attempt.score,
+            "total_questions": len(questions_data),
             "questions": questions_data
         }, status=status.HTTP_200_OK)
 
@@ -688,18 +718,14 @@ class AttemptReviewView(APIView):
         """Build prompt for AI explanation generation."""
         questions_text = ""
         for i, q in enumerate(questions_data):
-            selected_text = "None"
-            correct_text = "Unknown"
+            selected_text = q.get('selected_answer') or "None"
+            correct_text = q.get('correct_answer') or "Unknown"
             
-            for opt in q['options']:
-                if opt['id'] == q['selected_option_id']:
-                    selected_text = opt['text']
-                if opt['id'] == q['correct_option_id']:
-                    correct_text = opt['text']
+            opts_str = ", ".join([opt['text'] if isinstance(opt, dict) else str(opt) for opt in q.get('options', [])])
             
             questions_text += f"""
 Question {i+1}: {q['question_text']}
-Options: {', '.join([opt['text'] for opt in q['options']])}
+Options: {opts_str}
 Selected Answer: {selected_text}
 Correct Answer: {correct_text}
 User's answer was {'correct' if q['is_correct'] else 'incorrect'}.
