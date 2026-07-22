@@ -388,7 +388,7 @@ class AttemptDetailView(generics.RetrieveAPIView):
             for ua in user_answers
         }
 
-        questions = attempt.quiz.question_set.all().order_by('question_order')
+        questions = attempt.quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order')
         question_data = AttemptQuestionSerializer(questions, many=True).data
         for q in question_data:
             if 'question_text' not in q and 'question' in q:
@@ -574,7 +574,7 @@ class AttemptReviewView(APIView):
         # Get all user answers
         user_answers = UserAnswer.objects.filter(attempt=attempt).select_related('question')
         user_answers.update(reviewed=True)
-        questions = attempt.quiz.question_set.all().order_by('question_order')
+        questions = attempt.quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order')
 
         # Build question data
         questions_data = []
@@ -583,8 +583,14 @@ class AttemptReviewView(APIView):
             selected_option_id = user_answer.selected_option_id if user_answer else None
             is_correct = user_answer.is_correct if user_answer else False
 
-            options = question.questionoption_set.all().order_by('id')
-            correct_option = options.filter(is_correct=True).first()
+            # Prefetch-friendly option retrieval
+            if hasattr(question, '_prefetched_objects_cache') and 'questionoption_set' in question._prefetched_objects_cache:
+                options = list(question._prefetched_objects_cache['questionoption_set'].all())
+                options = sorted(options, key=lambda x: x.id)
+            else:
+                options = list(question.questionoption_set.all().order_by('id'))
+
+            correct_option = next((opt for opt in options if opt.is_correct), None)
             correct_option_id = correct_option.id if correct_option else None
 
             questions_data.append({

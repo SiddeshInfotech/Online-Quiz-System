@@ -223,7 +223,7 @@ class QuizStartView(APIView):
         elapsed = (timezone.now() - attempt.started_at).total_seconds()
         remaining = max(0, (quiz.duration_minutes * 60) - elapsed)
 
-        questions = quiz.question_set.all().order_by('question_order')
+        questions = quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order')
         question_data = AttemptQuestionSerializer(questions, many=True).data
 
         return Response({
