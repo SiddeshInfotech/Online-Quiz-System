@@ -3,6 +3,7 @@ from django.urls import path, include
 from django.http import JsonResponse
 from django.conf import settings
 from django.conf.urls.static import static
+from apps.users.views import LoginView
 
 
 def home(request):
@@ -26,6 +27,12 @@ urlpatterns = [
     path('', home, name='home'),
     path('api/health/', health_check, name='health-check'),
     path('admin/', admin.site.urls),
+
+    # 🛠️ Explicit Admin Login Routes
+    path('api/custom_admin/auth/login/', LoginView.as_view(), name='custom-admin-auth-login'),
+    path('api/custom_admin/login/', LoginView.as_view(), name='custom-admin-login'),
+    path('api/auth/admin-login/', LoginView.as_view(), name='auth-admin-login-alias'),
+
     path('api/auth/', include('apps.users.urls')),
     path('api/achievements/', include('apps.users.achievement_urls')),
     path('api/badges/', include('apps.users.badge_urls')),

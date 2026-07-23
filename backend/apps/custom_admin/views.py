@@ -17,9 +17,23 @@ from .serializers import (
 
 User = get_user_model()
 
+
+class IsCustomAdmin(permissions.BasePermission):
+    """
+    Allows access to users who are staff, superusers, or have role == 'Admin'.
+    """
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(
+            user and 
+            user.is_authenticated and 
+            (user.is_staff or user.is_superuser or getattr(user, 'role', None) == 'Admin')
+        )
+
+
 # 🛠️ 1. Real Dynamic Analytics View (GET /api/custom_admin/analytics/)
 class AdminAnalyticsView(APIView):
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    permission_classes = [IsCustomAdmin]
 
     def get(self, request):
         # 1. Total actual registered non-superuser accounts currently in DB
@@ -64,7 +78,7 @@ AdminDashboardAnalyticsView = AdminAnalyticsView
 
 # 🛠️ 2. Real Users Endpoint (GET /api/custom_admin/users/)
 class AdminUsersListView(generics.ListAPIView):
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    permission_classes = [IsCustomAdmin]
     serializer_class = AdminUserSerializer
 
     def get_queryset(self):
@@ -79,7 +93,7 @@ AdminUserListView = AdminUsersListView
 
 
 class AdminUserToggleStatusView(APIView):
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    permission_classes = [IsCustomAdmin]
 
     def post(self, request, pk):
         user = get_object_or_404(User, id=pk)
@@ -106,7 +120,7 @@ class AdminUserToggleStatusView(APIView):
 class AdminQuizListCreateView(generics.ListCreateAPIView):
     queryset = Quiz.objects.all().order_by('-created_at')
     serializer_class = AdminQuizSerializer
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    permission_classes = [IsCustomAdmin]
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
@@ -114,10 +128,10 @@ class AdminQuizListCreateView(generics.ListCreateAPIView):
 class AdminQuizDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Quiz.objects.all()
     serializer_class = AdminQuizSerializer
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    permission_classes = [IsCustomAdmin]
 
 class AdminQuizToggleVisibilityView(APIView):
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    permission_classes = [IsCustomAdmin]
 
     def post(self, request, pk):
         quiz = get_object_or_404(Quiz, id=pk)
@@ -136,17 +150,17 @@ class AdminQuizToggleVisibilityView(APIView):
 class AdminPenaltyLogListView(generics.ListAPIView):
     queryset = UserPenaltyLog.objects.all().order_by('-created_at')
     serializer_class = UserPenaltyLogSerializer
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    permission_classes = [IsCustomAdmin]
 
 
 # E. Support Ticket Inbox Views
 class AdminSupportMessageListView(generics.ListAPIView):
     queryset = ContactMessage.objects.all().order_by('-created_at')
     serializer_class = AdminSupportMessageSerializer
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    permission_classes = [IsCustomAdmin]
 
 class AdminSupportMessageToggleResolveView(APIView):
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+    permission_classes = [IsCustomAdmin]
 
     def patch(self, request, pk):
         message = get_object_or_404(ContactMessage, id=pk)

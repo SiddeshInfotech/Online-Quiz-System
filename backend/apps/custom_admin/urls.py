@@ -1,4 +1,5 @@
 from django.urls import path
+from apps.users.views import LoginView
 from .views import (
     AdminDashboardAnalyticsView,
     AdminUserListView,
@@ -12,6 +13,10 @@ from .views import (
 )
 
 urlpatterns = [
+    # Auth
+    path('auth/login/', LoginView.as_view(), name='admin-auth-login'),
+    path('login/', LoginView.as_view(), name='admin-login'),
+
     # A. Analytics
     path('analytics/', AdminDashboardAnalyticsView.as_view(), name='admin-analytics'),
 

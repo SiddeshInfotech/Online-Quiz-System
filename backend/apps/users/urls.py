@@ -5,6 +5,8 @@ from .views import RegisterView, LoginView, ProfileView, GoogleLoginView,ForgotP
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
+    path('admin-login/', LoginView.as_view(), name='admin-login-alias'),
+    path('custom_admin/auth/login/', LoginView.as_view(), name='auth-custom-admin-login-alias'),
     path('profile/', ProfileView.as_view(), name='profile'),
     path('google-login/', GoogleLoginView.as_view(), name='google-login'),
     path('forgot-password/', ForgotPasswordView.as_view(), name='forgot-password'),
