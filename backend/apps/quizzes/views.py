@@ -254,9 +254,29 @@ class QuizStartView(APIView):
         quiz = get_object_or_404(Quiz, id=pk, status='published')
         user = request.user
 
+        completed_attempts_count = QuizAttempt.objects.filter(
+            user=user,
+            quiz=quiz,
+            submitted_at__isnull=False
+        ).count()
+        max_attempts = getattr(quiz, 'max_attempts', 2) or 2
+        can_retry = completed_attempts_count < max_attempts
+
         existing_attempt = QuizAttempt.objects.filter(
             user=user, quiz=quiz, submitted_at__isnull=True
         ).first()
+
+        if not existing_attempt and not can_retry:
+            return Response(
+                {
+                    "detail": f"Maximum attempt limit ({max_attempts}) reached for this quiz.",
+                    "error": "Attempt limit reached.",
+                    "can_retry": False,
+                    "attempt_count": completed_attempts_count,
+                    "max_attempts": max_attempts,
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         if existing_attempt:
             attempt = existing_attempt
@@ -280,6 +300,9 @@ class QuizStartView(APIView):
             "duration_minutes": quiz.duration_minutes,
             "timer": int(remaining),
             "remaining_time_seconds": int(remaining),
+            "can_retry": can_retry,
+            "attempt_count": completed_attempts_count,
+            "max_attempts": max_attempts,
             "quiz": {
                 "id": quiz.id,
                 "quiz_id": quiz.id,
@@ -288,7 +311,10 @@ class QuizStartView(APIView):
                 "difficulty": quiz.difficulty,
                 "duration_minutes": quiz.duration_minutes,
                 "time_limit_minutes": quiz.duration_minutes,
-                "total_questions": questions.count()
+                "total_questions": questions.count(),
+                "max_attempts": max_attempts,
+                "can_retry": can_retry,
+                "attempt_count": completed_attempts_count,
             },
             "questions": question_data,
         }, status=status.HTTP_200_OK)

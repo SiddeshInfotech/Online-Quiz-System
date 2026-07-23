@@ -39,22 +39,27 @@ class StartAttemptView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Enforce retry limit (maximum 2 completed attempts per quiz: 1 initial + 1 retry)
+        # Enforce retry limit based on quiz.max_attempts
         completed_attempts_count = QuizAttempt.objects.filter(
             user=request.user,
             quiz=quiz,
             submitted_at__isnull=False
         ).count()
+        max_attempts = getattr(quiz, 'max_attempts', 2) or 2
+        can_retry = completed_attempts_count < max_attempts
 
-        if completed_attempts_count >= 2:
+        if not can_retry:
             retry_count = max(0, completed_attempts_count - 1)
-            max_retry = 1
+            max_retry = max(0, max_attempts - 1)
             return Response(
                 {
-                    "detail": "Retry limit reached for this quiz. You can only attempt a quiz a maximum of 2 times.",
+                    "detail": f"Maximum attempt limit ({max_attempts}) reached for this quiz.",
+                    "error": "Attempt limit reached.",
+                    "can_retry": False,
+                    "attempt_count": completed_attempts_count,
+                    "max_attempts": max_attempts,
                     "retry_count": retry_count,
-                    "max_retry": max_retry,
-                    "can_retry": retry_count < max_retry
+                    "max_retry": max_retry
                 },
                 status=status.HTTP_403_FORBIDDEN
             )
@@ -640,12 +645,22 @@ class AttemptResultView(APIView):
         time_taken_seconds = int(time_diff.total_seconds())
         time_remaining_seconds = max(0, (quiz.duration_minutes * 60) - time_taken_seconds)
 
-        # ✅ Get total questions count efficiently
+        # Get total questions count and attempt retry limits
         total_questions = attempt.quiz.question_set.count()
+        attempt_count = QuizAttempt.objects.filter(
+            user=request.user,
+            quiz=quiz,
+            submitted_at__isnull=False
+        ).count()
+        max_attempts = getattr(quiz, 'max_attempts', 2) or 2
+        can_retry = attempt_count < max_attempts
 
         return Response({
             "attempt_id": attempt.id,
             "result_id": attempt.result.id if hasattr(attempt, 'result') and attempt.result else None,
+            "can_retry": can_retry,
+            "attempt_count": attempt_count,
+            "max_attempts": max_attempts,
             "quiz": {
                 "id": quiz.id,
                 "title": quiz.title,
@@ -654,7 +669,10 @@ class AttemptResultView(APIView):
                 "total_questions": total_questions,
                 "time_limit_minutes": quiz.duration_minutes,
                 "passing_marks": int(0.4 * total_questions),
-                "marks_per_question": 1
+                "marks_per_question": 1,
+                "max_attempts": max_attempts,
+                "can_retry": can_retry,
+                "attempt_count": attempt_count,
             },
             "score": total_score,
             "total_questions": total_questions,
@@ -668,7 +686,7 @@ class AttemptResultView(APIView):
             "time_spent_seconds": time_taken_seconds,
             "time_remaining_seconds": time_remaining_seconds,
             "submitted_at": attempt.submitted_at.isoformat(),
-            "grade": grade  # ✅ Added grade for frontend
+            "grade": grade
         })
 
     def _calculate_grade(self, percentage):

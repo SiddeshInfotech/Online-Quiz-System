@@ -111,6 +111,27 @@ class BackendModulesVerificationTest(TestCase):
         )
         self.assertEqual(submit_res.status_code, 200)
 
+        # Verify Result API exposes retry status fields
+        result_res = self.client.get(f'/api/attempts/{attempt_id}/result/')
+        self.assertEqual(result_res.status_code, 200)
+        result_data = result_res.json()
+        self.assertIn('can_retry', result_data)
+        self.assertIn('attempt_count', result_data)
+        self.assertIn('max_attempts', result_data)
+        self.assertEqual(result_data['attempt_count'], 1)
+
+        # Test single attempt limit enforcement (max_attempts = 1)
+        self.quiz.max_attempts = 1
+        self.quiz.save()
+
+        result_res_limited = self.client.get(f'/api/attempts/{attempt_id}/result/')
+        self.assertFalse(result_res_limited.json()['can_retry'])
+
+        # Expect POST /api/quizzes/{quiz_id}/start/ to reject when limit reached
+        rejected_start = self.client.post(f'/api/quizzes/{self.quiz.id}/start/')
+        self.assertEqual(rejected_start.status_code, 403)
+        self.assertFalse(rejected_start.json()['can_retry'])
+
     def test_module_2_custom_admin_health(self):
         self.client.force_authenticate(user=self.admin_user)
         # Analytics

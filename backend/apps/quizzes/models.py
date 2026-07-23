@@ -28,6 +28,7 @@ class Quiz(models.Model):
     status = models.CharField(max_length=20, choices=STATUS, default='Draft', db_index=True)
     duration_minutes = models.IntegerField()
     total_marks = models.IntegerField(default=0)
+    max_attempts = models.IntegerField(default=2)
     is_ai_generated = models.BooleanField(default=False)
     join_code = models.CharField(max_length=20, unique=True, blank=True, null=True)
     share_link = models.CharField(max_length=255, blank=True, null=True)

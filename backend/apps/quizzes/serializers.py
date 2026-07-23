@@ -19,7 +19,7 @@ class QuizLibrarySerializer(serializers.ModelSerializer):
             'id', 'title', 'description', 'subject', 'difficulty',
             'duration_minutes', 'total_questions', 'grade_level', 'status',
             'category', 'category_name', 'created_at', 'progress_percentage',
-            'created_by_me'
+            'created_by_me', 'max_attempts'
         ]
 
     def get_progress_percentage(self, obj):
@@ -56,7 +56,7 @@ class QuizSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'description', 'subject', 'difficulty',
             'question_type', 'visibility', 'status', 'duration_minutes',
-            'total_marks', 'is_ai_generated', 'join_code', 'share_link',
+            'total_marks', 'max_attempts', 'is_ai_generated', 'join_code', 'share_link',
             'category', 'category_name', 'created_by', 'created_by_name',
             'created_at', 'updated_at', 'grade_level',
             'question_count', 'created_by_me'
