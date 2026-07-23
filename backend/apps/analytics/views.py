@@ -187,6 +187,21 @@ class DashboardSummaryView(APIView):
         current_level_xp = (level - 1) * 100
         remaining_xp = next_level_xp - current_xp
 
+        # Fetch subject performance breakdown
+        subject_stats = completed_attempts.values('quiz__subject').annotate(
+            attempts=Count('id'),
+            avg_score=Avg('percentage')
+        ).order_by('-attempts')
+
+        subject_performance = []
+        for item in subject_stats:
+            subj_name = item['quiz__subject'] or 'General'
+            subject_performance.append({
+                "subject": subj_name,
+                "attempts": item['attempts'],
+                "average_score": round(float(item['avg_score'] or 0), 1)
+            })
+
         return Response({
             "level": level,
             "current_level_xp": current_level_xp,
@@ -219,6 +234,7 @@ class DashboardSummaryView(APIView):
                 "target": daily_goal
             },
             "recent_attempts": recent_attempts_data,
+            "subject_performance": subject_performance,
             "performance": {
                 "quizzes_completed": quizzes_completed,
                 "quizzes_attempted": total_attempts,
@@ -226,13 +242,42 @@ class DashboardSummaryView(APIView):
                 "average_score": round(avg_score, 2),
                 "accuracy": accuracy,
                 "total_time_spent_seconds": total_time_spent,
-                "weekly_data": weekly_data
+                "weekly_data": weekly_data,
+                "subject_performance": subject_performance
             },
             "quick_actions": quick_actions
         })
 
     def _calculate_streak(self, user):
         from django.utils import timezone
+
+
+from rest_framework import status
+
+class SubjectPerformanceView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        completed_attempts = QuizAttempt.objects.filter(
+            user=user, submitted_at__isnull=False
+        )
+
+        subject_stats = completed_attempts.values('quiz__subject').annotate(
+            attempts=Count('id'),
+            avg_score=Avg('percentage')
+        ).order_by('-attempts')
+
+        subject_performance = []
+        for item in subject_stats:
+            subj_name = item['quiz__subject'] or 'General'
+            subject_performance.append({
+                "subject": subj_name,
+                "attempts": item['attempts'],
+                "average_score": round(float(item['avg_score'] or 0), 1)
+            })
+
+        return Response(subject_performance, status=status.HTTP_200_OK)
         import datetime
 
         # Single query to fetch all submitted attempt timestamps for this user
