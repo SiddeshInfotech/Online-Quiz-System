@@ -270,23 +270,27 @@ class QuizStartView(APIView):
         elapsed = (timezone.now() - attempt.started_at).total_seconds()
         remaining = max(0, (quiz.duration_minutes * 60) - elapsed)
 
-        questions = quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order')
+        questions = quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order', 'id')
         question_data = AttemptQuestionSerializer(questions, many=True).data
 
         return Response({
-            "warning": "This endpoint is deprecated. Please migrate to POST /api/attempts/start/.",
             "attempt_id": attempt.id,
+            "quiz_title": quiz.title,
+            "started_at": attempt.started_at,
+            "duration_minutes": quiz.duration_minutes,
+            "timer": int(remaining),
+            "remaining_time_seconds": int(remaining),
             "quiz": {
                 "id": quiz.id,
+                "quiz_id": quiz.id,
                 "title": quiz.title,
                 "description": quiz.description or "",
                 "difficulty": quiz.difficulty,
+                "duration_minutes": quiz.duration_minutes,
                 "time_limit_minutes": quiz.duration_minutes,
                 "total_questions": questions.count()
             },
             "questions": question_data,
-            "remaining_time_seconds": int(remaining),
-            "started_at": attempt.started_at
         }, status=status.HTTP_200_OK)
 
 

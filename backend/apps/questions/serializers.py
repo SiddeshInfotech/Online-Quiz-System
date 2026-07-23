@@ -18,12 +18,13 @@ class AttemptQuestionOptionSerializer(serializers.ModelSerializer):
         fields = ['id', 'option_text', 'text', 'question_id']
 
 class QuestionSerializer(serializers.ModelSerializer):
+    question_id = serializers.IntegerField(source='id', read_only=True)
     options = serializers.SerializerMethodField()
     choices = serializers.SerializerMethodField()
 
     class Meta:
         model = Question
-        fields = ['id', 'question_text', 'question_type', 'marks', 'question_order', 'options', 'choices']
+        fields = ['id', 'question_id', 'question_text', 'question_type', 'marks', 'question_order', 'options', 'choices']
 
     def get_options(self, obj):
         if hasattr(obj, 'options') and isinstance(obj.options, list) and obj.options:
@@ -41,12 +42,13 @@ class QuestionSerializer(serializers.ModelSerializer):
         return self.get_options(obj)
 
 class AttemptQuestionSerializer(serializers.ModelSerializer):
+    question_id = serializers.IntegerField(source='id', read_only=True)
     options = serializers.SerializerMethodField()
     choices = serializers.SerializerMethodField()
 
     class Meta:
         model = Question
-        fields = ['id', 'question_text', 'question_type', 'marks', 'options', 'choices']
+        fields = ['id', 'question_id', 'question_text', 'question_type', 'marks', 'question_order', 'options', 'choices']
 
     def get_options(self, obj):
         if hasattr(obj, 'options') and isinstance(obj.options, list) and obj.options:

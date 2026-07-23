@@ -101,8 +101,10 @@ class StartAttemptView(APIView):
                     started_at=timezone.now()
                 )
 
-                questions = quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order')
+                questions = quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order', 'id')
                 question_data = AttemptQuestionSerializer(questions, many=True).data
+                elapsed = (timezone.now() - attempt.started_at).total_seconds()
+                remaining = max(0, (quiz.duration_minutes * 60) - elapsed)
 
                 return Response(
                     {
@@ -111,20 +113,47 @@ class StartAttemptView(APIView):
                         "quiz_title": quiz.title,
                         "started_at": attempt.started_at,
                         "duration_minutes": quiz.duration_minutes,
+                        "timer": int(remaining),
+                        "remaining_time_seconds": int(remaining),
+                        "quiz": {
+                            "id": quiz.id,
+                            "quiz_id": quiz.id,
+                            "title": quiz.title,
+                            "description": quiz.description or "",
+                            "difficulty": quiz.difficulty,
+                            "duration_minutes": quiz.duration_minutes,
+                            "time_limit_minutes": quiz.duration_minutes,
+                            "total_questions": questions.count()
+                        },
                         "questions": question_data,
                     },
                     status=status.HTTP_201_CREATED
                 )
 
-            questions = quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order')
+            questions = quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order', 'id')
             question_data = AttemptQuestionSerializer(questions, many=True).data
+            elapsed = (timezone.now() - existing_attempt.started_at).total_seconds()
+            remaining = max(0, (quiz.duration_minutes * 60) - elapsed)
 
             return Response(
                 {
                     "message": "You already have an in-progress attempt.",
                     "attempt_id": existing_attempt.id,
+                    "quiz_title": quiz.title,
                     "started_at": existing_attempt.started_at,
                     "duration_minutes": quiz.duration_minutes,
+                    "timer": int(remaining),
+                    "remaining_time_seconds": int(remaining),
+                    "quiz": {
+                        "id": quiz.id,
+                        "quiz_id": quiz.id,
+                        "title": quiz.title,
+                        "description": quiz.description or "",
+                        "difficulty": quiz.difficulty,
+                        "duration_minutes": quiz.duration_minutes,
+                        "time_limit_minutes": quiz.duration_minutes,
+                        "total_questions": questions.count()
+                    },
                     "questions": question_data,
                 },
                 status=status.HTTP_200_OK
@@ -136,8 +165,10 @@ class StartAttemptView(APIView):
             started_at=timezone.now()
         )
 
-        questions = quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order')
+        questions = quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order', 'id')
         question_data = AttemptQuestionSerializer(questions, many=True).data
+        elapsed = (timezone.now() - attempt.started_at).total_seconds()
+        remaining = max(0, (quiz.duration_minutes * 60) - elapsed)
 
         return Response(
             {
@@ -146,6 +177,18 @@ class StartAttemptView(APIView):
                 "quiz_title": quiz.title,
                 "started_at": attempt.started_at,
                 "duration_minutes": quiz.duration_minutes,
+                "timer": int(remaining),
+                "remaining_time_seconds": int(remaining),
+                "quiz": {
+                    "id": quiz.id,
+                    "quiz_id": quiz.id,
+                    "title": quiz.title,
+                    "description": quiz.description or "",
+                    "difficulty": quiz.difficulty,
+                    "duration_minutes": quiz.duration_minutes,
+                    "time_limit_minutes": quiz.duration_minutes,
+                    "total_questions": questions.count()
+                },
                 "questions": question_data,
             },
             status=status.HTTP_201_CREATED
@@ -470,16 +513,22 @@ class AttemptDetailView(generics.RetrieveAPIView):
 
         return Response({
             "attempt_id": attempt.id,
+            "quiz_title": attempt.quiz.title,
+            "started_at": attempt.started_at,
+            "duration_minutes": attempt.quiz.duration_minutes,
+            "timer": int(remaining),
+            "remaining_time_seconds": int(remaining),
             "quiz": {
                 "id": attempt.quiz.id,
+                "quiz_id": attempt.quiz.id,
                 "title": attempt.quiz.title,
+                "description": attempt.quiz.description or "",
                 "difficulty": attempt.quiz.difficulty,
+                "duration_minutes": attempt.quiz.duration_minutes,
                 "time_limit_minutes": attempt.quiz.duration_minutes,
                 "total_questions": attempt.quiz.question_set.count()
             },
             "questions": question_data,
-            "remaining_time_seconds": int(remaining),
-            "started_at": attempt.started_at
         }, status=status.HTTP_200_OK)
 
 

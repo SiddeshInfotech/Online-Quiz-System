@@ -67,13 +67,35 @@ class BackendModulesVerificationTest(TestCase):
 
     def test_module_1_quiz_options(self):
         self.client.force_authenticate(user=self.user)
-        # Start attempt
+        # Test 1: Start attempt via POST /api/quizzes/{quiz_id}/start/
+        res_quiz_start = self.client.post(f'/api/quizzes/{self.quiz.id}/start/')
+        self.assertEqual(res_quiz_start.status_code, 200)
+        data_quiz_start = res_quiz_start.json()
+        self.assertIn('attempt_id', data_quiz_start)
+        self.assertIn('quiz', data_quiz_start)
+        self.assertIn('timer', data_quiz_start)
+        self.assertIn('questions', data_quiz_start)
+        self.assertTrue(len(data_quiz_start['questions']) > 0)
+        q_item = data_quiz_start['questions'][0]
+        self.assertIn('id', q_item)
+        self.assertIn('question_id', q_item)
+        self.assertEqual(q_item['id'], self.q1.id)
+        self.assertEqual(q_item['question_id'], self.q1.id)
+        self.assertIn('question_text', q_item)
+        self.assertIn('options', q_item)
+        self.assertEqual(q_item['options'], ["3", "4", "5", "6"])
+
+        # Test 2: Start attempt via POST /api/attempts/start/
         res = self.client.post('/api/attempts/start/', {'quiz_id': self.quiz.id}, format='json')
         self.assertIn(res.status_code, [200, 201])
         data = res.json()
+        self.assertIn('timer', data)
+        self.assertIn('quiz', data)
         questions = data.get('questions', [])
         self.assertTrue(len(questions) > 0)
         first_q = questions[0]
+        self.assertIn('id', first_q)
+        self.assertIn('question_id', first_q)
         self.assertIn('options', first_q)
         options = first_q['options']
         # Must be a clean, non-null list of strings
