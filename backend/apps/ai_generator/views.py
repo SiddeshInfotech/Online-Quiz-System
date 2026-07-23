@@ -96,52 +96,50 @@ class GenerateAIQuizView(APIView):
             category=category
         )
 
-        # Bulk create questions and options in 2 database operations
-        questions_to_create = []
-        for idx, q_data in enumerate(questions_data):
-            q_type = q_data.get('question_type', 'MCQ')
-            question_text = q_data.get('question_text', '').strip()
-            options = q_data.get('options', [])
-            correct_answer = q_data.get('correct_answer', '').strip()
-
-            question = Question(
-                quiz=quiz,
-                question_text=question_text,
-                question_type=q_type,
-                correct_answer=correct_answer,
-                marks=1,
-                question_order=idx + 1
-            )
-            questions_to_create.append((question, options, correct_answer))
-
-        created_questions = Question.objects.bulk_create([item[0] for item in questions_to_create])
+        # Create questions and bulk-insert options atomically with guaranteed PKs
+        from django.db import transaction
 
         options_to_create = []
-        for created_q, (_, options, correct_answer) in zip(created_questions, questions_to_create):
-            if options:
-                trimmed_options = [str(opt).strip() for opt in options]
-                trimmed_correct = str(correct_answer).strip()
+        with transaction.atomic():
+            for idx, q_data in enumerate(questions_data):
+                q_type = q_data.get('question_type', 'MCQ')
+                question_text = q_data.get('question_text', '').strip()
+                options = q_data.get('options', [])
+                correct_answer = q_data.get('correct_answer', '').strip()
 
-                try:
-                    correct_index = trimmed_options.index(trimmed_correct)
-                except ValueError:
-                    lower_options = [opt.lower() for opt in trimmed_options]
+                question = Question.objects.create(
+                    quiz=quiz,
+                    question_text=question_text,
+                    question_type=q_type,
+                    correct_answer=correct_answer,
+                    marks=1,
+                    question_order=idx + 1
+                )
+
+                if options:
+                    trimmed_options = [str(opt).strip() for opt in options]
+                    trimmed_correct = str(correct_answer).strip()
+
                     try:
-                        correct_index = lower_options.index(trimmed_correct.lower())
+                        correct_index = trimmed_options.index(trimmed_correct)
                     except ValueError:
-                        correct_index = 0
+                        lower_options = [opt.lower() for opt in trimmed_options]
+                        try:
+                            correct_index = lower_options.index(trimmed_correct.lower())
+                        except ValueError:
+                            correct_index = 0
 
-                for opt_idx, opt_text in enumerate(trimmed_options):
-                    options_to_create.append(
-                        QuestionOption(
-                            question=created_q,
-                            option_text=opt_text,
-                            is_correct=(opt_idx == correct_index)
+                    for opt_idx, opt_text in enumerate(trimmed_options):
+                        options_to_create.append(
+                            QuestionOption(
+                                question=question,
+                                option_text=opt_text,
+                                is_correct=(opt_idx == correct_index)
+                            )
                         )
-                    )
 
-        if options_to_create:
-            QuestionOption.objects.bulk_create(options_to_create)
+            if options_to_create:
+                QuestionOption.objects.bulk_create(options_to_create)
 
         return Response({
             "success": True,
