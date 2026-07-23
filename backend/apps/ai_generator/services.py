@@ -10,17 +10,14 @@ import ast
 class AIService:
     def __init__(self):
         self.api_key = os.environ.get('OPENROUTER_API_KEY')
-        self.gemini_key = os.environ.get('GEMINI_API_KEY')
-        if not self.api_key and not self.gemini_key:
-            raise ValueError("Neither OPENROUTER_API_KEY nor GEMINI_API_KEY is configured")
+        if not self.api_key:
+            raise ValueError("OPENROUTER_API_KEY is not configured")
 
         self.api_url = "https://openrouter.ai/api/v1/chat/completions"
-        self.headers = {}
-        if self.api_key:
-            self.headers = {
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
-            }
+        self.headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
 
     def generate_quiz(self, subject, difficulty, num_questions, prompt_topic="", quiz_mode="Theory"):
         try:
@@ -127,69 +124,38 @@ IMPORTANT:
         return self._call_openrouter(prompt, num_questions)
 
     def _call_openrouter(self, prompt, num_questions):
-        models_to_try = []
-        if self.gemini_key:
-            models_to_try.append("direct/gemini")
-        if self.api_key:
-            models_to_try.extend([
-                "google/gemini-2.5-flash",
-                "openai/gpt-4o-mini",
-                "anthropic/claude-3-haiku",
-                "openai/gpt-3.5-turbo"
-            ])
+        models_to_try = [
+            "google/gemini-2.5-flash",
+            "openai/gpt-4o-mini",
+            "anthropic/claude-3-haiku",
+            "openai/gpt-3.5-turbo"
+        ]
 
         last_error = None
 
         for model in models_to_try:
             try:
-                raw_text = None
-                if model == "direct/gemini":
-                    # Try gemini-2.5-flash and gemini-1.5-flash directly
-                    for gemini_model in ["gemini-2.5-flash", "gemini-1.5-flash"]:
-                        try:
-                            url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={self.gemini_key}"
-                            headers = {"Content-Type": "application/json"}
-                            payload = {
-                                "contents": [{"parts": [{"text": prompt}]}],
-                                "generationConfig": {
-                                    "responseMimeType": "application/json"
-                                }
-                            }
-                            response = requests.post(url, headers=headers, json=payload, timeout=30)
-                            if response.status_code == 200:
-                                res_json = response.json()
-                                raw_text = res_json['candidates'][0]['content']['parts'][0]['text']
-                                break
-                            else:
-                                print(f"Direct Gemini ({gemini_model}) failed with status {response.status_code}: {response.text}")
-                        except Exception as e:
-                            print(f"Direct Gemini ({gemini_model}) request exception: {e}")
-                    
-                    if not raw_text:
-                        raise ValueError("All direct Gemini model attempts failed")
+                payload = {
+                    "model": model,
+                    "messages": [
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": 0.7,
+                    "max_tokens": 2000,
+                }
+
+                response = requests.post(
+                    self.api_url,
+                    headers=self.headers,
+                    json=payload,
+                    timeout=60
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    raw_text = data['choices'][0]['message']['content'].strip()
                 else:
-                    # OpenRouter request
-                    payload = {
-                        "model": model,
-                        "messages": [
-                            {"role": "user", "content": prompt}
-                        ],
-                        "temperature": 0.7,
-                        "max_tokens": 2000,
-                    }
-
-                    response = requests.post(
-                        self.api_url,
-                        headers=self.headers,
-                        json=payload,
-                        timeout=60
-                    )
-
-                    if response.status_code == 200:
-                        data = response.json()
-                        raw_text = data['choices'][0]['message']['content'].strip()
-                    else:
-                        raise ValueError(f"OpenRouter status {response.status_code}: {response.text}")
+                    raise ValueError(f"OpenRouter status {response.status_code}: {response.text}")
 
                 # Clean and parse the raw output using multiple robust strategies
                 parsed_data = None
@@ -377,67 +343,39 @@ IMPORTANT:
 
     def generate_explanations(self, prompt, num_items):
         """
-        Generate AI explanations (list of strings) using OpenRouter or direct Gemini.
+        Generate AI explanations (list of strings) using OpenRouter.
         This is a simpler version that doesn't validate question structure.
         """
-        models_to_try = []
-        if self.gemini_key:
-            models_to_try.append("direct/gemini")
-        if self.api_key:
-            models_to_try.extend([
-                "google/gemini-2.5-flash",
-                "openai/gpt-4o-mini",
-                "anthropic/claude-3-haiku",
-                "openai/gpt-3.5-turbo"
-            ])
+        models_to_try = [
+            "google/gemini-2.5-flash",
+            "openai/gpt-4o-mini",
+            "anthropic/claude-3-haiku",
+            "openai/gpt-3.5-turbo"
+        ]
 
         last_error = None
 
         for model in models_to_try:
             try:
-                raw_text = None
-                if model == "direct/gemini":
-                    # Try gemini-2.5-flash and gemini-1.5-flash directly
-                    for gemini_model in ["gemini-2.5-flash", "gemini-1.5-flash"]:
-                        try:
-                            url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={self.gemini_key}"
-                            headers = {"Content-Type": "application/json"}
-                            payload = {
-                                "contents": [{"parts": [{"text": prompt}]}],
-                                "generationConfig": {
-                                    "responseMimeType": "application/json"
-                                }
-                            }
-                            response = requests.post(url, headers=headers, json=payload, timeout=30)
-                            if response.status_code == 200:
-                                res_json = response.json()
-                                raw_text = res_json['candidates'][0]['content']['parts'][0]['text']
-                                break
-                        except Exception as e:
-                            print(f"Direct Gemini ({gemini_model}) request exception in explanations: {e}")
-                    
-                    if not raw_text:
-                        raise ValueError("All direct Gemini model attempts failed for explanations")
+                payload = {
+                    "model": model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.7,
+                    "max_tokens": 2000,
+                }
+
+                response = requests.post(
+                    self.api_url,
+                    headers=self.headers,
+                    json=payload,
+                    timeout=60
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    raw_text = data['choices'][0]['message']['content'].strip()
                 else:
-                    payload = {
-                        "model": model,
-                        "messages": [{"role": "user", "content": prompt}],
-                        "temperature": 0.7,
-                        "max_tokens": 2000,
-                    }
-
-                    response = requests.post(
-                        self.api_url,
-                        headers=self.headers,
-                        json=payload,
-                        timeout=60
-                    )
-
-                    if response.status_code == 200:
-                        data = response.json()
-                        raw_text = data['choices'][0]['message']['content'].strip()
-                    else:
-                        raise ValueError(f"{model} failed with status {response.status_code}")
+                    raise ValueError(f"{model} failed with status {response.status_code}")
 
                 # Clean and parse JSON array
                 raw_text_clean = raw_text.strip()
