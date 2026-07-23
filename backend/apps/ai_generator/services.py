@@ -317,10 +317,7 @@ IMPORTANT:
     def _call_openrouter(self, prompt, num_questions):
         models_to_try = [
             "google/gemini-2.0-flash-001",
-            "google/gemini-flash-1.5",
-            "openai/gpt-4o-mini",
-            "deepseek/deepseek-chat",
-            "meta-llama/llama-3.3-70b-instruct"
+            "openai/gpt-4o-mini"
         ]
 
         last_error = None
@@ -338,14 +335,14 @@ IMPORTANT:
                     ],
                     "response_format": {"type": "json_object"},
                     "temperature": 0.7,
-                    "max_tokens": 3000,
+                    "max_tokens": 3500,
                 }
 
                 response = requests.post(
                     self.api_url,
                     headers=self.headers,
                     json=payload,
-                    timeout=25,
+                    timeout=12,
                     stream=False
                 )
 
@@ -356,7 +353,7 @@ IMPORTANT:
                         self.api_url,
                         headers=self.headers,
                         json=payload,
-                        timeout=25,
+                        timeout=12,
                         stream=False
                     )
 
