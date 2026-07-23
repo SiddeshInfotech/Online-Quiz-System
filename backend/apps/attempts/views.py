@@ -488,9 +488,16 @@ class UserAttemptsHistoryView(APIView):
 class AttemptDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request, pk):   
+    def get(self, request, *args, **kwargs):
+        attempt_id = kwargs.get('pk') or kwargs.get('attempt_id')
+        if not attempt_id:
+            return Response({"error": "Attempt ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            attempt = QuizAttempt.objects.get(id=pk, user=request.user, submitted_at__isnull=True)
+            if request.user.is_staff or request.user.is_superuser or getattr(request.user, 'role', None) == 'Admin':
+                attempt = QuizAttempt.objects.select_related('quiz', 'user').get(id=attempt_id)
+            else:
+                attempt = QuizAttempt.objects.select_related('quiz', 'user').get(id=attempt_id, user=request.user)
         except QuizAttempt.DoesNotExist:
             return Response({"error": "Attempt not found."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -503,8 +510,9 @@ class AttemptDetailView(generics.RetrieveAPIView):
             for ua in user_answers
         }
 
-        questions = attempt.quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order')
+        questions = attempt.quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order', 'id')
         question_data = AttemptQuestionSerializer(questions, many=True).data
+
         for q in question_data:
             if 'question_text' not in q and 'question' in q:
                 q['question_text'] = q.pop('question')
@@ -513,16 +521,25 @@ class AttemptDetailView(generics.RetrieveAPIView):
             q['selected_option_id'] = answer_map.get(q['id'], {}).get('selected_option_id')
             q['marked_for_review'] = answer_map.get(q['id'], {}).get('marked_for_review', False)
 
-        elapsed = (timezone.now() - attempt.started_at).total_seconds()
-        remaining = max(0, (attempt.quiz.duration_minutes * 60) - elapsed)
+        if attempt.submitted_at is None:
+            elapsed = (timezone.now() - attempt.started_at).total_seconds()
+            remaining = max(0, (attempt.quiz.duration_minutes * 60) - elapsed)
+            is_completed = False
+        else:
+            remaining = 0
+            is_completed = True
 
         return Response({
             "attempt_id": attempt.id,
             "quiz_title": attempt.quiz.title,
             "started_at": attempt.started_at,
+            "submitted_at": attempt.submitted_at,
+            "is_completed": is_completed,
             "duration_minutes": attempt.quiz.duration_minutes,
             "timer": int(remaining),
             "remaining_time_seconds": int(remaining),
+            "score": attempt.score,
+            "percentage": attempt.percentage,
             "quiz": {
                 "id": attempt.quiz.id,
                 "quiz_id": attempt.quiz.id,
