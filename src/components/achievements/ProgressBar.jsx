@@ -1,7 +1,9 @@
 import { motion } from "framer-motion";
 
-const ProgressBar = ({ current, total, color = "violet" }) => {
-  const percentage = Math.min((current / total) * 100, 100) || 0;
+const ProgressBar = ({ current, total, percentage: percentageProp, color = "violet" }) => {
+  const percentage = percentageProp !== undefined && percentageProp !== null
+    ? Math.min(100, Math.max(0, percentageProp))
+    : Math.min(((current || 0) / (total || 1)) * 100, 100) || 0;
 
   const colorStyles = {
     violet: "bg-violet-600 shadow-violet-600/30",

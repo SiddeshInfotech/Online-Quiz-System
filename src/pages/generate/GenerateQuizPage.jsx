@@ -141,7 +141,7 @@ const SubjectDropdown = ({ value, onChange, hasError }) => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.18 }}
-            className="absolute z-30 mt-1.5 w-full surface border border-app rounded-2xl shadow-xl shadow-slate-200/60 overflow-hidden"
+            className="absolute z-30 mt-1.5 w-full surface border border-app rounded-2xl shadow-2xl overflow-hidden"
           >
             {/* Search input */}
             <div className="p-2 border-b border-app sticky top-0 surface">
@@ -177,7 +177,7 @@ const SubjectDropdown = ({ value, onChange, hasError }) => {
                         w-full text-left px-4 py-2.5 text-sm transition-colors duration-150
                         ${s === value
                           ? "bg-violet-600 text-white font-semibold"
-                          : "text-app-2 hover:bg-violet-50 hover:text-violet-700"
+                          : "text-app-2 hover:bg-[var(--accent-soft)] hover:text-violet-600"
                         }
                       `}
                     >

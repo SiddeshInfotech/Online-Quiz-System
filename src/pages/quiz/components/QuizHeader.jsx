@@ -53,7 +53,7 @@ const QuizHeader = ({
           </h1>
           <div className="flex items-center gap-3 mt-1">
             <span className="text-xs font-semibold text-app-muted">
-              Question {currentQuestionIndex + 1} of {totalQuestions}
+              Question {totalQuestions > 0 ? currentQuestionIndex + 1 : 0} of {totalQuestions}
             </span>
             <div className="h-1.5 flex-1 max-w-[120px] surface-elev rounded-full overflow-hidden hidden sm:block">
               <div

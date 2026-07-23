@@ -13,22 +13,27 @@ const rarityColors = {
 };
 
 const BadgeCard = ({ badge, onClaim, className = "" }) => {
+  if (!badge) return null;
+
   const {
-    id,
-    name,
-    description,
-    image_url,
+    badge_id = badge.id,
+    badge_name = badge.name,
+    description = badge.requirement,
+    icon_url = badge.image_url,
+    category,
     rarity = "Common",
-    xp_reward,
-    progress = 0,
-    target = 1,
-    requirement,
-    status = "LOCKED",
+    xp_reward = badge.xp_earned,
+    current_progress = badge.progress ?? 0,
+    required_target = badge.target ?? 1,
+    progress_percentage,
+    is_unlocked,
+    is_claimed,
   } = badge;
 
-  const isLocked = status === "LOCKED";
-  const isClaimable = status === "CLAIMABLE";
-  const isClaimed = status === "CLAIMED";
+  // Requirement 2: Strict backend status logic only
+  const isLocked = is_unlocked === false;
+  const isClaimable = is_unlocked === true && is_claimed === false;
+  const isClaimed = is_claimed === true;
 
   // Card styles
   const cardStyle = isClaimable
@@ -36,7 +41,7 @@ const BadgeCard = ({ badge, onClaim, className = "" }) => {
     : "border-app";
 
   return (
-    <Link to={`/badges/${id}`} className={`block h-full ${className}`}>
+    <Link to={`/badges/${badge_id}`} className={`block h-full ${className}`}>
       <motion.div
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
@@ -54,28 +59,28 @@ const BadgeCard = ({ badge, onClaim, className = "" }) => {
           {/* Top Section: Image & Title */}
           <div className="flex gap-4 items-start pr-16">
             <div className="relative shrink-0">
-              {image_url ? (
+              {icon_url ? (
                 <img
-                  src={image_url}
-                  alt={name}
+                  src={icon_url}
+                  alt={badge_name}
                   className={`w-16 h-16 object-cover rounded-2xl border border-app shadow-sm ${isLocked ? "grayscale-[0.6] opacity-80" : ""}`}
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${name}&backgroundColor=6D5EF9`;
+                    e.target.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(badge_name)}&backgroundColor=6D5EF9`;
                   }}
                 />
               ) : (
-                <div className={`w-16 h-16 bg-slate-200 rounded-2xl border border-app shadow-sm ${isLocked ? "grayscale-[0.6] opacity-80" : ""}`} />
+                <div className={`w-16 h-16 surface-subtle rounded-2xl border border-app shadow-sm ${isLocked ? "grayscale-[0.6] opacity-80" : ""}`} />
               )}
               
               {/* Status Icons */}
               {isClaimed && (
-                <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-md border-2 border-[var(--bg-surface)]">
                   <Check size={14} strokeWidth={3} />
                 </div>
               )}
               {isLocked && (
-                <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-slate-200 text-app-muted rounded-full flex items-center justify-center shadow-md border-2 border-app">
+                <div className="absolute -bottom-2 -right-2 w-6 h-6 surface-subtle text-app-muted rounded-full flex items-center justify-center shadow-md border-2 border-app">
                   <Lock size={12} strokeWidth={2.5} />
                 </div>
               )}
@@ -83,12 +88,14 @@ const BadgeCard = ({ badge, onClaim, className = "" }) => {
 
             <div className="flex flex-col pt-1">
               <h3 className="font-bold text-app group-hover:text-violet-700 transition-colors line-clamp-2 leading-snug">
-                {name}
+                {badge_name}
               </h3>
-              <div className="text-xs font-medium text-violet-600 mt-1.5 flex items-center gap-1">
-                <Sparkles size={12} />
-                +{xp_reward} XP
-              </div>
+              {xp_reward !== undefined && xp_reward !== null && (
+                <div className="text-xs font-medium text-violet-600 mt-1.5 flex items-center gap-1">
+                  <Sparkles size={12} />
+                  +{xp_reward} XP
+                </div>
+              )}
             </div>
           </div>
 
@@ -115,15 +122,11 @@ const BadgeCard = ({ badge, onClaim, className = "" }) => {
             ) : (
               <div className="flex flex-col">
                 <ProgressBar 
-                  current={progress} 
-                  total={target || 1} 
+                  current={current_progress} 
+                  total={required_target || 1} 
+                  percentage={progress_percentage}
                   color={isClaimed ? "emerald" : "violet"}
                 />
-                {(requirement || badge.requirement) && (
-                  <p className="text-xs text-slate-400 line-clamp-2 mt-2">
-                    {requirement || badge.requirement}
-                  </p>
-                )}
               </div>
             )}
           </div>

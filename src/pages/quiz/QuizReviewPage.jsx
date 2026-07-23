@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, AlertCircle, RefreshCw, FileText } from "lucide-react";
 import attemptsService from "../../services/attemptsService";
 import Button from "../../components/ui/Button";
 
@@ -10,6 +10,47 @@ import QuestionCard from "./components/QuestionCard";
 import QuestionPalette from "./components/QuestionPalette";
 import MobileDrawer from "./components/MobileDrawer";
 
+/**
+ * Normalize review question object according to latest backend review contract.
+ */
+const normalizeReviewQuestion = (q, idx) => {
+  if (!q) return null;
+
+  const question_id = q.question_id ?? q.id ?? idx + 1;
+  const question_text = q.question_text ?? q.text ?? "";
+
+  // Normalize options: string array or object array into resilient objects
+  let options = [];
+  if (Array.isArray(q.options)) {
+    options = q.options.map((opt, i) => {
+      if (typeof opt === "string") {
+        return { id: String(i), text: opt, value: opt };
+      } else if (typeof opt === "object" && opt !== null) {
+        const optText = opt.text ?? opt.option_text ?? opt.value ?? String(opt.id || "");
+        return { id: String(opt.id ?? i), text: optText, value: optText };
+      }
+      return { id: String(i), text: String(opt), value: String(opt) };
+    });
+  }
+
+  const selected_answer = q.selected_answer ?? q.user_answer ?? (q.selected_option ? (q.selected_option.text || q.selected_option) : "");
+  const correct_answer = q.correct_answer ?? (q.correct_option ? (q.correct_option.text || q.correct_option) : "");
+  const is_correct = q.is_correct !== undefined ? q.is_correct : (selected_answer !== "" && selected_answer === correct_answer);
+  const explanation = q.explanation ?? q.ai_explanation ?? "";
+
+  return {
+    ...q,
+    id: question_id,
+    question_id,
+    question_text,
+    options,
+    selected_answer,
+    correct_answer,
+    is_correct,
+    explanation,
+  };
+};
+
 const QuizReviewPage = () => {
   const { attemptId } = useParams();
   const navigate = useNavigate();
@@ -18,52 +59,32 @@ const QuizReviewPage = () => {
   const [attempt, setAttempt] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState({}); // { question_id: option_id }
   
   // UI state
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   const fetchReview = useCallback(async () => {
     try {
       setIsLoading(true);
+      setError(null);
       const data = await attemptsService.getAttemptReview(attemptId);
-      
       setAttempt(data);
-      const qs = data.questions || [];
-      setQuestions(qs);
-      
-      const initialAnswers = {};
-      
-      // Try to extract from data.answers if it exists and has items
-      if (data.answers && data.answers.length > 0) {
-        data.answers.forEach((ans) => {
-          const qId = ans.question_id || ans.question;
-          const optId = ans.selected_option_id || ans.option_id || ans.user_answer_id || ans.selected_option || ans.answer;
-          if (qId != null && optId != null) {
-            initialAnswers[qId] = optId;
-          }
-        });
-      }
 
-      // Also try to extract directly from questions as a fallback/merge
-      if (qs && qs.length > 0) {
-        qs.forEach((q) => {
-          // If we already found it in data.answers, we can skip or overwrite
-          // But let's check all possible fields on the question itself
-          const optId = q.selected_option_id || q.user_answer_id || q.user_selected_option_id || 
-                       (q.selected_option && q.selected_option.id) || q.selected_option || 
-                       (q.user_answer && q.user_answer.id) || q.user_answer;
-          if (optId != null) {
-            initialAnswers[q.id] = optId;
-          }
-        });
-      }
+      const rawQuestions = Array.isArray(data)
+        ? data
+        : Array.isArray(data.questions)
+        ? data.questions
+        : Array.isArray(data.review)
+        ? data.review
+        : [];
 
-      setAnswers(initialAnswers);
-
+      const normalized = rawQuestions.map(normalizeReviewQuestion).filter(Boolean);
+      setQuestions(normalized);
     } catch (err) {
       console.error("Failed to load review", err);
+      setError("Unable to load review. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -98,7 +119,7 @@ const QuizReviewPage = () => {
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (isLoading) return;
+      if (isLoading || questions.length === 0) return;
 
       if (e.key === "ArrowRight") {
         handleNext();
@@ -108,7 +129,7 @@ const QuizReviewPage = () => {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isLoading, handleNext, handlePrev]);
+  }, [isLoading, questions.length, handleNext, handlePrev]);
 
   const handleNavigatePalette = (index) => {
     setCurrentIndex(index);
@@ -116,6 +137,76 @@ const QuizReviewPage = () => {
   };
 
   const currentQuestion = questions[currentIndex];
+
+  // 10. Loading State
+  if (isLoading) {
+    return (
+      <div className="min-h-screen surface-subtle font-inter flex flex-col">
+        <QuizHeader
+          quizTitle="Quiz Review"
+          currentQuestionIndex={0}
+          totalQuestions={0}
+          onExit={() => navigate(`/results/${attemptId}`)}
+          exitText="Back to Results"
+          isLoading={true}
+        />
+        <div className="flex-1 flex flex-col items-center justify-center p-8">
+          <div className="w-10 h-10 border-4 border-violet-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-app-muted font-medium text-lg">Loading review...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 10. Error State
+  if (error) {
+    return (
+      <div className="min-h-screen surface-subtle font-inter flex flex-col">
+        <QuizHeader
+          quizTitle="Quiz Review"
+          currentQuestionIndex={0}
+          totalQuestions={0}
+          onExit={() => navigate(`/results/${attemptId}`)}
+          exitText="Back to Results"
+        />
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-md mx-auto">
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mb-4">
+            <AlertCircle size={32} />
+          </div>
+          <h2 className="text-xl font-bold text-app mb-2">Unable to load review</h2>
+          <p className="text-app-muted text-sm mb-6">Unable to load review. Please try again.</p>
+          <Button variant="primary" onClick={fetchReview} className="gap-2">
+            <RefreshCw size={16} /> Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // 9. Empty State (questions.length === 0)
+  if (questions.length === 0) {
+    return (
+      <div className="min-h-screen surface-subtle font-inter flex flex-col">
+        <QuizHeader
+          quizTitle={attempt?.quiz_title || attempt?.title || "Quiz Review"}
+          currentQuestionIndex={0}
+          totalQuestions={0}
+          onExit={() => navigate(`/results/${attemptId}`)}
+          exitText="Back to Results"
+        />
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-md mx-auto">
+          <div className="w-16 h-16 surface-elev text-violet-600 rounded-2xl flex items-center justify-center mb-4 border border-app shadow-sm">
+            <FileText size={32} />
+          </div>
+          <h2 className="text-xl font-bold text-app mb-2">No review data available</h2>
+          <p className="text-app-muted text-sm mb-6">No review data available for this attempt.</p>
+          <Button variant="secondary" onClick={() => navigate(`/results/${attemptId}`)}>
+            Back to Results
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen surface-subtle font-inter pb-20 lg:pb-8">
@@ -126,7 +217,7 @@ const QuizReviewPage = () => {
         remainingSeconds={null}
         onExit={() => navigate(`/results/${attemptId}`)}
         exitText="Back to Results"
-        isLoading={isLoading}
+        isLoading={false}
       />
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8 flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
@@ -135,12 +226,12 @@ const QuizReviewPage = () => {
           <QuestionCard
             question={currentQuestion}
             index={currentIndex}
-            selectedOptionId={currentQuestion?.selected_option_id ?? currentQuestion?.user_answer_id ?? (currentQuestion ? answers[currentQuestion.id] : null)}
+            selectedOptionId={null}
             isMarkedForReview={false} 
             onSelectOption={() => {}} 
             onClearAnswer={() => {}} 
             onToggleReview={() => {}} 
-            isLoading={isLoading}
+            isLoading={false}
             reviewMode={true}
           />
 
@@ -149,7 +240,7 @@ const QuizReviewPage = () => {
             <Button
               variant="secondary"
               onClick={handlePrev}
-              disabled={currentIndex === 0 || isLoading}
+              disabled={currentIndex === 0}
               className="min-w-[120px]"
             >
               <ChevronLeft size={18} className="mr-1" />
@@ -159,7 +250,7 @@ const QuizReviewPage = () => {
             <Button
               variant="primary"
               onClick={handleNext}
-              disabled={currentIndex === questions.length - 1 || isLoading}
+              disabled={currentIndex === questions.length - 1}
               className="min-w-[120px]"
             >
               Next
@@ -173,10 +264,10 @@ const QuizReviewPage = () => {
           <QuestionPalette
             totalQuestions={questions.length}
             currentQuestionIndex={currentIndex}
-            answers={answers}
+            answers={{}}
             markedForReview={{}}
             onNavigate={handleNavigatePalette}
-            isLoading={isLoading}
+            isLoading={false}
             reviewMode={true}
             questions={questions}
           />
@@ -189,7 +280,7 @@ const QuizReviewPage = () => {
         setIsOpen={setIsMobileDrawerOpen}
         totalQuestions={questions.length}
         currentQuestionIndex={currentIndex}
-        answers={answers}
+        answers={{}}
         markedForReview={{}}
         onNavigate={handleNavigatePalette}
         reviewMode={true}

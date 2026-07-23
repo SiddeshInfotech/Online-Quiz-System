@@ -24,10 +24,10 @@ const UserBadgesPage = () => {
     const fetchBadges = async () => {
       try {
         const data = await achievementService.getAllBadges();
-        // Only show claimed badges on the profile page
+        // Only show claimed badges on the user badges page
         const earned = data
-          .filter(b => b.status === "CLAIMED")
-          .map(b => ({ ...b, image_url: resolveMediaUrl(b.image_url) }));
+          .filter(b => b.is_claimed === true)
+          .map(b => ({ ...b, icon_url: resolveMediaUrl(b.icon_url || b.image_url) }));
         setBadges(earned);
       } catch (error) {
         console.error("Failed to fetch badges", error);
@@ -35,27 +35,37 @@ const UserBadgesPage = () => {
         setLoading(false);
       }
     };
+
     fetchBadges();
+
+    const handleGamificationRefresh = () => {
+      fetchBadges();
+    };
+
+    window.addEventListener("app:refresh-gamification", handleGamificationRefresh);
+    return () => window.removeEventListener("app:refresh-gamification", handleGamificationRefresh);
   }, []);
 
   const filteredBadges = badges.filter(badge => {
     if (activeFilter === "All") return true;
-    return badge.rarity === activeFilter;
+    return badge.rarity?.toUpperCase() === activeFilter.toUpperCase();
   });
 
   const sortedBadges = [...filteredBadges].sort((a, b) => {
     switch (activeSort) {
       case "XP":
-        return b.xp_reward - a.xp_reward;
+        return (b.xp_reward ?? b.xp_earned ?? 0) - (a.xp_reward ?? a.xp_earned ?? 0);
       case "Alphabetical":
-        return a.name.localeCompare(b.name);
+        return (a.badge_name || a.name || "").localeCompare(b.badge_name || b.name || "");
       case "Rarity":
-        const rarityOrder = { Legendary: 4, Epic: 3, Rare: 2, Common: 1 };
-        return (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
+        const rarityOrder = { LEGENDARY: 4, EPIC: 3, RARE: 2, COMMON: 1 };
+        return (rarityOrder[b.rarity?.toUpperCase()] || 0) - (rarityOrder[a.rarity?.toUpperCase()] || 0);
       case "Newest":
       default:
-        if (a.claimed_at && b.claimed_at) {
-          return new Date(b.claimed_at) - new Date(a.claimed_at);
+        const dateA = a.earned_at || a.claimed_at;
+        const dateB = b.earned_at || b.claimed_at;
+        if (dateA && dateB) {
+          return new Date(dateB) - new Date(dateA);
         }
         return 0;
     }

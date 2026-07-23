@@ -11,19 +11,19 @@ const SelectDropdown = ({ value, options, onChange, label }) => (
         border border-app surface pl-4 pr-10
         text-sm font-medium text-app-2
         outline-none transition-all duration-200
-        focus:border-violet-400 focus:ring-4 focus:ring-violet-100
-        hover:border-slate-300 cursor-pointer
+        focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20
+        hover:border-app cursor-pointer
       "
     >
       {options.map((opt) => (
-        <option key={opt} value={opt}>
+        <option key={opt} value={opt} className="surface text-app">
           {opt}
         </option>
       ))}
     </select>
     <ChevronDown
       size={16}
-      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-app-muted pointer-events-none"
     />
   </div>
 );
@@ -48,7 +48,7 @@ const SearchFilterBar = ({
       <div className="relative flex-1 min-w-0">
         <Search
           size={18}
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-app-muted"
         />
         <input
           type="text"
@@ -60,8 +60,8 @@ const SearchFilterBar = ({
             h-11 w-full rounded-xl border border-app surface-subtle
             pl-10 pr-4 text-sm text-app-2
             outline-none transition-all duration-200
-            placeholder:text-slate-400
-            focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-100
+            placeholder:text-app-muted
+            focus:border-violet-400 focus:surface focus:ring-2 focus:ring-violet-500/20
           "
         />
       </div>

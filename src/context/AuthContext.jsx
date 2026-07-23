@@ -74,7 +74,13 @@ export const AuthProvider = ({ children }) => {
 
     setTokenState(newToken);
     setCurrentUser(normalised || null);
-  }, []);
+
+    // Backend evaluates badge unlocks on login: refresh profile and invalidate gamification state
+    fetchProfile().catch(() => {});
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("app:refresh-gamification"));
+    }
+  }, [fetchProfile]);
 
   const logout = useCallback(() => {
     removeToken();

@@ -30,15 +30,15 @@ const RecentAttempts = ({ attempts, isLoading }) => {
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-transparent animate-pulse">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-slate-200"></div>
+                <div className="w-12 h-12 rounded-xl surface-subtle"></div>
                 <div className="space-y-2">
-                  <div className="h-4 w-32 bg-slate-200 rounded"></div>
-                  <div className="h-3 w-24 bg-slate-200 rounded"></div>
+                  <div className="h-4 w-32 surface-subtle rounded"></div>
+                  <div className="h-3 w-24 surface-subtle rounded"></div>
                 </div>
               </div>
               <div className="text-right space-y-2">
-                <div className="h-5 w-10 bg-slate-200 rounded ml-auto"></div>
-                <div className="h-3 w-16 bg-slate-200 rounded"></div>
+                <div className="h-5 w-10 surface-subtle rounded ml-auto"></div>
+                <div className="h-3 w-16 surface-subtle rounded"></div>
               </div>
             </div>
           ))}

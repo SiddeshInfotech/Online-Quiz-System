@@ -19,25 +19,55 @@ const BadgeDetailsPage = () => {
   const navigate = useNavigate();
   const [badge, setBadge] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [claimLoading, setClaimLoading] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const fetchBadge = async () => {
+    try {
+      const badges = await achievementService.getAllBadges();
+      const data = badges.find(b => String(b.badge_id || b.id) === String(id));
+      if (!data) throw new Error("Badge not found");
+      setBadge({
+        ...data,
+        icon_url: resolveMediaUrl(data.icon_url || data.image_url)
+      });
+    } catch (error) {
+      console.error("Failed to load badge details", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchBadge = async () => {
-      try {
-        const badges = await achievementService.getAllBadges();
-        const data = badges.find(b => String(b.id) === String(id));
-        if (!data) throw new Error("Badge not found");
-        setBadge({
-          ...data,
-          image_url: resolveMediaUrl(data.image_url)
-        });
-      } catch (error) {
-        console.error("Failed to load badge details", error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchBadge();
+
+    const handleGamificationRefresh = () => {
+      fetchBadge();
+    };
+
+    window.addEventListener("app:refresh-gamification", handleGamificationRefresh);
+    return () => window.removeEventListener("app:refresh-gamification", handleGamificationRefresh);
   }, [id]);
+
+  const showToast = (message) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleClaim = async () => {
+    if (!badge) return;
+    try {
+      setClaimLoading(true);
+      const badgeId = badge.badge_id || badge.id;
+      await achievementService.claimBadge(badgeId);
+      showToast("Badge claimed successfully!");
+      await fetchBadge();
+    } catch (error) {
+      showToast(error.message || "Could not claim badge. Please try again.");
+    } finally {
+      setClaimLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -57,24 +87,33 @@ const BadgeDetailsPage = () => {
   }
 
   const {
-    name,
-    description,
-    image_url,
+    badge_id = badge.id,
+    badge_name = badge.name,
+    description = badge.requirement,
+    icon_url = badge.image_url,
     category,
     rarity = "Common",
-    xp_reward,
-    progress = 0,
-    target = 1,
-    requirement,
-    status = "locked",
-    claimed_at
+    xp_reward = badge.xp_earned,
+    current_progress = badge.progress ?? 0,
+    required_target = badge.target ?? 1,
+    progress_percentage,
+    is_unlocked,
+    is_claimed,
+    earned_at = badge.claimed_at,
   } = badge;
 
-  const isClaimed = status === "CLAIMED";
-  const isLocked = status === "LOCKED";
+  const isLocked = is_unlocked === false;
+  const isClaimable = is_unlocked === true && is_claimed === false;
 
   return (
     <div className="w-full max-w-4xl mx-auto pb-12">
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-6 py-3 rounded-full font-medium shadow-lg border border-slate-700 animate-fade-in">
+          {toast}
+        </div>
+      )}
+
       <button 
         onClick={() => navigate(-1)}
         className="flex items-center gap-2 text-app-muted hover:text-violet-600 font-medium mb-8 transition-colors group"
@@ -87,11 +126,10 @@ const BadgeDetailsPage = () => {
         {/* Banner */}
         <div className="h-48 bg-gradient-to-r from-violet-600 to-fuchsia-600 relative overflow-hidden">
           <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] mix-blend-overlay"></div>
-          {/* Large blurred background image for aesthetic */}
-          {image_url && (
+          {icon_url && (
             <div 
               className="absolute inset-0 bg-cover bg-center opacity-30 blur-2xl scale-150"
-              style={{ backgroundImage: `url(${image_url})` }}
+              style={{ backgroundImage: `url(${icon_url})` }}
             />
           )}
         </div>
@@ -100,14 +138,14 @@ const BadgeDetailsPage = () => {
           {/* Main Badge Icon */}
           <div className="relative -mt-24 mb-6 flex justify-center sm:justify-start">
             <div className={`w-40 h-40 surface rounded-[32px] p-6 shadow-2xl border-4 border-app flex items-center justify-center ${isLocked ? 'grayscale opacity-75' : ''}`}>
-              {image_url ? (
+              {icon_url ? (
                 <img 
-                  src={image_url} 
-                  alt={name} 
+                  src={icon_url} 
+                  alt={badge_name} 
                   className="w-full h-full object-contain"
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${name}&backgroundColor=6D5EF9`;
+                    e.target.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(badge_name)}&backgroundColor=6D5EF9`;
                   }}
                 />
               ) : (
@@ -124,19 +162,37 @@ const BadgeDetailsPage = () => {
           <div className="flex flex-col sm:flex-row gap-8">
             {/* Left Content */}
             <div className="flex-1">
-              <h1 className="text-3xl font-bold font-space-grotesk text-app mb-3">{name}</h1>
+              <h1 className="text-3xl font-bold font-space-grotesk text-app mb-3">{badge_name}</h1>
               <p className="text-app-2 text-lg leading-relaxed mb-6">{description}</p>
               
               <div className="mb-8">
-                <ProgressBar current={progress} total={target || 1} color={isClaimed ? "emerald" : "violet"} />
-                {isClaimed && claimed_at && (
+                <ProgressBar current={current_progress} total={required_target || 1} percentage={progress_percentage} color={is_claimed ? "emerald" : "violet"} />
+                {is_claimed && earned_at && (
                   <p className="text-sm font-medium text-emerald-600 mt-3 flex items-center gap-2">
-                    <Calendar size={16} /> Claimed on {new Date(claimed_at).toLocaleDateString()}
+                    <Calendar size={16} /> Earned on {new Date(earned_at).toLocaleDateString()}
                   </p>
                 )}
               </div>
 
-              {/* Related Quizzes Mock Section */}
+              {/* Claim Action */}
+              {isClaimable && (
+                <div className="mb-8 p-6 bg-violet-500/10 border border-violet-500/20 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-bold text-violet-900 dark:text-violet-300 text-lg">Badge Unlocked!</h3>
+                    <p className="text-xs text-violet-700 dark:text-violet-400">Complete the requirements to claim your reward.</p>
+                  </div>
+                  <Button
+                    variant="primary"
+                    disabled={claimLoading}
+                    onClick={handleClaim}
+                    className="min-w-[140px] justify-center shadow-lg shadow-violet-500/20"
+                  >
+                    {claimLoading ? "Claiming..." : "Claim Badge"}
+                  </Button>
+                </div>
+              )}
+
+              {/* Related Quizzes Section */}
               <div className="border-t border-app pt-8 mt-8">
                 <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
                   <BookOpen size={18} className="text-violet-600" /> Related Quizzes to Claim This
@@ -154,12 +210,14 @@ const BadgeDetailsPage = () => {
 
             {/* Right Sidebar Stats */}
             <div className="w-full sm:w-64 shrink-0 flex flex-col gap-4">
-              <div className="surface-subtle rounded-2xl p-5 border border-app">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">XP Reward</p>
-                <div className="text-2xl font-bold text-violet-600 flex items-center gap-2">
-                  <Sparkles size={20} /> +{xp_reward}
+              {xp_reward !== undefined && xp_reward !== null && (
+                <div className="surface-subtle rounded-2xl p-5 border border-app">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">XP Reward</p>
+                  <div className="text-2xl font-bold text-violet-600 flex items-center gap-2">
+                    <Sparkles size={20} /> +{xp_reward}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="surface-subtle rounded-2xl p-5 border border-app">
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Category</p>
@@ -169,12 +227,15 @@ const BadgeDetailsPage = () => {
               </div>
 
               <div className="surface-subtle rounded-2xl p-5 border border-app">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Requirement</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Requirement Progress</p>
                 <div className="text-sm font-medium text-app-2">
-                  {progress} / {target || 1} completed
+                  {current_progress} / {required_target || 1} completed
                 </div>
-                {(requirement || badge.requirement) && (
-                  <p className="text-xs text-app-muted mt-2">{requirement || badge.requirement}</p>
+                {progress_percentage !== undefined && (
+                  <p className="text-xs text-violet-600 font-bold mt-1">{progress_percentage}% completed</p>
+                )}
+                {description && (
+                  <p className="text-xs text-app-muted mt-2">{description}</p>
                 )}
               </div>
             </div>

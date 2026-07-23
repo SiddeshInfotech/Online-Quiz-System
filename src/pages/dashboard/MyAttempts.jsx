@@ -47,7 +47,7 @@ const StatCard = ({ icon: Icon, label, value, detail, tone }) => (
   <Card hover className="p-5">
     <div className="flex items-start justify-between gap-4">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <p className="text-xs font-semibold uppercase tracking-wide text-app-muted">
           {label}
         </p>
         <p className="mt-3 font-space-grotesk text-3xl font-bold text-app">
@@ -82,7 +82,7 @@ const ScoreRing = ({ percentage }) => {
           fill="transparent"
           stroke="currentColor"
           strokeWidth="8"
-          className="text-slate-200 dark:text-slate-700"
+          className="text-[var(--border)] opacity-40"
         />
         <circle
           cx="50"
@@ -100,7 +100,7 @@ const ScoreRing = ({ percentage }) => {
         <span className="font-space-grotesk text-xl font-bold text-app">
           {percentage}%
         </span>
-        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">Score</span>
+        <span className="text-[10px] font-semibold text-app-muted">Score</span>
       </div>
     </div>
   );
@@ -265,25 +265,25 @@ const AttemptsSkeleton = () => (
       <Card key={item} className="p-5">
         <div className="flex animate-pulse flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-1 gap-4">
-            <div className="hidden h-14 w-14 rounded-2xl bg-slate-200 sm:block" />
+            <div className="hidden h-14 w-14 rounded-2xl surface-subtle sm:block" />
             <div className="flex-1 space-y-4">
-              <div className="h-5 w-2/3 rounded bg-slate-200" />
+              <div className="h-5 w-2/3 rounded surface-subtle" />
               <div className="flex gap-2">
-                <div className="h-7 w-24 rounded-full bg-slate-200" />
-                <div className="h-7 w-28 rounded-full bg-slate-200" />
+                <div className="h-7 w-24 rounded-full surface-subtle" />
+                <div className="h-7 w-28 rounded-full surface-subtle" />
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div className="h-4 rounded bg-slate-200" />
-                <div className="h-4 rounded bg-slate-200" />
-                <div className="h-4 rounded bg-slate-200" />
+                <div className="h-4 rounded surface-subtle" />
+                <div className="h-4 rounded surface-subtle" />
+                <div className="h-4 rounded surface-subtle" />
               </div>
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="h-24 w-24 rounded-full bg-slate-200" />
+            <div className="h-24 w-24 rounded-full surface-subtle" />
             <div className="space-y-2">
-              <div className="h-9 w-36 rounded-xl bg-slate-200" />
-              <div className="h-9 w-36 rounded-xl bg-slate-200" />
+              <div className="h-9 w-36 rounded-xl surface-subtle" />
+              <div className="h-9 w-36 rounded-xl surface-subtle" />
             </div>
           </div>
         </div>

@@ -40,7 +40,8 @@ const AchievementPage = () => {
       // Resolve media URLs
       const processedBadges = fetchedBadges.map(b => ({
         ...b,
-        image_url: resolveMediaUrl(b.image_url)
+        icon_url: resolveMediaUrl(b.icon_url || b.image_url),
+        image_url: resolveMediaUrl(b.icon_url || b.image_url)
       }));
 
       setBadges(processedBadges);
@@ -55,43 +56,35 @@ const AchievementPage = () => {
 
   useEffect(() => {
     loadData();
+
+    const handleGamificationRefresh = () => {
+      loadData();
+    };
+
+    window.addEventListener("app:refresh-gamification", handleGamificationRefresh);
+    return () => window.removeEventListener("app:refresh-gamification", handleGamificationRefresh);
   }, []);
 
   const handleClaim = async (badge) => {
     try {
-      const res = await achievementService.claimBadge(badge.id);
+      const badgeId = badge.badge_id || badge.id;
+      const res = await achievementService.claimBadge(badgeId);
 
-      // Backend returns { badge_id, status, xp_earned, badge: {...}, celebrate }.
-      // Mark the badge CLAIMED in local state (match on badge_id, not res.id).
-      const claimedId = res.badge_id ?? badge.id;
-      setBadges(prev =>
-        prev.map(b =>
-          b.id === claimedId
-            ? { ...b, status: "CLAIMED", claimed_at: res.claimed_at }
-            : b
-        )
-      );
+      showToast("Badge claimed successfully!");
+      loadData();
 
-      // Fetch fresh stats (badge counts / XP)
-      try {
-        const freshStats = await achievementService.getUserStats();
-        setStats(freshStats);
-      } catch (_) { /* non-critical */ }
-
-      // #17: full-screen celebration driven by the backend payload.
-      if (res.celebrate && res.badge) {
+      if (res && res.celebrate && res.badge) {
         setCelebration({
-          badge: { ...res.badge, image_url: resolveMediaUrl(res.badge.image_url) },
-          xpEarned: res.xp_earned,
+          badge: { ...res.badge, icon_url: resolveMediaUrl(res.badge.icon_url || res.badge.image_url) },
+          xpEarned: res.xp_earned || res.badge?.xp_reward || 0,
         });
       } else {
-        // Fallback to the existing modal if celebrate wasn't returned.
         setSelectedBadge({ ...badge, ...res });
         setShowClaimModal(true);
       }
     } catch (error) {
       console.error("Failed to claim badge", error);
-      showToast("Could not claim badge. Please try again.");
+      showToast(error.message || "Could not claim badge. Please try again.");
     }
   };
 
@@ -103,16 +96,14 @@ const AchievementPage = () => {
   const handleModalClose = () => {
     setShowClaimModal(false);
     setSelectedBadge(null);
-    showToast("Badge claimed successfully!");
   };
 
-  // Filtering & Sorting Logic
+  // Filtering & Sorting Logic per backend contract
   const filteredBadges = badges.filter(badge => {
-    // Filter
     if (activeFilter === "All") return true;
-    if (activeFilter === "Claimed") return badge.status === "CLAIMED";
-    if (activeFilter === "Claimable") return badge.status === "CLAIMABLE";
-    if (activeFilter === "Locked") return badge.status === "LOCKED";
+    if (activeFilter === "Claimed") return badge.is_claimed === true;
+    if (activeFilter === "Claimable") return badge.is_unlocked === true && badge.is_claimed === false;
+    if (activeFilter === "Locked") return badge.is_unlocked === false;
 
     return badge.rarity?.toUpperCase() === activeFilter.toUpperCase();
   });
@@ -120,30 +111,30 @@ const AchievementPage = () => {
   const sortedBadges = [...filteredBadges].sort((a, b) => {
     switch (activeSort) {
       case "Progress":
-        const progressA = (a.target > 0) ? (a.progress / a.target) : 0;
-        const progressB = (b.target > 0) ? (b.progress / b.target) : 0;
-        return progressB - progressA;
+        return (b.progress_percentage ?? 0) - (a.progress_percentage ?? 0);
       case "XP":
-        return b.xp_reward - a.xp_reward;
+        return (b.xp_reward ?? b.xp_earned ?? 0) - (a.xp_reward ?? a.xp_earned ?? 0);
       case "Alphabetical":
-        return a.name.localeCompare(b.name);
+        return (a.badge_name || a.name || "").localeCompare(b.badge_name || b.name || "");
       case "Rarity":
         const rarityOrder = { LEGENDARY: 4, EPIC: 3, RARE: 2, COMMON: 1 };
         return (rarityOrder[b.rarity?.toUpperCase()] || 0) - (rarityOrder[a.rarity?.toUpperCase()] || 0);
       case "Newest":
       default:
-        if (a.claimed_at && b.claimed_at) {
-          return new Date(b.claimed_at) - new Date(a.claimed_at);
-        } else if (a.claimed_at) {
+        const dateA = a.earned_at || a.claimed_at;
+        const dateB = b.earned_at || b.claimed_at;
+        if (dateA && dateB) {
+          return new Date(dateB) - new Date(dateA);
+        } else if (dateA) {
           return -1;
-        } else if (b.claimed_at) {
+        } else if (dateB) {
           return 1;
         }
-        return 0; // fallback if no date
+        return 0;
     }
   });
 
-  const claimableBadges = badges.filter(b => b.status === "CLAIMABLE");
+  const claimableBadges = badges.filter(b => b.is_unlocked === true && b.is_claimed === false);
 
   return (
     <div className="w-full max-w-7xl mx-auto pb-12">

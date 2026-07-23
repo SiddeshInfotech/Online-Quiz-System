@@ -3,7 +3,9 @@ import { Sparkles, X, Trophy } from "lucide-react";
 import Button from "../ui/Button/Button";
 
 const ClaimModal = ({ isOpen, badge, onClose }) => {
-  if (!isOpen || !badge) return null;
+  const badgeName = badge.badge_name || badge.name || "Badge";
+  const iconUrl = badge.icon_url || badge.image_url;
+  const xpAmount = badge.xp_earned ?? badge.xp_reward;
 
   return (
     <AnimatePresence>
@@ -14,7 +16,7 @@ const ClaimModal = ({ isOpen, badge, onClose }) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+          className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
         />
 
         {/* Modal */}
@@ -23,7 +25,7 @@ const ClaimModal = ({ isOpen, badge, onClose }) => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8, y: 20 }}
           transition={{ type: "spring", damping: 20, stiffness: 300 }}
-          className="relative surface w-full max-w-sm rounded-[32px] p-8 text-center shadow-2xl overflow-hidden"
+          className="relative surface w-full max-w-sm rounded-[32px] p-8 text-center shadow-2xl overflow-hidden border border-app"
         >
           {/* Confetti / Glow background effect */}
           <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-violet-500/20 to-transparent pointer-events-none" />
@@ -33,21 +35,21 @@ const ClaimModal = ({ isOpen, badge, onClose }) => {
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors z-10"
+            className="absolute top-4 right-4 p-2 text-app-muted hover:text-app hover:bg-[var(--bg-elevated)] rounded-full transition-colors z-10"
           >
             <X size={20} />
           </button>
 
           <div className="relative z-10 flex flex-col items-center">
-            <div className="w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center mb-6 text-violet-600 shadow-inner">
+            <div className="w-16 h-16 bg-violet-500/15 rounded-full flex items-center justify-center mb-6 text-violet-500 shadow-inner">
               <Trophy size={32} />
             </div>
 
-            <h2 className="text-2xl font-bold font-space-grotesk text-slate-800 mb-2">
+            <h2 className="text-2xl font-bold font-space-grotesk text-app mb-2">
               Congratulations!
             </h2>
             <p className="text-sm text-app-muted mb-8">
-              You've successfully claimed the <span className="font-bold text-violet-600">{badge.name}</span> badge.
+              You've successfully claimed the <span className="font-bold text-violet-600">{badgeName}</span> badge.
             </p>
 
             <motion.div
@@ -56,37 +58,41 @@ const ClaimModal = ({ isOpen, badge, onClose }) => {
               transition={{ type: "spring", delay: 0.2 }}
               className="w-32 h-32 mb-6"
             >
-              {badge.image_url ? (
+              {iconUrl ? (
                 <img
-                  src={badge.image_url}
-                  alt={badge.name}
+                  src={iconUrl}
+                  alt={badgeName}
                   className="w-full h-full object-contain filter drop-shadow-xl"
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${badge.name}&backgroundColor=6D5EF9`;
+                    e.target.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(badgeName)}&backgroundColor=6D5EF9`;
                   }}
                 />
               ) : (
-                <div className="w-full h-full bg-slate-200 rounded-full" />
+                <div className="w-full h-full surface-subtle rounded-full flex items-center justify-center">
+                  <Trophy size={48} className="text-violet-400" />
+                </div>
               )}
             </motion.div>
 
-            <div className="inline-flex flex-col items-center mb-8">
-              <div className="inline-flex items-center gap-2 bg-amber-50 text-amber-600 px-4 py-2 rounded-full font-bold text-lg border border-amber-200 shadow-sm">
-                <Sparkles size={20} />
-                +{badge.xp_earned || badge.xp_reward} XP
+            {xpAmount !== undefined && xpAmount !== null && (
+              <div className="inline-flex flex-col items-center mb-8">
+                <div className="inline-flex items-center gap-2 bg-amber-500/10 text-amber-500 px-4 py-2 rounded-full font-bold text-lg border border-amber-500/20 shadow-sm">
+                  <Sparkles size={20} />
+                  +{xpAmount} XP
+                </div>
+                {badge.new_total_xp !== undefined && (
+                  <p className="text-sm font-medium text-amber-500 mt-2">
+                    New Total: {badge.new_total_xp} XP
+                  </p>
+                )}
               </div>
-              {badge.new_total_xp !== undefined && (
-                <p className="text-sm font-medium text-amber-700 mt-2">
-                  New Total: {badge.new_total_xp} XP
-                </p>
-              )}
-            </div>
+            )}
 
             <Button onClick={onClose} className="w-full justify-center py-3">
               Continue
             </Button>
-            <p className="text-xs text-slate-400 mt-4">
+            <p className="text-xs text-app-muted mt-4">
               Keep learning to unlock more achievements.
             </p>
           </div>

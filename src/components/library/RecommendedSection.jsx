@@ -5,12 +5,12 @@ import RecommendedCard from "./RecommendedCard";
 
 const RecommendedSkeleton = () => (
   <div className="min-w-[260px] md:min-w-[280px] h-[260px] surface rounded-2xl border border-app shadow-sm p-4 flex flex-col animate-pulse">
-    <div className="w-full h-32 bg-slate-200 rounded-xl mb-4" />
-    <div className="h-4 bg-slate-200 rounded w-3/4 mb-2" />
-    <div className="h-3 bg-slate-200 rounded w-1/2 mb-4" />
+    <div className="w-full h-32 surface-subtle rounded-xl mb-4" />
+    <div className="h-4 surface-subtle rounded w-3/4 mb-2" />
+    <div className="h-3 surface-subtle rounded w-1/2 mb-4" />
     <div className="mt-auto flex justify-between">
-      <div className="h-4 bg-slate-200 rounded w-1/4" />
-      <div className="h-4 bg-slate-200 rounded w-1/4" />
+      <div className="h-4 surface-subtle rounded w-1/4" />
+      <div className="h-4 surface-subtle rounded w-1/4" />
     </div>
   </div>
 );

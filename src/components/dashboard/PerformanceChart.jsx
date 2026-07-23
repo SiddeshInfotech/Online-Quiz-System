@@ -19,8 +19,8 @@ const PerformanceChart = ({ stats, chartData, isLoading }) => {
         <div className="grid grid-cols-4 gap-4 mb-8">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="animate-pulse">
-              <div className="h-3 w-16 bg-slate-200 rounded mb-2"></div>
-              <div className="h-6 w-12 bg-slate-200 rounded"></div>
+              <div className="h-3 w-16 surface-subtle rounded mb-2"></div>
+              <div className="h-6 w-12 surface-subtle rounded"></div>
             </div>
           ))}
         </div>
@@ -57,7 +57,7 @@ const PerformanceChart = ({ stats, chartData, isLoading }) => {
           </div>
           <div className="absolute bottom-0 left-8 right-0 flex justify-between px-4 z-0">
             {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <div key={i} className="h-2 w-6 bg-slate-200 rounded"></div>
+              <div key={i} className="h-2 w-6 surface-subtle rounded"></div>
             ))}
           </div>
         </div>

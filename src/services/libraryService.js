@@ -32,6 +32,12 @@ const libraryService = {
     const response = await api.get(`/quizzes/${id}/`);
     return response.data;
   },
+
+  // Alias for getQuizById
+  getQuizDetails: async (id) => {
+    const response = await api.get(`/quizzes/${id}/`);
+    return response.data;
+  },
 };
 
 export default libraryService;

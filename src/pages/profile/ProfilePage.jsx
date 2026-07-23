@@ -87,7 +87,7 @@ const ProfileSkeleton = () => (
   <div className="w-full max-w-6xl mx-auto pb-12 animate-pulse">
     {/* Header */}
     <div className="mb-8">
-      <div className="h-8 w-48 bg-slate-200 rounded-lg mb-2" />
+      <div className="h-8 w-48 surface-subtle rounded-lg mb-2" />
       <div className="h-4 w-64 surface-elev rounded-lg" />
     </div>
 
@@ -95,19 +95,19 @@ const ProfileSkeleton = () => (
       {/* Left Column - Profile Card */}
       <div className="lg:col-span-1">
         <Card className="p-8 flex flex-col items-center gap-6">
-          <div className="w-32 h-32 rounded-full bg-slate-200" />
+          <div className="w-32 h-32 rounded-full surface-subtle" />
           <div className="flex flex-col items-center gap-2 w-full">
-            <div className="h-6 w-3/4 bg-slate-200 rounded-lg" />
+            <div className="h-6 w-3/4 surface-subtle rounded-lg" />
             <div className="h-4 w-1/2 surface-elev rounded-lg" />
           </div>
-          <div className="h-11 w-full bg-slate-200 rounded-xl mt-4" />
+          <div className="h-11 w-full surface-subtle rounded-xl mt-4" />
         </Card>
       </div>
 
       {/* Right Column - Info Cards */}
       <div className="lg:col-span-2 flex flex-col gap-6">
         <Card className="p-8">
-          <div className="h-6 w-40 bg-slate-200 rounded-lg mb-6" />
+          <div className="h-6 w-40 surface-subtle rounded-lg mb-6" />
           <div className="flex flex-col gap-6">
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex flex-col gap-2">
@@ -118,7 +118,7 @@ const ProfileSkeleton = () => (
           </div>
         </Card>
         <Card className="p-8">
-          <div className="h-6 w-32 bg-slate-200 rounded-lg mb-6" />
+          <div className="h-6 w-32 surface-subtle rounded-lg mb-6" />
           <div className="flex gap-4">
             <div className="h-11 flex-1 surface-elev rounded-xl" />
             <div className="h-11 flex-1 surface-elev rounded-xl" />
@@ -392,7 +392,7 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
               leftIcon={FileText}
             />
 
-            <div className="border-t border-slate-100 pt-5 mt-2">
+            <div className="border-t border-app pt-5 mt-2">
               <p className="text-sm font-semibold text-app mb-4 flex items-center gap-2">
                 <GraduationCap size={16} className="text-violet-600" />
                 Educational Details
@@ -724,15 +724,20 @@ const ProfilePage = () => {
         await fetchProfile();
         // Fetch recent badges for the profile preview (image thumbnails only)
         const badgesData = await achievementService.getUserAuthBadges();
-        const badgesList = badgesData.badges || badgesData || [];
-        const claimed = badgesList.filter(b => b.status === "CLAIMED").map(b => ({
-          ...b,
-          image_url: resolveMediaUrl(b.image_url)
-        }));
-        // Sort by newest if claimed_at exists
-        claimed.sort((a, b) => new Date(b.claimed_at || 0) - new Date(a.claimed_at || 0));
-        // Use profile.badge_count from backend if available, otherwise count from list.
-        // profile.badge_count is the authoritative value per new backend contract.
+        const badgesList = Array.isArray(badgesData)
+          ? badgesData
+          : badgesData.badges || [];
+
+        const claimed = badgesList
+          .filter(b => b.is_claimed === true)
+          .map(b => ({
+            ...b,
+            icon_url: resolveMediaUrl(b.icon_url || b.image_url),
+            image_url: resolveMediaUrl(b.icon_url || b.image_url)
+          }));
+
+        // Sort by newest if earned_at / claimed_at exists
+        claimed.sort((a, b) => new Date(b.earned_at || b.claimed_at || 0) - new Date(a.earned_at || a.claimed_at || 0));
         setTotalClaimedBadges(claimed.length);
         setRecentBadges(claimed.slice(0, 5));
       } catch (err) {
@@ -741,8 +746,18 @@ const ProfilePage = () => {
         if (!cancelled) setLoading(false);
       }
     };
+
     load();
-    return () => { cancelled = true; };
+
+    const handleGamificationRefresh = () => {
+      load();
+    };
+
+    window.addEventListener("app:refresh-gamification", handleGamificationRefresh);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("app:refresh-gamification", handleGamificationRefresh);
+    };
   }, [fetchProfile]);
 
   // Sync totalClaimedBadges from profile.badge_count whenever the profile updates.
@@ -957,7 +972,7 @@ const ProfilePage = () => {
             >
               <Card className="p-5 hover:shadow-xl transition-all duration-300">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-100">
+                <div className="flex items-center justify-between mb-3 pb-3 border-b border-app">
                   <div>
                     <h3 className="text-sm font-bold font-space-grotesk text-app flex items-center gap-1.5">
                       🏆 Achievements

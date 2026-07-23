@@ -164,12 +164,12 @@ const FeedbackPage = () => {
   if (loading) {
     return (
       <div className="p-6 max-w-5xl mx-auto space-y-8 animate-pulse">
-        <div className="h-8 bg-slate-200 rounded w-1/4"></div>
-        <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-        <div className="h-48 bg-slate-200 rounded-2xl w-full"></div>
+        <div className="h-8 surface-subtle rounded w-1/4"></div>
+        <div className="h-4 surface-subtle rounded w-1/2"></div>
+        <div className="h-48 surface-subtle rounded-2xl w-full"></div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="h-96 bg-slate-200 rounded-2xl lg:col-span-7"></div>
-          <div className="h-96 bg-slate-200 rounded-2xl lg:col-span-5"></div>
+          <div className="h-96 surface-subtle rounded-2xl lg:col-span-7"></div>
+          <div className="h-96 surface-subtle rounded-2xl lg:col-span-5"></div>
         </div>
       </div>
     );
@@ -179,7 +179,7 @@ const FeedbackPage = () => {
     return (
       <div className="p-6 max-w-5xl mx-auto flex flex-col items-center justify-center py-20 text-center">
         <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-        <h2 className="text-xl font-semibold text-slate-800 mb-2">Oops! Something went wrong</h2>
+        <h2 className="text-xl font-semibold text-app mb-2">Oops! Something went wrong</h2>
         <p className="text-app-muted">{error}</p>
         <Button onClick={fetchData} className="mt-6">Try Again</Button>
       </div>
@@ -260,7 +260,7 @@ const FeedbackPage = () => {
                     Write New Feedback
                   </Button>
                 )}
-                <div className="h-px w-full bg-slate-100 my-6" />
+                <div className="h-px w-full border-b border-app my-6" />
               </div>
             )}
 
@@ -295,13 +295,13 @@ const FeedbackPage = () => {
                   Your Experience <span className="text-red-500">*</span>
                 </label>
                 <textarea
-                  className="w-full rounded-xl border border-app p-4 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 outline-none transition-all resize-none surface-subtle focus:surface"
+                  className="w-full rounded-xl border border-app p-4 text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 outline-none transition-all resize-none surface-subtle focus:surface text-app"
                   rows={5}
                   placeholder="Tell us what you liked, what can be improved, or report an issue..."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                 />
-                <div className={`text-right text-xs mt-1 ${message.length > 1000 ? 'text-red-500' : 'text-slate-400'}`}>
+                <div className={`text-right text-xs mt-1 ${message.length > 1000 ? 'text-red-500' : 'text-app-muted'}`}>
                   {message.length} / 1000
                 </div>
               </div>

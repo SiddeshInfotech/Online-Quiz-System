@@ -259,7 +259,7 @@ const Podium = ({ top3, isInTop3 = false, currentUserId }) => {
 
 const rankBadgeStyle = (rank) => {
   if (rank === 1) return "bg-amber-100 text-amber-700 border border-amber-200";
-  if (rank === 2) return "surface-elev text-slate-600 border border-app";
+  if (rank === 2) return "surface-elev text-app border border-app";
   if (rank === 3) return "bg-orange-100 text-orange-700 border border-orange-200";
   return "surface text-app-muted border border-app";
 };
@@ -299,7 +299,7 @@ const TableRow = ({ id, entry, isCurrentUser, index }) => {
     className={`group transition-colors duration-200 ${
       isCurrentUser
         ? "bg-violet-50/70 dark:bg-violet-500/10 border-l-4 border-l-violet-500 ring-inset ring-1 ring-violet-100 dark:ring-violet-500/20"
-        : "hover:bg-slate-50 dark:hover:bg-[var(--bg-elevated)]"
+        : "hover:bg-[var(--bg-elevated)]"
     }`}
   >
     {/* Rank */}

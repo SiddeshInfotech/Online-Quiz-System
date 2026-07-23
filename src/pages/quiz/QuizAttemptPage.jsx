@@ -3,6 +3,8 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Check, Clock, Loader2, AlertTriangle, ShieldAlert } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import attemptsService from "../../services/attemptsService";
+import libraryService from "../../services/libraryService";
+import { notifyGamificationUpdated } from "../../services/achievementService";
 import Button from "../../components/ui/Button";
 
 // Components
@@ -76,8 +78,30 @@ const QuizAttemptPage = () => {
       }
 
       setAttempt(data);
-      // Assuming questions are in data.questions
-      const qs = data.questions || [];
+      
+      // Robust question extraction across potential API key structures
+      let qs =
+        (Array.isArray(data.questions) && data.questions.length > 0 && data.questions) ||
+        (Array.isArray(data.quiz?.questions) && data.quiz.questions.length > 0 && data.quiz.questions) ||
+        (Array.isArray(data.attempt?.questions) && data.attempt.questions.length > 0 && data.attempt.questions) ||
+        (Array.isArray(data.attempt?.quiz?.questions) && data.attempt.quiz.questions.length > 0 && data.attempt.quiz.questions) ||
+        (Array.isArray(data.quiz_questions) && data.quiz_questions.length > 0 && data.quiz_questions) ||
+        (Array.isArray(data.questions_list) && data.questions_list.length > 0 && data.questions_list) ||
+        [];
+
+      // Fallback: If attempt payload does not contain questions, fetch from library quiz details
+      if ((!qs || qs.length === 0) && (data.quiz_id || data.quiz)) {
+        const qId = data.quiz_id || (typeof data.quiz === "object" ? data.quiz?.id : data.quiz);
+        if (qId) {
+          try {
+            const quizDetail = await libraryService.getQuizById(qId);
+            qs = quizDetail.questions || quizDetail.quiz?.questions || quizDetail.data?.questions || [];
+          } catch (fallbackErr) {
+            console.error("Fallback getQuizById failed:", fallbackErr);
+          }
+        }
+      }
+
       setQuestions(qs);
       
       // If there are existing answers, populate them
@@ -344,6 +368,7 @@ const QuizAttemptPage = () => {
       // Backend now returns only { status, attempt_id, result_id }
       // Do not use the response body — navigate to result page which fetches its own data
       await attemptsService.submitAttempt(attemptId, payload);
+      notifyGamificationUpdated();
       navigate(`/results/${attemptId}`, { replace: true, state: { from_ai: fromAi } });
     } catch (err) {
       console.error("Submission failed", err);
@@ -411,17 +436,36 @@ const QuizAttemptPage = () => {
              )}
           </div>
 
-          <QuestionCard
-            question={currentQuestion}
-            index={currentIndex}
-            selectedOptionId={currentQuestion ? answers[currentQuestion.id] : null}
-            isMarkedForReview={!!markedForReview[currentIndex]}
-            onSelectOption={handleSelectOption}
-            onClearAnswer={handleClearAnswer}
-            onToggleReview={handleToggleReview}
-            isLoading={isLoading}
-            disabled={isSubmitting || isTimeUp || remainingSeconds === 0 || forcedAutoSubmitted}
-          />
+          {!isLoading && questions.length === 0 ? (
+            <div className="surface rounded-3xl p-8 md:p-12 text-center border border-app shadow-sm space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto border border-amber-500/20">
+                <AlertTriangle size={32} />
+              </div>
+              <h3 className="text-xl font-bold font-space-grotesk text-app">
+                No Questions Found
+              </h3>
+              <p className="text-sm text-app-muted max-w-md mx-auto leading-relaxed">
+                Unable to load questions for this quiz attempt. The quiz data may be unavailable or empty.
+              </p>
+              <div className="pt-3">
+                <Button variant="primary" onClick={() => navigate("/library")}>
+                  Return to Quiz Library
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <QuestionCard
+              question={currentQuestion}
+              index={currentIndex}
+              selectedOptionId={currentQuestion ? answers[currentQuestion.id] : null}
+              isMarkedForReview={!!markedForReview[currentIndex]}
+              onSelectOption={handleSelectOption}
+              onClearAnswer={handleClearAnswer}
+              onToggleReview={handleToggleReview}
+              isLoading={isLoading}
+              disabled={isSubmitting || isTimeUp || remainingSeconds === 0 || forcedAutoSubmitted}
+            />
+          )}
 
           {/* Navigation Buttons */}
           <div className="flex items-center justify-between pt-4">

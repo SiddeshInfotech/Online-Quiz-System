@@ -24,10 +24,10 @@ const QuestionCard = ({
     return (
       <div className="surface rounded-3xl p-6 md:p-8 shadow-sm border border-app">
         <div className="flex justify-between items-start mb-6">
-          <div className="animate-pulse bg-slate-200 h-6 w-32 rounded"></div>
-          <div className="animate-pulse bg-slate-200 h-8 w-8 rounded-full"></div>
+          <div className="animate-pulse surface-subtle h-6 w-32 rounded"></div>
+          <div className="animate-pulse surface-subtle h-8 w-8 rounded-full"></div>
         </div>
-        <div className="animate-pulse bg-slate-200 h-24 w-full rounded-xl mb-8"></div>
+        <div className="animate-pulse surface-subtle h-24 w-full rounded-xl mb-8"></div>
         <div className="space-y-4">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="animate-pulse surface-elev h-16 w-full rounded-2xl"></div>
@@ -156,10 +156,20 @@ const QuestionCard = ({
           </div>
         ) : (
           question.options.map((option, i) => {
-            const effectiveSelectedId = question?.selected_option_id ?? question?.user_answer_id ?? selectedOptionId;
-            const isSelected = effectiveSelectedId != null && String(effectiveSelectedId).trim() === String(option.id).trim();
-            const isCorrectOption = question.correct_option_id != null && String(option.id).trim() === String(question.correct_option_id).trim();
+            const optionText = typeof option === "string" ? option : (option.text ?? option.value ?? String(option.id || ""));
+            const optionId = typeof option === "object" && option?.id != null ? String(option.id).trim() : String(i);
             const letter = String.fromCharCode(65 + i);
+
+            const effectiveSelectedId = question?.selected_option_id ?? question?.user_answer_id ?? selectedOptionId;
+            
+            // Text-based matching (latest backend contract) + ID fallback (legacy contract)
+            const isSelected = reviewMode
+              ? (question.selected_answer ? optionText.trim() === String(question.selected_answer).trim() : (effectiveSelectedId != null && String(effectiveSelectedId).trim() === optionId))
+              : (effectiveSelectedId != null && String(effectiveSelectedId).trim() === optionId);
+
+            const isCorrectOption = reviewMode
+              ? (question.correct_answer ? optionText.trim() === String(question.correct_answer).trim() : (question.correct_option_id != null && String(question.correct_option_id).trim() === optionId))
+              : false;
 
             let containerClasses = "";
             let circleClasses = "";
@@ -205,10 +215,10 @@ const QuestionCard = ({
 
             return (
               <motion.button
-                key={option.id}
+                key={optionId || i}
                 whileHover={reviewMode || disabled ? {} : { scale: 1.01 }}
                 whileTap={reviewMode || disabled ? {} : { scale: 0.99 }}
-                onClick={() => !reviewMode && !disabled && onSelectOption(option.id)}
+                onClick={() => !reviewMode && !disabled && onSelectOption(optionId)}
                 disabled={reviewMode || disabled}
                 className={`w-full text-left p-4 rounded-2xl border-2 transition-all flex items-start gap-4 ${containerClasses} ${disabled && !reviewMode ? "opacity-70 cursor-not-allowed" : ""}`}
               >
@@ -219,7 +229,7 @@ const QuestionCard = ({
                 </div>
                 <div className="flex-1 mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <span className={`text-base ${textClasses}`}>
-                    {option.text}
+                    {optionText}
                   </span>
                   {reviewMode && (
                     <div className="flex items-center gap-2 flex-shrink-0">
@@ -262,15 +272,15 @@ const QuestionCard = ({
           }))}
       </div>
 
-      {/* AI Explanation Card */}
+      {/* Explanation Card */}
       {reviewMode && (
         <div className="mt-8 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-2xl p-5 md:p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-xl">🤖</span>
-            <h3 className="font-bold text-indigo-900 dark:text-indigo-400 text-lg">AI Explanation</h3>
+            <h3 className="font-bold text-indigo-900 dark:text-indigo-400 text-lg">Explanation</h3>
           </div>
           <p className="text-indigo-800 dark:text-indigo-200 leading-relaxed whitespace-pre-wrap">
-            {question.ai_explanation || "No explanation is available for this question."}
+            {question.explanation || question.ai_explanation || "No explanation is available for this question."}
           </p>
         </div>
       )}
