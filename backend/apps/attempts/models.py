@@ -30,6 +30,12 @@ class UserAnswer(models.Model):
     marked_for_review = models.BooleanField(default=False)
     reviewed = models.BooleanField(default=False)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['attempt', 'is_correct']),
+            models.Index(fields=['question', 'is_correct']),
+        ]
+
 class Result(models.Model):
     attempt = models.OneToOneField(QuizAttempt, on_delete=models.CASCADE)
     correct_answers = models.IntegerField(default=0)
