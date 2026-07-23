@@ -16,8 +16,8 @@ class AdminUserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'username', 'email', 'full_name', 'total_points', 
-            'xp', 'level', 'role', 'is_active', 'total_attempts', 
-            'penalty_count', 'date_joined'
+            'xp', 'level', 'role', 'is_active', 'is_staff', 'is_superuser',
+            'total_attempts', 'penalty_count', 'date_joined'
         ]
         read_only_fields = fields
 
@@ -28,6 +28,7 @@ class AdminQuizSerializer(serializers.ModelSerializer):
     category_name = serializers.ReadOnlyField(source='category.category_name')
     created_by_name = serializers.ReadOnlyField(source='created_by.username')
     question_count = serializers.SerializerMethodField()
+    questions = serializers.JSONField(required=False, write_only=True)
 
     class Meta:
         model = Quiz
@@ -37,12 +38,45 @@ class AdminQuizSerializer(serializers.ModelSerializer):
             'total_marks', 'is_ai_generated', 'join_code', 'share_link',
             'category', 'category_name', 'created_by', 'created_by_name',
             'created_at', 'updated_at', 'grade_level', 'is_published',
-            'question_count'
+            'question_count', 'questions'
         ]
         read_only_fields = ['created_by', 'created_at', 'updated_at', 'join_code', 'share_link', 'question_count']
 
     def get_question_count(self, obj):
         return obj.question_set.count()
+
+    def create(self, validated_data):
+        from apps.questions.models import Question, QuestionOption
+        questions_data = validated_data.pop('questions', None)
+        quiz = super().create(validated_data)
+
+        if questions_data and isinstance(questions_data, list):
+            for idx, q_data in enumerate(questions_data):
+                if not isinstance(q_data, dict):
+                    continue
+                q_text = q_data.get('question_text', '').strip()
+                q_type = q_data.get('question_type', 'MCQ')
+                correct = q_data.get('correct_answer', '').strip()
+                options = q_data.get('options', [])
+
+                question = Question.objects.create(
+                    quiz=quiz,
+                    question_text=q_text,
+                    question_type=q_type,
+                    correct_answer=correct,
+                    marks=1,
+                    question_order=idx + 1
+                )
+
+                if options and isinstance(options, list):
+                    for opt_idx, opt in enumerate(options):
+                        opt_text = str(opt).strip()
+                        QuestionOption.objects.create(
+                            question=question,
+                            option_text=opt_text,
+                            is_correct=(opt_text.lower() == correct.lower() or opt_idx == 0)
+                        )
+        return quiz
 
 class UserPenaltyLogSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source='user.username')

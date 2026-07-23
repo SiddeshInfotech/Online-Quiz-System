@@ -36,12 +36,12 @@ class AdminAnalyticsView(APIView):
     permission_classes = [IsCustomAdmin]
 
     def get(self, request):
-        # 1. Total actual registered non-superuser accounts currently in DB
-        total_users = User.objects.filter(is_superuser=False).count()
+        # 1. Total actual registered accounts currently in DB
+        total_users = User.objects.count()
 
         # 2. Total actual quizzes created by admins vs students
-        admin_quizzes = Quiz.objects.filter(created_by__is_staff=True).count()
-        user_quizzes = Quiz.objects.filter(created_by__is_staff=False).count()
+        admin_quizzes = Quiz.objects.filter(Q(created_by__is_staff=True) | Q(created_by__role='Admin')).count()
+        user_quizzes = Quiz.objects.filter(created_by__is_staff=False, created_by__role='Student').count()
 
         # 3. Total actual attempts taken by real students in DB
         total_attempts = QuizAttempt.objects.count()
@@ -80,10 +80,11 @@ AdminDashboardAnalyticsView = AdminAnalyticsView
 class AdminUsersListView(generics.ListAPIView):
     permission_classes = [IsCustomAdmin]
     serializer_class = AdminUserSerializer
+    pagination_class = None
 
     def get_queryset(self):
-        # Return ALL actual registered non-superuser accounts from DB
-        return User.objects.filter(is_superuser=False).annotate(
+        # Return ALL actual registered user accounts from DB (including nilesh 45 and admin staff)
+        return User.objects.all().annotate(
             total_attempts=Count('quizattempt', distinct=True),
             penalty_count=Count('penalties', distinct=True)
         ).order_by('-date_joined')
