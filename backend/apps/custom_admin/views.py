@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status, generics, permissions
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
-from django.db.models import Count, Sum, Q
+from django.db.models import Count, Sum, Q, Avg
 from apps.quizzes.models import Quiz
 from apps.attempts.models import QuizAttempt
 from apps.custom_admin.models import UserPenaltyLog
@@ -49,12 +49,37 @@ class AdminAnalyticsView(APIView):
         # 4. Total points deducted in actual penalty logs
         penalty_points = UserPenaltyLog.objects.aggregate(total=Sum('points_deducted'))['total'] or 0
 
-        # 5. Dynamic subject breakdown based ONLY on real existing quizzes/attempts in DB
+        # 5. Dynamic subject performance with average scores across attempts
+        subject_stats = QuizAttempt.objects.filter(
+            submitted_at__isnull=False
+        ).values('quiz__subject').annotate(
+            attempts=Count('id'),
+            avg_score=Avg('percentage')
+        ).order_by('-attempts')
+
+        subject_performance = []
+        for item in subject_stats:
+            subj_name = item['quiz__subject'] or 'General'
+            subject_performance.append({
+                "subject": subj_name,
+                "attempts": item['attempts'],
+                "average_score": round(float(item['avg_score'] or 0), 1)
+            })
+
         subject_distribution = list(
             Quiz.objects.values('subject')
             .annotate(attempts=Count('quizattempt'))
             .order_by('-attempts')
         )
+
+        if not subject_performance:
+            for item in subject_distribution:
+                subj_name = item['subject'] or 'General'
+                subject_performance.append({
+                    "subject": subj_name,
+                    "attempts": item['attempts'],
+                    "average_score": 0.0
+                })
 
         return Response({
             "overview": {
@@ -63,13 +88,18 @@ class AdminAnalyticsView(APIView):
                 "user_quizzes": user_quizzes,
                 "total_attempts": total_attempts,
                 "penalty_points": penalty_points,
-                "total_points_deducted": penalty_points
+                "total_points_deducted": penalty_points,
+                "subject_performance": subject_performance
             },
             "subject_distribution": subject_distribution,
             "top_subjects": [
                 {"subject": item['subject'] or 'General', "attempts": item['attempts']}
                 for item in subject_distribution
-            ]
+            ],
+            "subject_performance": subject_performance,
+            "performance": {
+                "subject_performance": subject_performance
+            }
         }, status=status.HTTP_200_OK)
 
 # Alias for backwards compatibility

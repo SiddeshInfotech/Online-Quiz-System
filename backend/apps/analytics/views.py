@@ -233,7 +233,12 @@ class DashboardSummaryView(APIView):
                 "completed": today_completed,
                 "target": daily_goal
             },
-            "recent_attempts": recent_attempts_data,
+            "overview": {
+                "total_users": user.id,
+                "total_attempts": total_attempts,
+                "quizzes_completed": quizzes_completed,
+                "subject_performance": subject_performance
+            },
             "subject_performance": subject_performance,
             "performance": {
                 "quizzes_completed": quizzes_completed,
