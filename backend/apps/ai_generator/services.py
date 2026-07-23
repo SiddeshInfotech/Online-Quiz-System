@@ -194,11 +194,8 @@ IMPORTANT:
     def _call_openrouter(self, prompt, num_questions):
         models_to_try = [
             "google/gemini-2.0-flash-001",
-            "google/gemini-flash-1.5",
             "openai/gpt-4o-mini",
-            "meta-llama/llama-3.3-70b-instruct",
-            "deepseek/deepseek-chat",
-            "openai/gpt-3.5-turbo"
+            "deepseek/deepseek-chat"
         ]
 
         last_error = None
@@ -216,14 +213,15 @@ IMPORTANT:
                     ],
                     "response_format": {"type": "json_object"},
                     "temperature": 0.7,
-                    "max_tokens": 2500,
+                    "max_tokens": 3000,
                 }
 
                 response = requests.post(
                     self.api_url,
                     headers=self.headers,
                     json=payload,
-                    timeout=60
+                    timeout=25,
+                    stream=False
                 )
 
                 # Fallback if model doesn't support response_format
@@ -233,7 +231,8 @@ IMPORTANT:
                         self.api_url,
                         headers=self.headers,
                         json=payload,
-                        timeout=60
+                        timeout=25,
+                        stream=False
                     )
 
                 if response.status_code == 200:
@@ -335,11 +334,8 @@ IMPORTANT:
         """
         models_to_try = [
             "google/gemini-2.0-flash-001",
-            "google/gemini-flash-1.5",
             "openai/gpt-4o-mini",
-            "meta-llama/llama-3.3-70b-instruct",
-            "deepseek/deepseek-chat",
-            "openai/gpt-3.5-turbo"
+            "deepseek/deepseek-chat"
         ]
 
         last_error = None
@@ -363,7 +359,8 @@ IMPORTANT:
                     self.api_url,
                     headers=self.headers,
                     json=payload,
-                    timeout=60
+                    timeout=25,
+                    stream=False
                 )
 
                 if response.status_code == 200:

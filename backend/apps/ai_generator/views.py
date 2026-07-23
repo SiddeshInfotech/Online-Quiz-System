@@ -1,10 +1,12 @@
 import json
+import hashlib
 import traceback
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.shortcuts import get_object_or_404
+from django.core.cache import cache
 
 from .serializers import QuizGenerationPayloadSerializer
 from .services import AIService
@@ -33,27 +35,37 @@ class GenerateAIQuizView(APIView):
         category_id = validated_data.get('category_id')
         quiz_mode = validated_data.get('quiz_mode', 'Theory')
 
-        try:
-            ai_service = AIService()
-            generation_result = ai_service.generate_quiz(
-                subject=subject,
-                difficulty=difficulty,
-                num_questions=num_questions,
-                prompt_topic=prompt_topic,
-                quiz_mode=quiz_mode
-            )
-            quiz_title = generation_result.get("quiz_title", "").strip()
-            questions_data = generation_result.get("questions", [])
-        except ValueError as e:
-            return Response({
-                "error": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({
-                "error": "AI generation failed",
-                "details": str(e),
-                "traceback": traceback.format_exc()
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # Check cache for identical AI generation requests
+        cache_hash = hashlib.md5(f"{subject}_{difficulty}_{num_questions}_{prompt_topic}_{quiz_mode}".encode('utf-8')).hexdigest()
+        cache_key = f"ai_gen_quiz_{cache_hash}"
+        cached_result = cache.get(cache_key)
+
+        if cached_result:
+            quiz_title = cached_result.get("quiz_title", "").strip()
+            questions_data = cached_result.get("questions", [])
+        else:
+            try:
+                ai_service = AIService()
+                generation_result = ai_service.generate_quiz(
+                    subject=subject,
+                    difficulty=difficulty,
+                    num_questions=num_questions,
+                    prompt_topic=prompt_topic,
+                    quiz_mode=quiz_mode
+                )
+                quiz_title = generation_result.get("quiz_title", "").strip()
+                questions_data = generation_result.get("questions", [])
+                cache.set(cache_key, generation_result, 600)
+            except ValueError as e:
+                return Response({
+                    "error": str(e)
+                }, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response({
+                    "error": "AI generation failed",
+                    "details": str(e),
+                    "traceback": traceback.format_exc()
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         category = None
         if category_id:
@@ -84,13 +96,15 @@ class GenerateAIQuizView(APIView):
             category=category
         )
 
+        # Bulk create questions and options in 2 database operations
+        questions_to_create = []
         for idx, q_data in enumerate(questions_data):
             q_type = q_data.get('question_type', 'MCQ')
             question_text = q_data.get('question_text', '').strip()
             options = q_data.get('options', [])
             correct_answer = q_data.get('correct_answer', '').strip()
 
-            question = Question.objects.create(
+            question = Question(
                 quiz=quiz,
                 question_text=question_text,
                 question_type=q_type,
@@ -98,12 +112,16 @@ class GenerateAIQuizView(APIView):
                 marks=1,
                 question_order=idx + 1
             )
+            questions_to_create.append((question, options, correct_answer))
 
-            if q_type in ['MCQ', 'True/False', 'Fill in the Blank', 'Coding'] and options:
-                trimmed_options = [opt.strip() for opt in options]
-                trimmed_correct = correct_answer.strip()
-    
-    
+        created_questions = Question.objects.bulk_create([item[0] for item in questions_to_create])
+
+        options_to_create = []
+        for created_q, (_, options, correct_answer) in zip(created_questions, questions_to_create):
+            if options:
+                trimmed_options = [str(opt).strip() for opt in options]
+                trimmed_correct = str(correct_answer).strip()
+
                 try:
                     correct_index = trimmed_options.index(trimmed_correct)
                 except ValueError:
@@ -112,21 +130,25 @@ class GenerateAIQuizView(APIView):
                         correct_index = lower_options.index(trimmed_correct.lower())
                     except ValueError:
                         correct_index = 0
-                        print(f"⚠️ WARNING: correct_answer '{trimmed_correct}' not found in options {trimmed_options}, defaulting to index 0")
-                
+
                 for opt_idx, opt_text in enumerate(trimmed_options):
-                    QuestionOption.objects.create(
-                        question=question,
-                        option_text=opt_text,
-                        is_correct=(opt_idx == correct_index)
+                    options_to_create.append(
+                        QuestionOption(
+                            question=created_q,
+                            option_text=opt_text,
+                            is_correct=(opt_idx == correct_index)
+                        )
                     )
+
+        if options_to_create:
+            QuestionOption.objects.bulk_create(options_to_create)
 
         return Response({
             "success": True,
             "message": f"AI Quiz generated and saved successfully! ({quiz_mode} mode)",
             "quiz_id": quiz.id,
             "title": quiz.title,
-            "total_questions": num_questions,
+            "total_questions": len(questions_data),
             "difficulty": difficulty,
             "subject": subject,
             "quiz_mode": quiz_mode
