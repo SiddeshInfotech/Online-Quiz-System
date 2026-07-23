@@ -132,6 +132,20 @@ class BackendModulesVerificationTest(TestCase):
         self.assertEqual(rejected_start.status_code, 403)
         self.assertFalse(rejected_start.json()['can_retry'])
 
+        # Test tab switch penalty deduction
+        self.quiz.max_attempts = 5
+        self.quiz.save()
+        start_new = self.client.post('/api/attempts/start/', {'quiz_id': self.quiz.id}, format='json')
+        new_att_id = start_new.json()['attempt_id']
+        viol_res = self.client.post(f'/api/attempts/{new_att_id}/log-violation/')
+        self.assertEqual(viol_res.status_code, 200)
+        viol_data = viol_res.json()
+        self.assertIn('points_deducted', viol_data)
+        self.assertEqual(viol_data['points_deducted'], 10)
+        self.user.refresh_from_db()
+        # Verify user model points updated
+        self.assertIn('new_total_points', viol_data)
+
     def test_module_2_custom_admin_health(self):
         self.client.force_authenticate(user=self.admin_user)
         # Analytics

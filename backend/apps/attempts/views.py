@@ -985,10 +985,10 @@ class LogViolationView(APIView):
                     user=request.user, 
                     is_auto_submitted=True, 
                     tab_switch_count__gt=0
-                ).count()
+                ).count() + 1
 
-                penalty_points = 0
-                reason = ""
+                penalty_points = 10
+                reason = f"Tab-switch violation #{attempt.tab_switch_count} on attempt #{attempt.id}"
                 if violations_count in [3, 4, 5]:
                     penalty_points = 50
                     reason = f"Tab-switch violation limit reached ({violations_count} auto-submitted violations)"
@@ -996,21 +996,19 @@ class LogViolationView(APIView):
                     penalty_points = 100
                     reason = f"Tab-switch violations exceeded 5 times ({violations_count} auto-submitted violations)"
 
-                if penalty_points > 0:
-                    user = request.user
-                    user.total_points = max(0, user.total_points - penalty_points)
-                    user.xp = max(0, user.xp - penalty_points)
-                    user.save(update_fields=['total_points', 'xp'])
+                user = request.user
+                from apps.custom_admin.models import UserPenaltyLog
+                UserPenaltyLog.objects.create(
+                    user=user,
+                    attempt=attempt,
+                    violations_count=violations_count,
+                    points_deducted=penalty_points,
+                    reason=reason
+                )
 
-                    # Log the penalty deduction event in UserPenaltyLog
-                    from apps.custom_admin.models import UserPenaltyLog
-                    UserPenaltyLog.objects.create(
-                        user=user,
-                        attempt=attempt,
-                        violations_count=violations_count,
-                        points_deducted=penalty_points,
-                        reason=reason
-                    )
+                from apps.users.services.points_service import recalculate_user_points_and_stats
+                recalculate_user_points_and_stats(user)
+                user.refresh_from_db()
 
                 Result.objects.update_or_create(
                     attempt=attempt,
@@ -1030,15 +1028,35 @@ class LogViolationView(APIView):
                 "tab_switch_count": attempt.tab_switch_count,
                 "max_allowed": max_allowed,
                 "is_auto_submitted": True,
-                "message": "Limit of tab switches exceeded. Quiz attempt has been automatically submitted."
+                "points_deducted": penalty_points,
+                "new_total_points": user.total_points,
+                "new_xp": user.xp,
+                "message": f"Limit of tab switches exceeded. Quiz attempt auto-submitted (-{penalty_points} points penalty)."
             }, status=status.HTTP_200_OK)
 
         else:
+            penalty_points = 10
+            user = request.user
+            from apps.custom_admin.models import UserPenaltyLog
+            UserPenaltyLog.objects.create(
+                user=user,
+                attempt=attempt,
+                violations_count=attempt.tab_switch_count,
+                points_deducted=penalty_points,
+                reason=f"Tab-switch warning violation #{attempt.tab_switch_count} on attempt #{attempt.id}"
+            )
+            from apps.users.services.points_service import recalculate_user_points_and_stats
+            recalculate_user_points_and_stats(user)
+            user.refresh_from_db()
+
             attempt.save()
             return Response({
                 "status": "warning_logged",
                 "tab_switch_count": attempt.tab_switch_count,
                 "max_allowed": max_allowed,
                 "is_auto_submitted": False,
-                "message": "Violation logged successfully."
+                "points_deducted": penalty_points,
+                "new_total_points": user.total_points,
+                "new_xp": user.xp,
+                "message": f"Violation logged successfully (-{penalty_points} points penalty)."
             }, status=status.HTTP_200_OK)

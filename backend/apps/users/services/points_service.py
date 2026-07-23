@@ -42,14 +42,19 @@ def recalculate_user_points_and_stats(user):
 
     badge_xp = sum(XP_MAP.get(ub.badge.rarity, 25) for ub in claimed_badges)
 
-    # 4. Authoritative assignment
-    user.total_points = quiz_score_total + badge_xp
+    # 4. Sum total penalty points deducted from UserPenaltyLog
+    from apps.custom_admin.models import UserPenaltyLog
+    from django.db.models import Sum
+    total_penalties = UserPenaltyLog.objects.filter(user=user).aggregate(total=Sum('points_deducted'))['total'] or 0
+
+    # 5. Authoritative assignment with penalty deduction
+    user.total_points = max(0, quiz_score_total + badge_xp - total_penalties)
     user.quizzes_completed = quizzes_completed
-    user.xp = badge_xp
-    user.level = (user.xp // 100) + 1
+    user.xp = max(0, badge_xp - total_penalties)
+    user.level = max(1, (user.xp // 100) + 1)
     user.save()
 
-    # 5. Flush caches and evaluate badges
+    # 6. Flush caches and evaluate badges
     cache.delete("leaderboard_all_rankings")
     cache.delete(f"user_badges_{user.id}")
     cache.delete(f"badges_all_{user.id}")
