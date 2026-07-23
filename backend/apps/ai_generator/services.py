@@ -123,6 +123,29 @@ IMPORTANT:
 """
         return self._call_openrouter(prompt, num_questions)
 
+    def _clean_json_strings(self, text):
+        """Escapes raw unescaped newlines, carriage returns, and tabs inside JSON string values."""
+        result = []
+        in_string = False
+        escaped = False
+        for char in text:
+            if char == '"' and not escaped:
+                in_string = not in_string
+                result.append(char)
+            elif in_string:
+                if char == '\n':
+                    result.append('\\n')
+                elif char == '\r':
+                    result.append('\\r')
+                elif char == '\t':
+                    result.append('\\t')
+                else:
+                    result.append(char)
+            else:
+                result.append(char)
+            escaped = (char == '\\' and not escaped)
+        return "".join(result)
+
     def _parse_json_robustly(self, raw_text):
         if not raw_text or not raw_text.strip():
             raise ValueError("Empty output from AI model")
@@ -140,15 +163,28 @@ IMPORTANT:
         except Exception:
             pass
 
-        # 3. Extract JSON object or array bounds
-        obj_match = re.search(r'\{.*\}', text, re.DOTALL)
-        arr_match = re.search(r'\[.*\]', text, re.DOTALL)
+        # 3. Clean raw unescaped string control characters
+        cleaned_text = self._clean_json_strings(text)
+        try:
+            return json.loads(cleaned_text, strict=False)
+        except Exception:
+            pass
+
+        # 4. Extract JSON object or array bounds
+        start_obj = text.find('{')
+        end_obj = text.rfind('}')
+        start_arr = text.find('[')
+        end_arr = text.rfind(']')
+
         candidates = []
-        if obj_match:
-            candidates.append(obj_match.group(0))
-        if arr_match:
-            candidates.append(arr_match.group(0))
+        if start_obj != -1 and end_obj != -1 and end_obj > start_obj:
+            candidates.append(text[start_obj:end_obj + 1])
+            candidates.append(self._clean_json_strings(text[start_obj:end_obj + 1]))
+        if start_arr != -1 and end_arr != -1 and end_arr > start_arr:
+            candidates.append(text[start_arr:end_arr + 1])
+            candidates.append(self._clean_json_strings(text[start_arr:end_arr + 1]))
         candidates.append(text)
+        candidates.append(cleaned_text)
 
         for candidate in candidates:
             # Try simple candidate load
@@ -194,8 +230,10 @@ IMPORTANT:
     def _call_openrouter(self, prompt, num_questions):
         models_to_try = [
             "google/gemini-2.0-flash-001",
+            "google/gemini-flash-1.5",
             "openai/gpt-4o-mini",
-            "deepseek/deepseek-chat"
+            "deepseek/deepseek-chat",
+            "meta-llama/llama-3.3-70b-instruct"
         ]
 
         last_error = None
