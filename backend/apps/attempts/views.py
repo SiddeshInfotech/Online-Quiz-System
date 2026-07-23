@@ -197,7 +197,12 @@ class SubmitAttemptView(APIView):
 
         for answer_data in answers_data:
             question_id = answer_data.get('question_id')
-            selected_option_id = answer_data.get('selected_option_id')
+            selected_option_val = (
+                answer_data.get('selected_option_id') or
+                answer_data.get('selected_option') or
+                answer_data.get('selected_answer') or
+                answer_data.get('answer')
+            )
 
             question = question_map.get(question_id)
             if not question:
@@ -209,12 +214,30 @@ class SubmitAttemptView(APIView):
 
             is_correct = False
             marks_obtained = 0
+            selected_option_id = None
 
             # MCQ / True/False -- only counts as "answered" if an option was chosen
-            if selected_option_id:
+            if selected_option_val is not None:
                 answered_question_ids.add(question_id)
-                option = option_map.get(selected_option_id)
-                if option and option.question_id == question_id:
+                option = None
+                
+                # Check if value is ID
+                if isinstance(selected_option_val, int) or (isinstance(selected_option_val, str) and selected_option_val.isdigit()):
+                    opt_id = int(selected_option_val)
+                    option = option_map.get(opt_id)
+                    if option and option.question_id != question_id:
+                        option = None
+
+                # Fallback to option text matching if option not found by ID
+                if not option:
+                    target_str = str(selected_option_val).strip().lower()
+                    for opt in question.questionoption_set.all():
+                        if opt.option_text.strip().lower() == target_str:
+                            option = opt
+                            break
+
+                if option:
+                    selected_option_id = option.id
                     is_correct = option.is_correct
                     marks_obtained = question.marks if is_correct else 0
 
@@ -292,9 +315,9 @@ class SubmitAttemptView(APIView):
                 },
             )
 
-        # ✅ OPTIMIZATION 5: Minified response
+        # Minified response
         elapsed_ms = int((time.time() - start_time) * 1000)
-        print(f"✅ Quiz submitted in {elapsed_ms}ms")
+        print(f"[SUCCESS] Quiz submitted in {elapsed_ms}ms")
 
         return Response({
             "status": "success",
@@ -471,7 +494,12 @@ class SaveAnswerView(APIView):
             return Response({"error": "Attempt not found or already submitted."}, status=status.HTTP_404_NOT_FOUND)
 
         question_id = request.data.get('question_id')
-        selected_option_id = request.data.get('selected_option_id')
+        selected_option_val = (
+            request.data.get('selected_option_id') or
+            request.data.get('selected_option') or
+            request.data.get('selected_answer') or
+            request.data.get('answer')
+        )
         marked_for_review = request.data.get('marked_for_review', False)
 
         if not question_id:
@@ -482,15 +510,24 @@ class SaveAnswerView(APIView):
         except Question.DoesNotExist:
             return Response({"error": "Question does not belong to this quiz."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 🔥 Compute is_correct
+        # 🔥 Compute is_correct and resolve selected_option_id
         is_correct = False
-        if selected_option_id:
-            try:
-                option = QuestionOption.objects.get(id=selected_option_id, question=question)
+        selected_option_id = None
+        if selected_option_val is not None:
+            option = None
+            if isinstance(selected_option_val, int) or (isinstance(selected_option_val, str) and selected_option_val.isdigit()):
+                try:
+                    option = QuestionOption.objects.get(id=int(selected_option_val), question=question)
+                except QuestionOption.DoesNotExist:
+                    option = None
+
+            if not option:
+                target_str = str(selected_option_val).strip().lower()
+                option = QuestionOption.objects.filter(question=question, option_text__iexact=target_str).first()
+
+            if option:
+                selected_option_id = option.id
                 is_correct = option.is_correct
-            except QuestionOption.DoesNotExist:
-                # Option not found, leave is_correct as False
-                pass
 
         # Delete existing answer (if any)
         UserAnswer.objects.filter(attempt=attempt, question=question).delete()

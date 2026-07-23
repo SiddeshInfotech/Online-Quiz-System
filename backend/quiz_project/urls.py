@@ -34,6 +34,7 @@ urlpatterns = [
     path('api/auth/admin-login/', LoginView.as_view(), name='auth-admin-login-alias'),
 
     path('api/auth/', include('apps.users.urls')),
+    path('api/users/', include('apps.users.urls')),
     path('api/achievements/', include('apps.users.achievement_urls')),
     path('api/badges/', include('apps.users.badge_urls')),
 

@@ -14,14 +14,14 @@ def compute_badge_progress_async(user_id):
             connection.close()
             
             user = User.objects.get(id=user_id)
-            print(f"🔄 Background: Computing badge progress for user {user_id}")
+            print(f"[BACKGROUND] Computing badge progress for user {user_id}")
             
             # This will compute and cache
             BadgeProgressHelper.get_all_progress(user, None)
             
-            print(f"✅ Background: Badge progress cached for user {user_id}")
+            print(f"[BACKGROUND] Badge progress cached for user {user_id}")
         except Exception as e:
-            print(f"❌ Background: Error computing progress: {e}")
+            print(f"[BACKGROUND ERROR] Error computing progress: {e}")
     
     # Run in background thread
     thread = threading.Thread(target=_compute)
@@ -48,7 +48,7 @@ def process_quiz_submission_background(user_id, attempt_id):
             user = User.objects.get(id=user_id)
             attempt = QuizAttempt.objects.get(id=attempt_id)
             
-            print(f"🔄 Background: Processing quiz submit stats/badges for user {user_id}, attempt {attempt_id}")
+            print(f"[BACKGROUND] Processing quiz submit stats/badges for user {user_id}, attempt {attempt_id}")
             
             # --- Calculate current streak and longest streak ---
             from datetime import timedelta
@@ -105,9 +105,9 @@ def process_quiz_submission_background(user_id, attempt_id):
             except Exception as e:
                 print(f"[daily-goal-notify] skipped in background thread: {e}")
                 
-            print(f"✅ Background: Finished processing submission for user {user_id}")
+            print(f"[BACKGROUND] Finished processing submission for user {user_id}")
         except Exception as e:
-            print(f"❌ Background: Error processing quiz submission: {e}")
+            print(f"[BACKGROUND ERROR] Error processing quiz submission: {e}")
 
     thread = threading.Thread(target=_run)
     thread.daemon = True

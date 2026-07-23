@@ -128,9 +128,9 @@ class RegisterView(generics.CreateAPIView):
             )
             sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
             response = sg.send(message)
-            print(f"✅ Email sent to {user.email}, status: {response.status_code}")
+            print(f"[OK] Email sent to {user.email}, status: {response.status_code}")
         except Exception as e:
-            print(f"❌ Email send failed: {e}")
+            print(f"[ERROR] Email send failed: {e}")
 
 
 class LoginView(generics.GenericAPIView):
@@ -243,9 +243,9 @@ class LoginView(generics.GenericAPIView):
             )
             sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
             response = sg.send(message)
-            print(f"✅ Email sent to {user.email}, status: {response.status_code}")
+            print(f"[OK] Email sent to {user.email}, status: {response.status_code}")
         except Exception as e:
-            print(f"❌ Email send failed: {e}")
+            print(f"[ERROR] Email send failed: {e}")
 
 
 class ProfileView(generics.RetrieveUpdateAPIView):
@@ -264,8 +264,9 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 
         return Response({
             "message": "Profile updated successfully",
-            "user": serializer.data
-        })
+            "user": serializer.data,
+            **serializer.data
+        }, status=status.HTTP_200_OK)
 
 
 class GoogleLoginView(APIView):
@@ -360,10 +361,10 @@ If you did not request this, please ignore this email.
 
             sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
             response = sg.send(message)
-            print(f"✅ Email sent to {email}, status: {response.status_code}")
+            print(f"[OK] Email sent to {email}, status: {response.status_code}")
 
         except Exception as e:
-            print(f"❌ Email send failed: {e}")
+            print(f"[ERROR] Email send failed: {e}")
 
         return Response({
             "message": "OTP sent successfully to your email",
@@ -621,6 +622,9 @@ class UserSettingsView(APIView):
                 "daily_quiz_goal": user.daily_quiz_goal
             }
         }, status=status.HTTP_200_OK)
+
+    def put(self, request):
+        return self.patch(request)
 
 
 class AccountDestructionView(APIView):

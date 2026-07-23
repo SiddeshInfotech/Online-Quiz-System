@@ -130,11 +130,23 @@ class UserSerializer(serializers.ModelSerializer):
             'is_staff', 'is_superuser'
         ]
         read_only_fields = [
-            'id', 'username', 'email', 'role', 'date_joined',
+            'id', 'role', 'date_joined',
             'quizzes_completed', 'total_points', 'xp', 'level',
             'current_streak', 'longest_streak', 'total_attempts',
             'is_staff', 'is_superuser'
         ]
+
+    def validate_username(self, value):
+        user = self.context.get('request').user if self.context and self.context.get('request') else self.instance
+        if user and User.objects.filter(username__iexact=value).exclude(pk=user.pk).exists():
+            raise serializers.ValidationError("This username is already taken.")
+        return value
+
+    def validate_email(self, value):
+        user = self.context.get('request').user if self.context and self.context.get('request') else self.instance
+        if user and User.objects.filter(email__iexact=value).exclude(pk=user.pk).exists():
+            raise serializers.ValidationError("This email is already registered.")
+        return value
 
     def update(self, instance, validated_data):
         request = self.context.get('request')
@@ -289,7 +301,6 @@ class UserBadgeSerializer(serializers.ModelSerializer):
     badge_id = serializers.IntegerField()
     badge_name = serializers.CharField(source='name')
     icon_url = serializers.CharField(source='image_url')
-
     
     is_unlocked = serializers.SerializerMethodField()
     is_claimed = serializers.SerializerMethodField()
@@ -317,12 +328,12 @@ class UserBadgeSerializer(serializers.ModelSerializer):
         ]
 
     def get_is_unlocked(self, obj):
-        earned_ids = self.context.get('earned_ids', set())
-        return obj.badge_id in earned_ids
+        earned_ids = self.context.get('earned_ids', set()) if self.context else set()
+        return bool(obj.badge_id in earned_ids)
 
     def get_is_claimed(self, obj):
-        claimed_ids = self.context.get('claimed_ids', set())
-        return obj.badge_id in claimed_ids
+        claimed_ids = self.context.get('claimed_ids', set()) if self.context else set()
+        return bool(obj.badge_id in claimed_ids)
 
     def get_status(self, obj):
         if self.get_is_claimed(obj):
@@ -332,21 +343,31 @@ class UserBadgeSerializer(serializers.ModelSerializer):
         return "LOCKED"
 
     def get_earned_at(self, obj):
-        awarded_at_map = self.context.get('awarded_at_map', {})
+        awarded_at_map = self.context.get('awarded_at_map', {}) if self.context else {}
         val = awarded_at_map.get(obj.badge_id, None)
-        return val.isoformat() if hasattr(val, 'isoformat') else val
+        if hasattr(val, 'isoformat'):
+            return val.isoformat()
+        elif isinstance(val, str):
+            return val
+        return None
 
     def get_claimed_at(self, obj):
-        claimed_at_map = self.context.get('claimed_at_map', {})
+        claimed_at_map = self.context.get('claimed_at_map', {}) if self.context else {}
         val = claimed_at_map.get(obj.badge_id, None)
-        return val.isoformat() if hasattr(val, 'isoformat') else val
+        if hasattr(val, 'isoformat'):
+            return val.isoformat()
+        elif isinstance(val, str):
+            return val
+        return None
 
     def get_awarded_at(self, obj):
         return self.get_earned_at(obj)
 
     def get_current_progress(self, obj):
-        progress_map = self.context.get('progress_map', {})
+        progress_map = self.context.get('progress_map', {}) if self.context else {}
         val = progress_map.get(obj.badge_id, 0)
+        if val is None:
+            return 0
         try:
             return int(val)
         except (ValueError, TypeError):
@@ -354,7 +375,13 @@ class UserBadgeSerializer(serializers.ModelSerializer):
 
     def get_required_target(self, obj):
         from .services.badge_progress import BadgeProgressHelper
-        return BadgeProgressHelper.get_target(obj)
+        target = BadgeProgressHelper.get_target(obj)
+        if target is None:
+            return 1
+        try:
+            return int(target)
+        except (ValueError, TypeError):
+            return 1
 
     def get_progress_percentage(self, obj):
         current = self.get_current_progress(obj)
@@ -362,7 +389,7 @@ class UserBadgeSerializer(serializers.ModelSerializer):
         if not target or target <= 0:
             return 100.0 if current > 0 else 0.0
         pct = (current / target) * 100.0
-        return min(100.0, round(pct, 2))
+        return min(100.0, round(float(pct), 2))
 
     def get_progress(self, obj):
         return self.get_current_progress(obj)
@@ -373,7 +400,6 @@ class UserBadgeSerializer(serializers.ModelSerializer):
     def get_xp_reward(self, obj):
         xp_map = {'COMMON': 25, 'RARE': 50, 'EPIC': 100, 'LEGENDARY': 200}
         return getattr(obj, 'xp_reward', xp_map.get(obj.rarity, 25))
-
 
 AllBadgeSerializer = UserBadgeSerializer
 

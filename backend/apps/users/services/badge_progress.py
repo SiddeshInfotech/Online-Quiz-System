@@ -19,12 +19,12 @@ class BadgeProgressHelper:
         
         # If cache exists and we need all badges, return cached
         if cached_data is not None:
-            print(f"✅ [PROGRESS CACHE HIT] user={user.id}")
+            print(f"[PROGRESS CACHE HIT] user={user.id}")
             if badges is None:
                 return cached_data
             # Filter for specific badges if needed
             return {b.badge_id: cached_data.get(b.badge_id, 0) for b in badges}
-        print(f"⏳ [PROGRESS CACHE MISS] user={user.id}, computing...")
+        print(f"[PROGRESS CACHE MISS] user={user.id}, computing...")
         start = time.time()
         
         # --- Optimized Pass: Fetch attempts into list to avoid repetitive queries ---
@@ -304,7 +304,7 @@ class BadgeProgressHelper:
         
         # Cache for 10 minutes (600 seconds)
         cache.set(cache_key, progress_map, 600)
-        print(f"✅ [PROGRESS CACHE SET] user={user.id}, took {time.time() - start:.2f}s")
+        print(f"[PROGRESS CACHE SET] user={user.id}, took {time.time() - start:.2f}s")
         return progress_map
 
     @staticmethod
@@ -466,9 +466,9 @@ def evaluate_user_badges(user):
             except Exception as e:
                 print(f"[evaluate_user_badges] notify error: {e}")
 
-            print(f"🎉 evaluate_user_badges: Unlocked {len(newly_unlocked)} badge(s) for {user.username}: {[b.name for b in newly_unlocked]}")
+            print(f"[evaluate_user_badges] Unlocked {len(newly_unlocked)} badge(s) for {user.username}: {[b.name for b in newly_unlocked]}")
 
         return newly_unlocked
     except Exception as e:
-        print(f"❌ Error in evaluate_user_badges for user {user.id}: {e}")
+        print(f"[ERROR] in evaluate_user_badges for user {user.id}: {e}")
         return []
