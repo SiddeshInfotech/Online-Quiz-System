@@ -123,11 +123,81 @@ IMPORTANT:
 """
         return self._call_openrouter(prompt, num_questions)
 
+    def _parse_json_robustly(self, raw_text):
+        if not raw_text or not raw_text.strip():
+            raise ValueError("Empty output from AI model")
+
+        text = raw_text.strip()
+
+        # 1. Remove markdown fences
+        code_block = re.search(r'```(?:json)?\s*(.*?)\s*```', text, re.DOTALL)
+        if code_block:
+            text = code_block.group(1).strip()
+
+        # 2. Try direct json.loads
+        try:
+            return json.loads(text, strict=False)
+        except Exception:
+            pass
+
+        # 3. Extract JSON object or array bounds
+        obj_match = re.search(r'\{.*\}', text, re.DOTALL)
+        arr_match = re.search(r'\[.*\]', text, re.DOTALL)
+        candidates = []
+        if obj_match:
+            candidates.append(obj_match.group(0))
+        if arr_match:
+            candidates.append(arr_match.group(0))
+        candidates.append(text)
+
+        for candidate in candidates:
+            # Try simple candidate load
+            try:
+                return json.loads(candidate, strict=False)
+            except Exception:
+                pass
+
+            # Fix common JSON errors:
+            # a) Trailing commas
+            c1 = re.sub(r',\s*([\}\]])', r'\1', candidate)
+            try:
+                return json.loads(c1, strict=False)
+            except Exception:
+                pass
+
+            # b) Unquoted keys: { quiz_title: "..." } -> { "quiz_title": "..." }
+            c2 = re.sub(r'([{,]\s*)([a-zA-Z0-9_]+)\s*:', r'\1"\2":', c1)
+            try:
+                return json.loads(c2, strict=False)
+            except Exception:
+                pass
+
+            # c) Single quotes for strings
+            c3 = re.sub(r"(?<=[:\[,\{])\s*'([^'\\]*(?:\\.[^'\\]*)*)'\s*(?=[,\}\]])", r' "\1"', c2)
+            try:
+                return json.loads(c3, strict=False)
+            except Exception:
+                pass
+
+            # d) ast.literal_eval
+            try:
+                return ast.literal_eval(candidate)
+            except Exception:
+                pass
+            try:
+                return ast.literal_eval(c3)
+            except Exception:
+                pass
+
+        raise ValueError("Failed to parse valid JSON from model output")
+
     def _call_openrouter(self, prompt, num_questions):
         models_to_try = [
-            "google/gemini-2.5-flash",
+            "google/gemini-2.0-flash-001",
+            "google/gemini-flash-1.5",
             "openai/gpt-4o-mini",
-            "anthropic/claude-3-haiku",
+            "meta-llama/llama-3.3-70b-instruct",
+            "deepseek/deepseek-chat",
             "openai/gpt-3.5-turbo"
         ]
 
@@ -138,10 +208,15 @@ IMPORTANT:
                 payload = {
                     "model": model,
                     "messages": [
+                        {
+                            "role": "system",
+                            "content": "You are an expert quiz generation engine. You MUST respond with 100% valid JSON only, with double quotes around all object property names and string values. Do not include any conversational response."
+                        },
                         {"role": "user", "content": prompt}
                     ],
+                    "response_format": {"type": "json_object"},
                     "temperature": 0.7,
-                    "max_tokens": 2000,
+                    "max_tokens": 2500,
                 }
 
                 response = requests.post(
@@ -151,112 +226,24 @@ IMPORTANT:
                     timeout=60
                 )
 
+                # Fallback if model doesn't support response_format
+                if response.status_code == 400 and 'response_format' in response.text:
+                    payload.pop('response_format', None)
+                    response = requests.post(
+                        self.api_url,
+                        headers=self.headers,
+                        json=payload,
+                        timeout=60
+                    )
+
                 if response.status_code == 200:
                     data = response.json()
                     raw_text = data['choices'][0]['message']['content'].strip()
                 else:
                     raise ValueError(f"OpenRouter status {response.status_code}: {response.text}")
 
-                # Clean and parse the raw output using multiple robust strategies
-                parsed_data = None
-                raw_text_clean = raw_text.strip()
-                
-                # Strategy 1: Direct loads
-                try:
-                    parsed_data = json.loads(raw_text_clean, strict=False)
-                except Exception:
-                    pass
-
-                # Strategy 2: Extract from markdown code blocks
-                if parsed_data is None:
-                    code_block_match = re.search(r'```(?:json)?\s*(.*?)\s*```', raw_text_clean, re.DOTALL)
-                    if code_block_match:
-                        content = code_block_match.group(1).strip()
-                        try:
-                            parsed_data = json.loads(content, strict=False)
-                        except Exception:
-                            raw_text_clean = content
-
-                # Strategy 3: Stack-based balanced brace/bracket extraction
-                if parsed_data is None:
-                    for start_char, end_char in [('{', '}'), ('[', ']')]:
-                        pos = 0
-                        while True:
-                            start_idx = raw_text_clean.find(start_char, pos)
-                            if start_idx == -1:
-                                break
-                            
-                            in_string = False
-                            escape = False
-                            stack_count = 0
-                            end_idx = -1
-                            
-                            for i in range(start_idx, len(raw_text_clean)):
-                                char = raw_text_clean[i]
-                                if escape:
-                                    escape = False
-                                    continue
-                                if char == '\\':
-                                    escape = True
-                                    continue
-                                if char == '"':
-                                    in_string = not in_string
-                                    continue
-                                if not in_string:
-                                    if char == start_char:
-                                        stack_count += 1
-                                    elif char == end_char:
-                                        stack_count -= 1
-                                        if stack_count == 0:
-                                            end_idx = i
-                                            break
-                            
-                            if end_idx != -1:
-                                json_candidate = raw_text_clean[start_idx:end_idx+1]
-                                try:
-                                    cleaned_candidate = re.sub(r',\s*}', '}', json_candidate)
-                                    cleaned_candidate = re.sub(r',\s*]', ']', cleaned_candidate)
-                                    parsed_data = json.loads(cleaned_candidate, strict=False)
-                                    break
-                                except Exception:
-                                    try:
-                                        parsed_data = ast.literal_eval(json_candidate)
-                                        break
-                                    except Exception:
-                                        pass
-                                pos = start_idx + 1
-                            else:
-                                pos = start_idx + 1
-                        if parsed_data is not None:
-                            break
-
-                # Strategy 4: Standard regex extraction
-                if parsed_data is None:
-                    raw_text_clean = ''.join(
-                        ch for ch in raw_text_clean
-                        if unicodedata.category(ch)[0] != 'C' or ch in '\n\r\t'
-                    )
-                    json_match = re.search(r'\{.*\}', raw_text_clean, re.DOTALL)
-                    if not json_match:
-                        json_match = re.search(r'\[.*\]', raw_text_clean, re.DOTALL)
-
-                    if json_match:
-                        json_str = json_match.group(0)
-                    else:
-                        json_str = raw_text_clean
-
-                    json_str = re.sub(r',\s*}', '}', json_str)
-                    json_str = re.sub(r',\s*]', ']', json_str)
-
-                    try:
-                        parsed_data = json.loads(json_str, strict=False)
-                    except json.JSONDecodeError:
-                        try:
-                            parsed_data = ast.literal_eval(json_str)
-                        except Exception:
-                            cleaned = re.sub(r'^[^{[]*', '', json_str)
-                            cleaned = re.sub(r'[^{[]*$', '', cleaned)
-                            parsed_data = json.loads(cleaned, strict=False)
+                # Clean and parse the raw output using robust parsing strategies
+                parsed_data = self._parse_json_robustly(raw_text)
 
                 quiz_title = ""
                 if isinstance(parsed_data, dict):
@@ -347,9 +334,11 @@ IMPORTANT:
         This is a simpler version that doesn't validate question structure.
         """
         models_to_try = [
-            "google/gemini-2.5-flash",
+            "google/gemini-2.0-flash-001",
+            "google/gemini-flash-1.5",
             "openai/gpt-4o-mini",
-            "anthropic/claude-3-haiku",
+            "meta-llama/llama-3.3-70b-instruct",
+            "deepseek/deepseek-chat",
             "openai/gpt-3.5-turbo"
         ]
 
@@ -359,7 +348,13 @@ IMPORTANT:
             try:
                 payload = {
                     "model": model,
-                    "messages": [{"role": "user", "content": prompt}],
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "You are an AI explanation engine. Respond with 100% valid JSON array of explanation strings only."
+                        },
+                        {"role": "user", "content": prompt}
+                    ],
                     "temperature": 0.7,
                     "max_tokens": 2000,
                 }
@@ -378,90 +373,7 @@ IMPORTANT:
                     raise ValueError(f"{model} failed with status {response.status_code}")
 
                 # Clean and parse JSON array
-                raw_text_clean = raw_text.strip()
-                explanations = None
-
-                # Strategy 1: Direct load
-                try:
-                    explanations = json.loads(raw_text_clean, strict=False)
-                except Exception:
-                    pass
-
-                # Strategy 2: Code block extraction
-                if explanations is None:
-                    code_block_match = re.search(r'```(?:json)?\s*(.*?)\s*```', raw_text_clean, re.DOTALL)
-                    if code_block_match:
-                        content = code_block_match.group(1).strip()
-                        try:
-                            explanations = json.loads(content, strict=False)
-                        except Exception:
-                            raw_text_clean = content
-
-                # Strategy 3: Stack-based balanced brackets extraction
-                if explanations is None:
-                    pos = 0
-                    while True:
-                        start_idx = raw_text_clean.find('[', pos)
-                        if start_idx == -1:
-                            break
-                        
-                        in_string = False
-                        escape = False
-                        stack_count = 0
-                        end_idx = -1
-                        
-                        for i in range(start_idx, len(raw_text_clean)):
-                            char = raw_text_clean[i]
-                            if escape:
-                                escape = False
-                                continue
-                            if char == '\\':
-                                escape = True
-                                continue
-                            if char == '"':
-                                in_string = not in_string
-                                continue
-                            if not in_string:
-                                if char == '[':
-                                    stack_count += 1
-                                elif char == ']':
-                                    stack_count -= 1
-                                    if stack_count == 0:
-                                        end_idx = i
-                                        break
-                        
-                        if end_idx != -1:
-                            json_candidate = raw_text_clean[start_idx:end_idx+1]
-                            try:
-                                cleaned_candidate = re.sub(r',\s*]', ']', json_candidate)
-                                explanations = json.loads(cleaned_candidate, strict=False)
-                                break
-                            except Exception:
-                                try:
-                                    explanations = ast.literal_eval(json_candidate)
-                                    break
-                                except Exception:
-                                    pass
-                            pos = start_idx + 1
-                        else:
-                            pos = start_idx + 1
-
-                # Strategy 4: Fallback standard regex
-                if explanations is None:
-                    raw_text_clean = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', raw_text_clean)
-                    json_match = re.search(r'\[\s*".*"\s*\]', raw_text_clean, re.DOTALL)
-                    if json_match:
-                        json_str = json_match.group(0)
-                    else:
-                        json_str = raw_text_clean
-
-                    try:
-                        explanations = json.loads(json_str, strict=False)
-                    except Exception:
-                        try:
-                            explanations = ast.literal_eval(json_str)
-                        except Exception:
-                            raise ValueError("Failed to parse explanations JSON")
+                explanations = self._parse_json_robustly(raw_text)
 
                 # Normalize to expected length and list type
                 if not isinstance(explanations, list):
