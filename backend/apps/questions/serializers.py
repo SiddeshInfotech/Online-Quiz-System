@@ -6,12 +6,17 @@ def clean_quiz_text(text):
     if not text or not isinstance(text, str):
         return text if text is not None else ""
     t = text.strip()
-    # Strip leading question numbers / choice prefixes like "1. ", "Question 1: ", "Q1: ", "A) ", "B. ", "1) "
-    t = re.sub(r'^(?:Question\s*)?#?\d+[\.:\)\-]\s*', '', t, flags=re.IGNORECASE)
-    t = re.sub(r'^[A-D][\.:\)\-]\s*', '', t)
-    # Strip embedded '#1', '#2', '#3' or 'concept #1' patterns
-    t = re.sub(r'\s*#\d+\b', '', t)
-    return t.strip()
+    prev = None
+    while prev != t:
+        prev = t
+        # Strip leading question numbers e.g., "1. ", "Question 1: ", "Q1: ", "#1: ", "#1 "
+        t = re.sub(r'^(?:Question\s*)?#?\d+[\.:\)\-\s]\s*', '', t, flags=re.IGNORECASE)
+        # Strip choice prefixes e.g., "(D) ", "[D] ", "Option D: ", "Option D - ", "D) ", "D. ", "D: ", "D - ", "d. ", "d) "
+        t = re.sub(r'^(?:Option\s*)?[\(\[]?[A-Da-d][\)\.\:\-\s\]]\s*', '', t, flags=re.IGNORECASE)
+        # Strip embedded '#1', '#2', '#3' or 'concept #1' patterns
+        t = re.sub(r'\s*#\d+\b', '', t)
+        t = t.strip()
+    return t
 
 class QuestionOptionSerializer(serializers.ModelSerializer):
     text = serializers.SerializerMethodField()

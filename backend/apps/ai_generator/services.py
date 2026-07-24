@@ -382,7 +382,7 @@ IMPORTANT:
                     "messages": [
                         {
                             "role": "system",
-                            "content": "You are an expert quiz generation engine. You MUST respond with 100% valid JSON only, with double quotes around all object property names and string values. Do not include any conversational response."
+                            "content": "You are an expert quiz generation engine. You MUST respond with 100% valid JSON only, with double quotes around all object property names and string values. DO NOT include choice letter prefixes like 'A.', 'B.', 'C.', 'D.' or '1.' inside the option text strings; output raw option text values only. Do not include any conversational response."
                         },
                         {"role": "user", "content": prompt}
                     ],
