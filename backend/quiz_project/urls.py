@@ -47,6 +47,7 @@ urlpatterns = [
     path('api/otp/', include('apps.otp.urls')),
     path('api/ai/', include('apps.ai_generator.urls')),
     path('api/feedback/', include('apps.feedback.urls')),
+    path('api/admin/feedback/', include('apps.feedback.admin_urls')),
     path('api/support/', include('apps.support.urls')),
     path('api/custom_admin/', include('apps.custom_admin.urls')),
 ]

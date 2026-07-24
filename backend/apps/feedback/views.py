@@ -87,23 +87,24 @@ class FeedbackCreateView(APIView):
 
 
 class FeedbackListView(generics.ListAPIView):
-    """All feedback, visible to every user."""
+    """All public feedback, visible to every user (excludes hidden feedback)."""
     serializer_class = FeedbackSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = None
 
     def get_queryset(self):
-        return Feedback.objects.select_related('user').order_by('-created_at')
+        return Feedback.objects.filter(is_hidden=False).exclude(status='Hidden').select_related('user').order_by('-created_at')
 
 
 class FeedbackSummaryView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        total_reviews = Feedback.objects.count()
-        avg_rating = Feedback.objects.aggregate(Avg('rating'))['rating__avg'] or 0
+        qs = Feedback.objects.filter(is_hidden=False).exclude(status='Hidden')
+        total_reviews = qs.count()
+        avg_rating = qs.aggregate(Avg('rating'))['rating__avg'] or 0
         distribution = {
-            str(r): Feedback.objects.filter(rating=r).count() for r in range(1, 6)
+            str(r): qs.filter(rating=r).count() for r in range(1, 6)
         }
         return Response({
             "average_rating": round(avg_rating, 2),

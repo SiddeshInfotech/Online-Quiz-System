@@ -11,6 +11,13 @@ from .views import (
     AdminSupportMessageListView,
     AdminSupportMessageToggleResolveView
 )
+from apps.feedback.admin_views import (
+    AdminFeedbackListView,
+    AdminFeedbackDetailUpdateDeleteView,
+    AdminFeedbackReplyView,
+    AdminFeedbackHideView,
+    AdminFeedbackStatsView
+)
 
 urlpatterns = [
     # Auth
@@ -37,4 +44,11 @@ urlpatterns = [
     # E. Support
     path('support/', AdminSupportMessageListView.as_view(), name='admin-support-list'),
     path('support/<int:pk>/', AdminSupportMessageToggleResolveView.as_view(), name='admin-support-toggle-resolve'),
+
+    # F. Feedback Moderation
+    path('feedback/', AdminFeedbackListView.as_view(), name='custom-admin-feedback-list'),
+    path('feedback/stats/', AdminFeedbackStatsView.as_view(), name='custom-admin-feedback-stats'),
+    path('feedback/<int:pk>/', AdminFeedbackDetailUpdateDeleteView.as_view(), name='custom-admin-feedback-detail'),
+    path('feedback/<int:pk>/reply/', AdminFeedbackReplyView.as_view(), name='custom-admin-feedback-reply'),
+    path('feedback/<int:pk>/hide/', AdminFeedbackHideView.as_view(), name='custom-admin-feedback-hide'),
 ]
