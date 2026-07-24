@@ -93,7 +93,7 @@ class FeedbackListView(generics.ListAPIView):
     pagination_class = None
 
     def get_queryset(self):
-        return Feedback.objects.filter(is_hidden=False).exclude(status='Hidden').select_related('user').order_by('-created_at')
+        return Feedback.objects.filter(is_hidden=False).exclude(status='Hidden').select_related('user', 'replied_by').order_by('-created_at')
 
 
 class FeedbackSummaryView(APIView):
@@ -118,7 +118,7 @@ class MyFeedbackView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        qs = Feedback.objects.filter(user=request.user).order_by('created_at')
+        qs = Feedback.objects.filter(user=request.user).select_related('user', 'replied_by').order_by('created_at')
         return Response({
             "count": qs.count(),
             "max_allowed": MAX_FEEDBACK_PER_USER,

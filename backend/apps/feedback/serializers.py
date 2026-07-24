@@ -16,11 +16,19 @@ class FeedbackUserSerializer(serializers.ModelSerializer):
 
 class FeedbackSerializer(serializers.ModelSerializer):
     user = FeedbackUserSerializer(read_only=True)
+    replied_by_username = serializers.SerializerMethodField()
 
     class Meta:
         model = Feedback
-        fields = ['id', 'user', 'rating', 'message', 'created_at', 'updated_at']
+        fields = [
+            'id', 'user', 'rating', 'message',
+            'status', 'reply_message', 'reply_date', 'replied_by_username',
+            'created_at', 'updated_at'
+        ]
         read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+
+    def get_replied_by_username(self, obj):
+        return obj.replied_by.username if obj.replied_by else None
 
 class FeedbackCreateSerializer(serializers.Serializer):
     rating = serializers.IntegerField(min_value=1, max_value=5)
