@@ -36,6 +36,11 @@ class AdminAnalyticsView(APIView):
     permission_classes = [IsCustomAdmin]
 
     def get(self, request):
+        from django.core.cache import cache
+        cached = cache.get("admin_analytics_summary")
+        if cached:
+            return Response(cached, status=status.HTTP_200_OK)
+
         # 1. Total actual registered accounts currently in DB
         total_users = User.objects.count()
 
@@ -81,7 +86,7 @@ class AdminAnalyticsView(APIView):
                     "average_score": 0.0
                 })
 
-        return Response({
+        data = {
             "overview": {
                 "total_users": total_users,
                 "admin_quizzes": admin_quizzes,
@@ -100,7 +105,9 @@ class AdminAnalyticsView(APIView):
             "performance": {
                 "subject_performance": subject_performance
             }
-        }, status=status.HTTP_200_OK)
+        }
+        cache.set("admin_analytics_summary", data, 15)
+        return Response(data, status=status.HTTP_200_OK)
 
 # Alias for backwards compatibility
 AdminDashboardAnalyticsView = AdminAnalyticsView
@@ -149,15 +156,19 @@ class AdminUserToggleStatusView(APIView):
 
 # C. Admin Quiz Creation & Moderation Views
 class AdminQuizListCreateView(generics.ListCreateAPIView):
-    queryset = Quiz.objects.all().order_by('-created_at')
     serializer_class = AdminQuizSerializer
     permission_classes = [IsCustomAdmin]
+
+    def get_queryset(self):
+        return Quiz.objects.all().select_related('category', 'created_by').annotate(
+            annotated_question_count=Count('question', distinct=True)
+        ).order_by('-created_at')
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
 class AdminQuizDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Quiz.objects.all()
+    queryset = Quiz.objects.all().select_related('category', 'created_by')
     serializer_class = AdminQuizSerializer
     permission_classes = [IsCustomAdmin]
 
@@ -179,15 +190,18 @@ class AdminQuizToggleVisibilityView(APIView):
 
 # D. Penalty & Violation Logs Audit View
 class AdminPenaltyLogListView(generics.ListAPIView):
-    queryset = UserPenaltyLog.objects.all().order_by('-created_at')
     serializer_class = UserPenaltyLogSerializer
     permission_classes = [IsCustomAdmin]
+
+    def get_queryset(self):
+        return UserPenaltyLog.objects.all().select_related('user', 'attempt', 'attempt__quiz').order_by('-created_at')
 
 
 # E. Support Ticket Inbox Views
 class AdminSupportMessageListView(generics.ListAPIView):
     queryset = ContactMessage.objects.all().order_by('-created_at')
     serializer_class = AdminSupportMessageSerializer
+    permission_classes = [IsCustomAdmin]
     permission_classes = [IsCustomAdmin]
 
 class AdminSupportMessageToggleResolveView(APIView):

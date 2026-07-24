@@ -42,7 +42,7 @@ class QuizLibrarySerializer(serializers.ModelSerializer):
     def get_created_by_me(self, obj):
         request = self.context.get('request')
         if request and request.user and request.user.is_authenticated:
-            return obj.created_by == request.user
+            return obj.created_by_id == request.user.id
         return False
 
 class QuizSerializer(serializers.ModelSerializer):
@@ -71,5 +71,5 @@ class QuizSerializer(serializers.ModelSerializer):
     def get_created_by_me(self, obj):
         request = self.context.get('request')
         if request and request.user and request.user.is_authenticated:
-            return obj.created_by == request.user
+            return obj.created_by_id == request.user.id
         return False

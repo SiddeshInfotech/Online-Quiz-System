@@ -17,6 +17,12 @@ class DashboardSummaryView(APIView):
     def get(self, request):
         user = request.user
 
+        from django.core.cache import cache
+        cache_key = f"dashboard_summary_{user.id}"
+        cached = cache.get(cache_key)
+        if cached:
+            return Response(cached, status=200)
+
         current_streak = self._calculate_streak(user)
         longest_streak = user.longest_streak if hasattr(user, 'longest_streak') else 0
 
@@ -202,7 +208,7 @@ class DashboardSummaryView(APIView):
                 "average_score": round(float(item['avg_score'] or 0), 1)
             })
 
-        return Response({
+        res_data = {
             "level": level,
             "current_level_xp": current_level_xp,
             "current_xp": current_xp,
@@ -251,7 +257,9 @@ class DashboardSummaryView(APIView):
                 "subject_performance": subject_performance
             },
             "quick_actions": quick_actions
-        })
+        }
+        cache.set(cache_key, res_data, 5)
+        return Response(res_data)
 
     def _calculate_streak(self, user):
         from django.utils import timezone

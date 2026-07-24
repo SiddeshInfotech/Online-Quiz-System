@@ -654,10 +654,6 @@ class UserBadgesView(APIView):
         if cached_data is not None:
             return Response(cached_data)
 
-        # Trigger evaluator pass to ensure any newly met criteria are marked claimable
-        from apps.users.services.badge_progress import evaluate_user_badges
-        evaluate_user_badges(user)
-
         user_badges = UserBadge.objects.filter(user=user).select_related('badge')
         earned_ids = set()
         claimed_ids = set()
@@ -793,12 +789,6 @@ class AllBadgesView(APIView):
         
         cache_key = f"badges_all_{user.id}"
         cached_data = cache.get(cache_key)
-        if cached_data:
-            return Response(cached_data)
-
-        from apps.users.services.badge_progress import evaluate_user_badges
-        evaluate_user_badges(user)
-
         progress_cache_key = f"badge_progress_{user.id}"
         progress_cached = cache.get(progress_cache_key)
         if not progress_cached:

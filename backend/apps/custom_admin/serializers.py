@@ -43,6 +43,8 @@ class AdminQuizSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_by', 'created_at', 'updated_at', 'join_code', 'share_link', 'question_count']
 
     def get_question_count(self, obj):
+        if hasattr(obj, 'annotated_question_count'):
+            return obj.annotated_question_count or 0
         return obj.question_set.count()
 
     def create(self, validated_data):
