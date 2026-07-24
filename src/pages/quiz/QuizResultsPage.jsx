@@ -42,16 +42,33 @@ const QuizResultsPage = () => {
 
   const [actionError, setActionError] = useState(null);
 
+  const canRetry = result?.can_retry ?? result?.quiz?.can_retry ?? false;
+  const attemptCount = result?.attempt_count ?? result?.quiz?.attempt_count ?? null;
+  const maxAttempts = result?.max_attempts ?? result?.quiz?.max_attempts ?? null;
+
   const handleRetry = async () => {
-    if (!result?.quiz?.id) return;
+    const quizId = result?.quiz?.id || result?.quiz_id;
+    if (!quizId) return;
     try {
       setActionError(null);
-      const res = await attemptsService.startAttempt(result.quiz.id);
+      const res = await attemptsService.startAttempt(quizId);
       navigate(`/attempts/${res.attempt_id || res.id}`);
     } catch (err) {
       console.error("Failed to retry quiz", err);
-      setActionError("Failed to start a new attempt. Please try again later.");
-      setTimeout(() => setActionError(null), 4000);
+      if (err.response?.status === 403) {
+        setActionError(
+          err.response?.data?.detail ||
+          err.response?.data?.message ||
+          "Maximum attempt limit reached."
+        );
+      } else {
+        setActionError(
+          err.response?.data?.detail ||
+          err.response?.data?.message ||
+          "Failed to start a new attempt. Please try again later."
+        );
+      }
+      setTimeout(() => setActionError(null), 5000);
     }
   };
 
@@ -133,6 +150,9 @@ const QuizResultsPage = () => {
 
         {/* Actions */}
         <ResultActions 
+          canRetry={canRetry}
+          attemptCount={attemptCount}
+          maxAttempts={maxAttempts}
           onRetry={handleRetry}
           onReview={handleReview}
           onBackToLibrary={handleBackToDashboard}

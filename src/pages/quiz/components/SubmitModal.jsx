@@ -94,7 +94,7 @@ const SubmitModal = ({
               <div className="mb-6 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-2">
                 <AlertCircle size={16} className="text-amber-500 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
-                  You still have {stats.unanswered} unanswered questions.
+                  You still have {stats.unanswered} unanswered question{stats.unanswered > 1 ? "s" : ""}. Unanswered questions will automatically be treated as unanswered/incorrect during scoring.
                 </p>
               </div>
             )}

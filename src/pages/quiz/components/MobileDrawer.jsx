@@ -11,6 +11,7 @@ const MobileDrawer = ({
   answers,
   markedForReview,
   onNavigate,
+  onSubmitQuiz,
   reviewMode = false,
   questions = [],
 }) => {
@@ -69,6 +70,10 @@ const MobileDrawer = ({
                   onNavigate(idx);
                   setIsOpen(false); // Close on selection
                 }}
+                onSubmitQuiz={onSubmitQuiz ? () => {
+                  setIsOpen(false);
+                  onSubmitQuiz();
+                } : undefined}
                 isLoading={false}
                 reviewMode={reviewMode}
                 questions={questions}

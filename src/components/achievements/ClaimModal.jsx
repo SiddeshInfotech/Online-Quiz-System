@@ -3,13 +3,14 @@ import { Sparkles, X, Trophy } from "lucide-react";
 import Button from "../ui/Button/Button";
 
 const ClaimModal = ({ isOpen, badge, onClose }) => {
-  const badgeName = badge.badge_name || badge.name || "Badge";
-  const iconUrl = badge.icon_url || badge.image_url;
-  const xpAmount = badge.xp_earned ?? badge.xp_reward;
+  const badgeName = badge?.badge_name || badge?.name || "Badge";
+  const iconUrl = badge?.icon_url || badge?.image_url;
+  const xpAmount = badge?.xp_earned ?? badge?.xp_reward;
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {isOpen && badge && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -81,7 +82,7 @@ const ClaimModal = ({ isOpen, badge, onClose }) => {
                   <Sparkles size={20} />
                   +{xpAmount} XP
                 </div>
-                {badge.new_total_xp !== undefined && (
+                {badge?.new_total_xp !== undefined && (
                   <p className="text-sm font-medium text-amber-500 mt-2">
                     New Total: {badge.new_total_xp} XP
                   </p>
@@ -98,6 +99,7 @@ const ClaimModal = ({ isOpen, badge, onClose }) => {
           </div>
         </motion.div>
       </div>
+      )}
     </AnimatePresence>
   );
 };

@@ -979,31 +979,30 @@ const ProfilePage = () => {
                     </h3>
                     <p className="text-xs text-app-muted mt-0.5">Your earned badges</p>
                   </div>
-                  {recentBadges.length > 0 && (
-                    <Link
-                      to="/profile/badges"
-                      className="text-xs font-semibold text-violet-600 hover:text-violet-700 transition-colors flex items-center gap-1"
-                    >
-                      View All →
-                    </Link>
-                  )}
+                  <Link
+                    to="/profile/badges"
+                    className="text-xs font-semibold text-violet-600 hover:text-violet-700 transition-colors flex items-center gap-1"
+                  >
+                    Badges Collected →
+                  </Link>
                 </div>
 
                 {/* Content */}
                 {recentBadges.length > 0 ? (
                   <div className="flex items-center gap-2 flex-wrap">
                     {recentBadges.map((badge) => (
-                      <div
+                      <Link
                         key={badge.id || badge.badge_id || badge.name}
+                        to={`/badges/${badge.id || badge.badge_id}`}
                         className="w-10 h-10 rounded-xl surface-subtle border-2 border-white shadow flex items-center justify-center overflow-hidden hover:scale-110 transition-transform cursor-pointer flex-shrink-0"
-                        title={badge.name}
+                        title={badge.name || badge.badge_name}
                       >
-                        {badge.image_url ? (
-                          <img src={badge.image_url} alt={badge.name} className="w-full h-full object-cover" />
+                        {badge.image_url || badge.icon_url ? (
+                          <img src={badge.image_url || badge.icon_url} alt={badge.name || badge.badge_name} className="w-full h-full object-cover" />
                         ) : (
                           <Award className="text-violet-400" size={20} />
                         )}
-                      </div>
+                      </Link>
                     ))}
                     {totalClaimedBadges > 5 && (
                       <Link
@@ -1019,12 +1018,20 @@ const ProfilePage = () => {
                     <span className="text-3xl mb-2">🏅</span>
                     <p className="text-sm font-semibold text-app-2 mb-1">No badges claimed yet</p>
                     <p className="text-[11px] text-app-muted mb-3">Complete quizzes and claim your first badge.</p>
-                    <Link
-                      to="/achievements"
-                      className="text-xs font-semibold text-violet-600 hover:text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-100 rounded-lg px-3 py-1.5 transition-colors"
-                    >
-                      Go to Achievements →
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        to="/profile/badges"
+                        className="text-xs font-semibold text-violet-600 hover:text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-100 rounded-lg px-3 py-1.5 transition-colors"
+                      >
+                        Badges Collected →
+                      </Link>
+                      <Link
+                        to="/achievements"
+                        className="text-xs font-semibold text-app-muted hover:text-app surface-subtle hover:bg-[var(--bg-elevated)] border border-app rounded-lg px-3 py-1.5 transition-colors"
+                      >
+                        Go to Achievements
+                      </Link>
+                    </div>
                   </div>
                 )}
               </Card>

@@ -1,5 +1,5 @@
 import React from "react";
-import { X, Clock, AlertCircle } from "lucide-react";
+import { X, Clock, Send } from "lucide-react";
 
 const QuizHeader = ({
   quizTitle,
@@ -7,6 +7,7 @@ const QuizHeader = ({
   totalQuestions,
   remainingSeconds,
   onExit,
+  onSubmitQuiz,
   isLoading,
   exitText = "Exit",
 }) => {
@@ -84,6 +85,18 @@ const QuizHeader = ({
             </div>
           )}
           
+          {onSubmitQuiz && (
+            <button
+              onClick={onSubmitQuiz}
+              disabled={isLoading}
+              className="flex items-center justify-center px-3.5 py-1.5 md:px-4 md:py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-medium text-xs md:text-sm shadow-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+              title="Submit Quiz Early"
+            >
+              <Send size={15} className="mr-1.5" />
+              <span>Submit Quiz</span>
+            </button>
+          )}
+
           <button
             onClick={onExit}
             className="flex items-center justify-center w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 rounded-xl text-app-muted hover:text-app hover:bg-[var(--bg-elevated)] transition-colors font-medium text-sm border border-transparent"

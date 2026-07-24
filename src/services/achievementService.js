@@ -139,18 +139,12 @@ class AchievementService {
    * Get user authenticated badges
    */
   async getUserAuthBadges() {
-    const response = await api.get('/auth/badges/');
-    const data = response.data;
-    if (Array.isArray(data)) {
-      return data.map(normalizeBadge);
+    try {
+      return await this.getAllBadges();
+    } catch (error) {
+      console.warn("Failed to load user badges from /achievements/all/", error);
+      return [];
     }
-    if (data && Array.isArray(data.badges)) {
-      return {
-        ...data,
-        badges: data.badges.map(normalizeBadge)
-      };
-    }
-    return data;
   }
 
   /**

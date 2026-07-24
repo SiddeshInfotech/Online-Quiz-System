@@ -1,4 +1,5 @@
 import axios from "axios";
+import customAdminService from "./customAdminService";
 
 /**
  * Dedicated Axios instance for Custom Admin Panel.
@@ -101,48 +102,37 @@ const adminService = {
    * Quiz Moderation
    * GET /custom_admin/quizzes/
    */
-  getQuizzes: async (params = {}) => {
-    const response = await adminApi.get("custom_admin/quizzes/", { params });
-    return response.data;
-  },
+  getQuizzes: (params) => customAdminService.getQuizzes(params),
 
   /**
    * Create Quiz
    * POST /custom_admin/quizzes/
    */
-  createQuiz: async (payload) => {
-    const response = await adminApi.post("custom_admin/quizzes/", payload);
-    return response.data;
-  },
+  createQuiz: (payload) => customAdminService.createQuiz(payload),
 
   /**
    * Update Quiz
    * PUT /custom_admin/quizzes/{quizId}/
    */
-  updateQuiz: async (quizId, payload) => {
-    const response = await adminApi.put(`custom_admin/quizzes/${quizId}/`, payload);
-    return response.data;
-  },
+  updateQuiz: (quizId, payload) => customAdminService.updateQuiz(quizId, payload),
 
   /**
-   * Archive Quiz (Backend deletion operation)
+   * Delete Quiz
    * DELETE /custom_admin/quizzes/{quizId}/
    */
-  archiveQuiz: async (quizId) => {
-    const response = await adminApi.delete(`custom_admin/quizzes/${quizId}/`);
-    return response.data;
-  },
+  deleteQuiz: (quizId) => customAdminService.deleteQuiz(quizId),
 
   /**
-   * Toggle Publish/Draft Quiz Status
-   * PATCH /custom_admin/quizzes/{quizId}/
+   * Archive Quiz (Legacy method mapped to deleteQuiz)
    */
-  toggleQuizStatus: async (quizId, isPublished) => {
-    const response = await adminApi.patch(`custom_admin/quizzes/${quizId}/`, {
-      is_published: isPublished,
-    });
-    return response.data;
-  },
+  archiveQuiz: (quizId) => customAdminService.deleteQuiz(quizId),
+
+  /**
+   * Toggle Publish/Draft / Visibility Quiz Status
+   * POST /custom_admin/quizzes/{quizId}/toggle-visibility/
+   */
+  toggleVisibility: (quizId, isVisible) => customAdminService.toggleVisibility(quizId, isVisible),
+  toggleQuizStatus: (quizId, isPublished) => customAdminService.toggleVisibility(quizId, isPublished),
 
   /**
    * Penalty Audit Logs

@@ -409,6 +409,7 @@ const QuizAttemptPage = () => {
         totalQuestions={questions.length}
         remainingSeconds={remainingSeconds}
         onExit={() => setShowExitModal(true)}
+        onSubmitQuiz={() => setShowSubmitModal(true)}
         isLoading={isLoading}
       />
 
@@ -468,22 +469,33 @@ const QuizAttemptPage = () => {
           )}
 
           {/* Navigation Buttons */}
-          <div className="flex items-center justify-between pt-4">
+          <div className="flex items-center justify-between pt-4 gap-2">
             <Button
               variant="secondary"
               onClick={handlePrev}
               disabled={currentIndex === 0 || isLoading}
-              className="min-w-[120px]"
+              className="min-w-[100px] sm:min-w-[120px]"
             >
               <ChevronLeft size={18} className="mr-1" />
               Previous
             </Button>
 
+            {currentIndex < questions.length - 1 && (
+              <Button
+                variant="outline"
+                onClick={() => setShowSubmitModal(true)}
+                disabled={isLoading || isSubmitting}
+                className="hidden sm:flex border-violet-300 dark:border-violet-700 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 font-semibold"
+              >
+                Submit Early
+              </Button>
+            )}
+
             <Button
               variant="primary"
               onClick={handleNext}
               disabled={isLoading}
-              className="min-w-[120px]"
+              className="min-w-[100px] sm:min-w-[120px]"
             >
               {currentIndex === questions.length - 1 ? (
                 "Submit Quiz"
@@ -505,6 +517,7 @@ const QuizAttemptPage = () => {
             answers={answers}
             markedForReview={markedForReview}
             onNavigate={handleNavigatePalette}
+            onSubmitQuiz={() => setShowSubmitModal(true)}
             isLoading={isLoading}
             questions={questions}
           />
@@ -520,6 +533,7 @@ const QuizAttemptPage = () => {
         answers={answers}
         markedForReview={markedForReview}
         onNavigate={handleNavigatePalette}
+        onSubmitQuiz={() => setShowSubmitModal(true)}
         questions={questions}
       />
 

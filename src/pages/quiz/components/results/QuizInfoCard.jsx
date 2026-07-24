@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { BookOpen, AlertTriangle, Hash, Clock, Target, CheckSquare } from "lucide-react";
+import { BookOpen, AlertTriangle, Hash, Clock, Target, CheckSquare, RotateCcw } from "lucide-react";
 
 const InfoRow = ({ icon: Icon, label, value }) => (
   <div className="flex items-center justify-between py-3 border-b border-app last:border-0">
@@ -27,6 +27,12 @@ const QuizInfoCard = ({ result, isLoading }) => {
   }
 
   if (!result) return null;
+
+  const attemptCount = result.attempt_count ?? result.quiz?.attempt_count ?? null;
+  const maxAttempts = result.max_attempts ?? result.quiz?.max_attempts ?? null;
+  const attemptsDisplay = maxAttempts != null 
+    ? `${attemptCount ?? 1} / ${maxAttempts}` 
+    : (attemptCount != null ? `${attemptCount}` : "--");
 
   return (
     <motion.div
@@ -83,6 +89,12 @@ const QuizInfoCard = ({ result, isLoading }) => {
           icon={CheckSquare}
           label="Marks per Question"
           value={result.quiz?.marks_per_question ?? "--"}
+        />
+
+        <InfoRow
+          icon={RotateCcw}
+          label="Attempts Used"
+          value={attemptsDisplay}
         />
       </div>
     </motion.div>

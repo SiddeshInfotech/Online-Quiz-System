@@ -69,8 +69,16 @@ const attemptsService = {
    * @param {string|number} attemptId 
    */
   getAttemptResult: async (attemptId) => {
-    const response = await api.get(`/attempts/${attemptId}/result/`);
-    return response.data;
+    try {
+      const response = await api.get(`/attempts/${attemptId}/result/`);
+      return response.data;
+    } catch (err) {
+      if (err.response?.status === 404) {
+        const fallback = await api.get(`/attempts/${attemptId}/`);
+        return fallback.data;
+      }
+      throw err;
+    }
   },
 
   /**
@@ -79,8 +87,16 @@ const attemptsService = {
    * @param {string|number} attemptId 
    */
   getAttemptReview: async (attemptId) => {
-    const response = await api.get(`/attempts/${attemptId}/review/`);
-    return response.data;
+    try {
+      const response = await api.get(`/attempts/${attemptId}/review/`);
+      return response.data;
+    } catch (err) {
+      if (err.response?.status === 404) {
+        const fallback = await api.get(`/attempts/${attemptId}/`);
+        return fallback.data;
+      }
+      throw err;
+    }
   },
 };
 

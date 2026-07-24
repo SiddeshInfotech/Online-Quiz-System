@@ -120,10 +120,10 @@ const AttemptCard = ({ attempt }) => {
   const category = attempt.category || "";
 
   // Backend Retry Metadata
-  const retryCount = attempt.retry_count ?? 1;
-  const maxRetry = attempt.max_retry ?? 1;
-  const canRetry = attempt.can_retry ?? false;
-  const retryTooltip = `You have used ${retryCount} of ${maxRetry} allowed ${maxRetry === 1 ? "retry" : "retries"}.`;
+  const canRetry = attempt.can_retry ?? attempt.quiz?.can_retry ?? false;
+  const retryCount = attempt.attempt_count ?? attempt.retry_count ?? 1;
+  const maxRetry = attempt.max_attempts ?? attempt.max_retry ?? 1;
+  const retryTooltip = `You have used ${retryCount} of ${maxRetry} allowed ${maxRetry === 1 ? "attempt" : "attempts"}.`;
 
   const navigate = useNavigate();
   const [isRetrying, setIsRetrying] = useState(false);
@@ -145,15 +145,23 @@ const AttemptCard = ({ attempt }) => {
     try {
       setIsRetrying(true);
       setRetryError(null);
-      const res = await attemptsService.startAttempt(attempt.quiz_id);
+      const res = await attemptsService.startAttempt(attempt.quiz_id || attempt.quiz?.id);
       navigate(`/attempts/${res.attempt_id || res.id}`);
     } catch (err) {
       console.error(err);
-      const errorMsg =
-        err?.response?.data?.detail ??
-        err?.response?.data?.message ??
-        "Retry limit reached for this quiz.";
-      setRetryError(errorMsg);
+      if (err?.response?.status === 403) {
+        const errorMsg =
+          err?.response?.data?.detail ??
+          err?.response?.data?.message ??
+          "Maximum attempt limit reached.";
+        setRetryError(errorMsg);
+      } else {
+        const errorMsg =
+          err?.response?.data?.detail ??
+          err?.response?.data?.message ??
+          "Failed to start attempt. Please try again later.";
+        setRetryError(errorMsg);
+      }
       setTimeout(() => setRetryError(null), 5000);
     } finally {
       setIsRetrying(false);

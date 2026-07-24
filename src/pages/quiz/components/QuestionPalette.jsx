@@ -1,5 +1,6 @@
 import React from "react";
-import { Bookmark } from "lucide-react";
+import { Bookmark, Send } from "lucide-react";
+import Button from "../../../components/ui/Button";
 
 const QuestionPalette = ({
   totalQuestions,
@@ -7,6 +8,7 @@ const QuestionPalette = ({
   answers,
   markedForReview,
   onNavigate,
+  onSubmitQuiz,
   isLoading,
   reviewMode = false,
   questions = [],
@@ -105,12 +107,22 @@ const QuestionPalette = ({
               </span>
             </div>
           ))}
-          <div className="flex items-center gap-2 col-span-2">
-            <div className="w-3 h-3 border-2 border-violet-500 rounded-full" />
-            <span className="text-xs font-medium text-app-2">Current Question</span>
-          </div>
         </div>
       </div>
+
+      {!reviewMode && onSubmitQuiz && (
+        <div className="pt-5 mt-5 border-t border-app">
+          <Button
+            variant="primary"
+            onClick={onSubmitQuiz}
+            disabled={isLoading}
+            className="w-full justify-center gap-2 shadow-md shadow-violet-500/20"
+          >
+            <Send size={16} />
+            Submit Quiz
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

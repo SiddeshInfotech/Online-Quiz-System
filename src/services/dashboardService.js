@@ -186,15 +186,17 @@ const adaptResponse = (raw = {}) => {
     : [];
 
   // ── Performance Stats ─────────────────────────────────────────────────────
-  // Backend may put stats inside a nested object or at root.
+  // Backend may put stats inside a nested object (e.g. overview) or at root.
   const rawStats =
-    raw?.performance ?? raw?.performance_stats ?? raw?.performanceStats ?? raw?.stats ?? {};
+    raw?.overview ?? raw?.performance ?? raw?.performance_stats ?? raw?.performanceStats ?? raw?.stats ?? {};
 
   const performanceStats = {
     quizzesAttempted: Number(
       pick(
         rawStats?.quizzes_attempted,
         rawStats?.quizzesAttempted,
+        rawStats?.total_attempts,
+        rawStats?.user_quizzes,
         raw?.quizzes_attempted,
         raw?.total_attempts
       ) ?? 0

@@ -156,7 +156,7 @@ const AdminPenaltiesPage = () => {
       <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-slate-950/80 uppercase font-semibold text-[10px] tracking-wider text-slate-400 border-b border-slate-800">
+            <thead className="bg-slate-950/80 uppercase font-semibold text-[10px] tracking-wider text-slate-400 border-b border-slate-800 whitespace-nowrap">
               <tr>
                 <th className="px-6 py-4">Student</th>
                 <th className="px-6 py-4">Quiz Title</th>
@@ -204,14 +204,14 @@ const AdminPenaltiesPage = () => {
                       </td>
 
                       {/* Violations */}
-                      <td className="px-6 py-4">
-                        <span className="font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full text-[11px]">
-                          {violations} count
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center whitespace-nowrap font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full text-[11px]">
+                          {violations} {violations === 1 ? "violation" : "violations"}
                         </span>
                       </td>
 
                       {/* Penalty Points */}
-                      <td className="px-6 py-4 font-bold text-rose-400">
+                      <td className="px-6 py-4 font-bold text-rose-400 whitespace-nowrap">
                         -{points} PTS
                       </td>
 
@@ -221,8 +221,8 @@ const AdminPenaltiesPage = () => {
                       </td>
 
                       {/* Timestamp */}
-                      <td className="px-6 py-4 text-right text-slate-400 font-mono text-[11px]">
-                        <span className="inline-flex items-center gap-1">
+                      <td className="px-6 py-4 text-right text-slate-400 font-mono text-[11px] whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 whitespace-nowrap">
                           <Clock size={12} className="text-slate-500" />
                           {timestamp}
                         </span>

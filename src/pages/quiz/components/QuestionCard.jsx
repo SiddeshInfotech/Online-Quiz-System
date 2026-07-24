@@ -87,6 +87,17 @@ const QuestionCard = ({
     );
   };
 
+  let rawOptions = question.options ?? question.choices ?? question.question_options ?? [];
+  if (typeof rawOptions === "string") {
+    try {
+      const parsed = JSON.parse(rawOptions);
+      if (Array.isArray(parsed)) rawOptions = parsed;
+    } catch (e) {
+      if (rawOptions.trim()) rawOptions = [rawOptions];
+    }
+  }
+  const optionsArray = Array.isArray(rawOptions) ? rawOptions : [];
+
   return (
     <div className="surface rounded-3xl p-6 md:p-10 shadow-sm border border-app relative overflow-hidden">
       {/* Top action bar */}
@@ -148,27 +159,32 @@ const QuestionCard = ({
 
       {/* Options */}
       <div className="space-y-3">
-        {!question.options || !Array.isArray(question.options) || question.options.length === 0 ? (
+        {optionsArray.length === 0 ? (
           <div className="p-6 rounded-2xl border-2 border-dashed border-amber-500/30 bg-amber-500/5 text-center text-amber-700 dark:text-amber-400 font-medium space-y-1">
             <AlertTriangle size={24} className="mx-auto mb-1 opacity-80" />
             <p className="text-sm font-semibold">No options available for this question.</p>
             <p className="text-xs opacity-75">If this issue persists, please contact support or try refreshing.</p>
           </div>
         ) : (
-          question.options.map((option, i) => {
-            const optionText = typeof option === "string" ? option : (option.text ?? option.value ?? String(option.id || ""));
-            const optionId = typeof option === "object" && option?.id != null ? String(option.id).trim() : String(i);
+          optionsArray.map((option, i) => {
+            const optionText = typeof option === "string" ? option : (option?.text ?? option?.option_text ?? option?.value ?? String(option?.id || ""));
+            const optionId = typeof option === "object" && option?.id != null ? String(option.id).trim() : (typeof option === "string" ? option : String(i));
             const letter = String.fromCharCode(65 + i);
 
             const effectiveSelectedId = question?.selected_option_id ?? question?.user_answer_id ?? selectedOptionId;
+            const effectiveSelectedStr = effectiveSelectedId != null ? String(effectiveSelectedId).trim() : null;
             
-            // Text-based matching (latest backend contract) + ID fallback (legacy contract)
+            // Text-based matching + Index matching + ID matching for high compatibility
             const isSelected = reviewMode
-              ? (question.selected_answer ? optionText.trim() === String(question.selected_answer).trim() : (effectiveSelectedId != null && String(effectiveSelectedId).trim() === optionId))
-              : (effectiveSelectedId != null && String(effectiveSelectedId).trim() === optionId);
+              ? (question.selected_answer
+                  ? optionText.trim() === String(question.selected_answer).trim()
+                  : (effectiveSelectedStr != null && (effectiveSelectedStr === optionId || effectiveSelectedStr === String(i) || effectiveSelectedStr === optionText.trim())))
+              : (effectiveSelectedStr != null && (effectiveSelectedStr === optionId || effectiveSelectedStr === String(i) || effectiveSelectedStr === optionText.trim()));
 
             const isCorrectOption = reviewMode
-              ? (question.correct_answer ? optionText.trim() === String(question.correct_answer).trim() : (question.correct_option_id != null && String(question.correct_option_id).trim() === optionId))
+              ? (question.correct_answer
+                  ? optionText.trim() === String(question.correct_answer).trim()
+                  : (question.correct_option_id != null && (String(question.correct_option_id).trim() === optionId || String(question.correct_option_id).trim() === String(i) || String(question.correct_option_id).trim() === optionText.trim())))
               : false;
 
             let containerClasses = "";
