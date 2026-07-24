@@ -795,19 +795,21 @@ class AttemptReviewView(APIView):
 
         # Generate AI explanations
         if questions_data:
+            subject_name = attempt.quiz.subject or "the topic"
             try:
                 explanations = self._generate_ai_explanations(attempt, questions_data)
                 for i, q_data in enumerate(questions_data):
                     ai_exp = explanations[i] if (explanations and i < len(explanations)) else ""
-                    if not ai_exp and q_data["correct_answer"]:
-                        ai_exp = f"The correct answer is '{q_data['correct_answer']}'."
+                    if not ai_exp or len(ai_exp.strip()) < 15 or ai_exp.startswith("No explanation available.") or ai_exp.startswith("The correct answer is"):
+                        ai_exp = self._build_rich_fallback_explanation(q_data, subject_name)
                     q_data["explanation"] = ai_exp
                     q_data["ai_explanation"] = ai_exp
             except Exception as e:
                 print(f"AI explanation generation failed: {e}")
                 for q_data in questions_data:
-                    if not q_data["explanation"] and q_data["correct_answer"]:
-                        q_data["explanation"] = f"The correct answer is '{q_data['correct_answer']}'."
+                    fallback = self._build_rich_fallback_explanation(q_data, subject_name)
+                    q_data["explanation"] = fallback
+                    q_data["ai_explanation"] = fallback
 
         return Response({
             "attempt_id": attempt.id,
@@ -817,6 +819,24 @@ class AttemptReviewView(APIView):
             "total_questions": len(questions_data),
             "questions": questions_data
         }, status=status.HTTP_200_OK)
+
+    def _build_rich_fallback_explanation(self, q_data, subject="the topic"):
+        correct_ans = q_data.get('correct_answer', '')
+        selected_ans = q_data.get('selected_answer', '')
+        is_correct = q_data.get('is_correct', False)
+
+        if is_correct:
+            return (
+                f"Correct! '{correct_ans}' is the right answer. "
+                f"Your response demonstrates a solid grasp of {subject} fundamentals. "
+                f"This option satisfies all logical constraints tested in this question."
+            )
+        else:
+            base = f"The correct answer is '{correct_ans}'. "
+            if selected_ans and selected_ans not in ["None", "Unknown", None]:
+                base += f"You selected '{selected_ans}', which is a common misconception. "
+            base += f"'{correct_ans}' is correct because it aligns with standard {subject} rules and principles."
+            return base
 
     def _generate_ai_explanations(self, attempt, questions_data):
         """Generate explanations for all questions using OpenRouter."""
@@ -847,33 +867,27 @@ class AttemptReviewView(APIView):
             questions_text += f"""
 Question {i+1}: {q['question_text']}
 Options: {opts_str}
-Selected Answer: {selected_text}
-Correct Answer: {correct_text}
-User's answer was {'correct' if q['is_correct'] else 'incorrect'}.
+User Choice: {selected_text}
+Correct Choice: {correct_text}
+User Result: {'Correct' if q['is_correct'] else 'Incorrect'}
 ---
 """
 
         prompt = f"""
-You are an expert tutor. For the quiz "{quiz_title}", provide brief, educational explanations for each question.
+You are an expert tutor providing detailed, concept-focused explanations for quiz results on "{quiz_title}".
 
-Each explanation should be 3-6 lines and:
-- Explain WHY the correct answer is correct.
-- Explain WHY the selected answer is incorrect (if applicable).
-- Briefly describe the underlying concept.
+For each question below, write a rich 2-4 sentence educational explanation.
 
-Here are the questions with the user's answers:
+CRITICAL RULES:
+- Explain WHY the correct choice is right and the fundamental theory behind it.
+- If the user choice was incorrect, explain why that choice is misleading or wrong.
+- DO NOT just say "The correct answer is X". Teach the user the actual concept!
+- DO NOT include raw numbers like "#1" or option prefixes like "A." in your explanation text.
 
+Questions & User Attempts:
 {questions_text}
 
-Return a JSON array of exactly {len(questions_data)} strings, where each string is the explanation for that question.
-
-Example output:
-[
-  "Explanation for question 1...",
-  "Explanation for question 2..."
-]
-
-Return ONLY valid JSON. No extra text.
+Return a JSON array of exactly {len(questions_data)} explanation strings. Return ONLY valid JSON.
 """
         return prompt
 

@@ -30,48 +30,101 @@ class AIService:
             return self._generate_fallback_quiz(subject, difficulty, num_questions, prompt_topic, quiz_mode)
 
     def _generate_fallback_quiz(self, subject, difficulty, num_questions, prompt_topic, quiz_mode):
-        topic_title = prompt_topic.strip() if prompt_topic else "Core Concepts"
+        topic_title = prompt_topic.strip() if prompt_topic else "Core Principles"
         quiz_title = f"{subject}: {topic_title} Mastery"
-        
-        sample_code_snippets = {
-            "python": '```python\ndef solve(arr):\n    return [x * 2 for x in arr if x % 2 == 0]\nprint(solve([1, 2, 3, 4]))\n```',
-            "javascript": '```javascript\nconst nums = [10, 20, 30];\nconst res = nums.reduce((acc, curr) => acc + curr, 0);\nconsole.log(res);\n```',
-            "java": '```java\npublic class Test {\n    public static void main(String[] args) {\n        System.out.println(10 + 20 + "Quiz");\n    }\n}\n```',
-            "cpp": '```cpp\n#include <iostream>\nint main() {\n    int a = 5, b = 2;\n    std::cout << a / b;\n    return 0;\n}\n```'
+
+        subject_pools = {
+            "python": [
+                {
+                    "q": "What is the primary difference between a List and a Tuple in Python?",
+                    "opts": ["Lists are mutable while Tuples are immutable", "Tuples are mutable while Lists are immutable", "Lists cannot store strings", "Tuples cannot be indexed"],
+                    "ans": "Lists are mutable while Tuples are immutable"
+                },
+                {
+                    "q": "What does the '__init__' method do in a Python class?",
+                    "opts": ["It serves as the constructor to initialize object attributes", "It deletes the object from memory", "It imports external modules automatically", "It compiles Python bytecode to native binary"],
+                    "ans": "It serves as the constructor to initialize object attributes"
+                },
+                {
+                    "q": "Which Python keyword is used to handle exceptions gracefully?",
+                    "opts": ["try / except", "catch / throw", "do / rescue", "error / handle"],
+                    "ans": "try / except"
+                },
+                {
+                    "q": "What will `bool([])` evaluate to in Python?",
+                    "opts": ["False", "True", "TypeError", "None"],
+                    "ans": "False"
+                },
+                {
+                    "q": "What is the output of the following Python code?\n\n```python\nx = [1, 2, 3]\ny = x\ny.append(4)\nprint(len(x))\n```",
+                    "opts": ["4", "3", "Error", "None"],
+                    "ans": "4"
+                }
+            ],
+            "javascript": [
+                {
+                    "q": "What is the difference between '==' and '===' in JavaScript?",
+                    "opts": ["'===' checks both value and type, while '==' performs type coercion", "'==' checks value and type, while '===' performs coercion", "They are identical in ES6", "'===' only works on numbers"],
+                    "ans": "'===' checks both value and type, while '==' performs type coercion"
+                },
+                {
+                    "q": "What is a Closure in JavaScript?",
+                    "opts": ["A function that remembers variables from its outer lexical scope", "A method to close browser windows", "A syntax error in asynchronous functions", "An object serialization format"],
+                    "ans": "A function that remembers variables from its outer lexical scope"
+                },
+                {
+                    "q": "What will `console.log(typeof NaN)` display?",
+                    "opts": ["'number'", "'NaN'", "'undefined'", "'object'"],
+                    "ans": "'number'"
+                },
+                {
+                    "q": "Which method converts a JSON string into a JavaScript object?",
+                    "opts": ["JSON.parse()", "JSON.stringify()", "Object.fromJSON()", "JSON.toObject()"],
+                    "ans": "JSON.parse()"
+                }
+            ],
+            "java": [
+                {
+                    "q": "Which keyword prevents a Java class from being subclassed?",
+                    "opts": ["final", "static", "private", "abstract"],
+                    "ans": "final"
+                },
+                {
+                    "q": "What is the size of an 'int' primitive variable in Java?",
+                    "opts": ["32 bits (4 bytes)", "16 bits (2 bytes)", "64 bits (8 bytes)", "8 bits (1 byte)"],
+                    "ans": "32 bits (4 bytes)"
+                },
+                {
+                    "q": "What is Garbage Collection in Java?",
+                    "opts": ["Automatic memory management that deallocates unreferenced objects", "A tool for deleting unused source files", "A feature to clear console output", "An exception thrown on memory leaks"],
+                    "ans": "Automatic memory management that deallocates unreferenced objects"
+                }
+            ]
         }
 
+        subj_key = "python"
         subj_lower = subject.lower()
-        code_lang = "python"
-        for lang in ["python", "javascript", "java", "cpp", "c++", "html", "css", "sql"]:
-            if lang in subj_lower:
-                code_lang = "cpp" if lang == "c++" else lang
+        for k in subject_pools:
+            if k in subj_lower:
+                subj_key = k
                 break
 
-        snippet = sample_code_snippets.get(code_lang, sample_code_snippets["python"])
-
+        pool = subject_pools[subj_key]
         questions = []
-        for i in range(1, num_questions + 1):
-            if quiz_mode == "Coding":
-                q_text = f"What is the output or behavior of Question #{i} in {subject} ({topic_title})?\n\n{snippet}"
-                opts = ["Expected Output A", "Output B", "Compilation Error", "Runtime Exception"]
-                corr = "Expected Output A"
-                q_type = "Coding"
+
+        for i in range(num_questions):
+            template = pool[i % len(pool)]
+            
+            if quiz_mode == "Coding" and "```" not in template["q"]:
+                q_text = f"Analyze the following {subject} code snippet:\n\n```python\n# {topic_title} logic execution\ndef process(items):\n    return [x for x in items if x]\nprint(process([1, 0, True]))\n```\n\n{template['q']}"
             else:
-                q_text = f"Which of the following statements is true regarding {subject} ({topic_title}) concept #{i}?"
-                opts = [
-                    f"{subject} supports efficient execution of statement #{i}.",
-                    f"{subject} strictly prohibits concept #{i} under standard compilers.",
-                    f"Concept #{i} is deprecated in modern implementations.",
-                    f"None of the above."
-                ]
-                corr = opts[0]
-                q_type = "MCQ"
+                q_text = template["q"]
 
             questions.append({
-                "question_type": q_type,
+                "question_type": "Coding" if quiz_mode == "Coding" else "MCQ",
                 "question_text": q_text,
-                "options": opts,
-                "correct_answer": corr
+                "options": list(template["opts"]),
+                "correct_answer": template["ans"]
             })
 
         return {
