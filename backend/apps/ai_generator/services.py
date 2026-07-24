@@ -33,7 +33,58 @@ class AIService:
         topic_title = prompt_topic.strip() if prompt_topic else "Core Principles"
         quiz_title = f"{subject}: {topic_title} Mastery"
 
-        subject_pools = {
+        coding_pools = {
+            "python": [
+                {
+                    "q": "What will be the output of the following Python code?\n\n```python\nitems = [1, 0, True, False, 2]\nresult = [x for x in items if x]\nprint(len(result))\n```",
+                    "opts": ["3", "5", "2", "Error"],
+                    "ans": "3"
+                },
+                {
+                    "q": "What is the output of this Python code snippet?\n\n```python\nx = [1, 2, 3]\ny = x\ny.append(4)\nprint(len(x))\n```",
+                    "opts": ["4", "3", "Error", "None"],
+                    "ans": "4"
+                },
+                {
+                    "q": "What does the following Python function return?\n\n```python\ndef calc(a, b=5):\n    return a * b\nprint(calc(3))\n```",
+                    "opts": ["15", "8", "TypeError", "5"],
+                    "ans": "15"
+                }
+            ],
+            "javascript": [
+                {
+                    "q": "What will the following JavaScript code output?\n\n```javascript\nconsole.log(1 + '2' + 3);\n```",
+                    "opts": ["'123'", "6", "'15'", "NaN"],
+                    "ans": "'123'"
+                },
+                {
+                    "q": "What is the result of executing this JavaScript snippet?\n\n```javascript\nconst a = [1, 2, 3];\nconst b = [...a, 4];\nconsole.log(b.length);\n```",
+                    "opts": ["4", "3", "TypeError", "undefined"],
+                    "ans": "4"
+                }
+            ],
+            "java": [
+                {
+                    "q": "What is the output of the following Java code?\n\n```java\npublic class Main {\n    public static void main(String[] args) {\n        String str = \"Java\";\n        str.concat(\" SE\");\n        System.out.println(str);\n    }\n}\n```",
+                    "opts": ["Java", "Java SE", "NullPointerException", "Compilation Error"],
+                    "ans": "Java"
+                },
+                {
+                    "q": "What will the following Java snippet print?\n\n```java\npublic class Main {\n    public static void main(String[] args) {\n        int x = 5;\n        System.out.println(x++ + ++x);\n    }\n}\n```",
+                    "opts": ["12", "11", "10", "Compilation Error"],
+                    "ans": "12"
+                }
+            ],
+            "c++": [
+                {
+                    "q": "What is the output of the following C++ code?\n\n```cpp\n#include <iostream>\nusing namespace std;\nint main() {\n    int a = 10;\n    int &b = a;\n    b = 20;\n    cout << a;\n    return 0;\n}\n```",
+                    "opts": ["20", "10", "Garbage Value", "Compilation Error"],
+                    "ans": "20"
+                }
+            ]
+        }
+
+        theory_pools = {
             "python": [
                 {
                     "q": "What is the primary difference between a List and a Tuple in Python?",
@@ -44,21 +95,6 @@ class AIService:
                     "q": "What does the '__init__' method do in a Python class?",
                     "opts": ["It serves as the constructor to initialize object attributes", "It deletes the object from memory", "It imports external modules automatically", "It compiles Python bytecode to native binary"],
                     "ans": "It serves as the constructor to initialize object attributes"
-                },
-                {
-                    "q": "Which Python keyword is used to handle exceptions gracefully?",
-                    "opts": ["try / except", "catch / throw", "do / rescue", "error / handle"],
-                    "ans": "try / except"
-                },
-                {
-                    "q": "What will `bool([])` evaluate to in Python?",
-                    "opts": ["False", "True", "TypeError", "None"],
-                    "ans": "False"
-                },
-                {
-                    "q": "What is the output of the following Python code?\n\n```python\nx = [1, 2, 3]\ny = x\ny.append(4)\nprint(len(x))\n```",
-                    "opts": ["4", "3", "Error", "None"],
-                    "ans": "4"
                 }
             ],
             "javascript": [
@@ -71,16 +107,6 @@ class AIService:
                     "q": "What is a Closure in JavaScript?",
                     "opts": ["A function that remembers variables from its outer lexical scope", "A method to close browser windows", "A syntax error in asynchronous functions", "An object serialization format"],
                     "ans": "A function that remembers variables from its outer lexical scope"
-                },
-                {
-                    "q": "What will `console.log(typeof NaN)` display?",
-                    "opts": ["'number'", "'NaN'", "'undefined'", "'object'"],
-                    "ans": "'number'"
-                },
-                {
-                    "q": "Which method converts a JSON string into a JavaScript object?",
-                    "opts": ["JSON.parse()", "JSON.stringify()", "Object.fromJSON()", "JSON.toObject()"],
-                    "ans": "JSON.parse()"
                 }
             ],
             "java": [
@@ -93,36 +119,26 @@ class AIService:
                     "q": "What is the size of an 'int' primitive variable in Java?",
                     "opts": ["32 bits (4 bytes)", "16 bits (2 bytes)", "64 bits (8 bytes)", "8 bits (1 byte)"],
                     "ans": "32 bits (4 bytes)"
-                },
-                {
-                    "q": "What is Garbage Collection in Java?",
-                    "opts": ["Automatic memory management that deallocates unreferenced objects", "A tool for deleting unused source files", "A feature to clear console output", "An exception thrown on memory leaks"],
-                    "ans": "Automatic memory management that deallocates unreferenced objects"
                 }
             ]
         }
 
         subj_key = "python"
         subj_lower = subject.lower()
-        for k in subject_pools:
+        target_pools = coding_pools if quiz_mode == "Coding" else theory_pools
+        for k in target_pools:
             if k in subj_lower:
                 subj_key = k
                 break
 
-        pool = subject_pools[subj_key]
+        pool = target_pools[subj_key]
         questions = []
 
         for i in range(num_questions):
             template = pool[i % len(pool)]
-            
-            if quiz_mode == "Coding" and "```" not in template["q"]:
-                q_text = f"Analyze the following {subject} code snippet:\n\n```python\n# {topic_title} logic execution\ndef process(items):\n    return [x for x in items if x]\nprint(process([1, 0, True]))\n```\n\n{template['q']}"
-            else:
-                q_text = template["q"]
-
             questions.append({
                 "question_type": "Coding" if quiz_mode == "Coding" else "MCQ",
-                "question_text": q_text,
+                "question_text": template["q"],
                 "options": list(template["opts"]),
                 "correct_answer": template["ans"]
             })
@@ -182,47 +198,42 @@ Return ONLY valid JSON. No extra text.
 
     def _generate_coding_quiz(self, subject, difficulty, num_questions, prompt_topic):
         prompt = f"""
-You are an expert programming logic question generator. Generate {num_questions} programming MCQs on "{subject}".
+You are an expert programming logic question generator. Generate {num_questions} programming questions specifically for "{subject}".
 
 Difficulty: {difficulty}
 Focus: {prompt_topic if prompt_topic else 'General'}
 
+CRITICAL STRICT RULES:
+1. LANGUAGE CONSISTENCY: Every code snippet MUST be written in valid {subject} syntax inside a markdown code block with tag \`\`\`{subject.lower()}. NEVER output Python code when the subject is Java, C++, or JavaScript.
+2. OPTIONS MATCH CODE: For "Predict the output" or code logic questions, the 4 options MUST be the exact outputs or values produced by running that code snippet (e.g., "3", "5", "Error", "None"). DO NOT mix theory questions or memory sizes as options for a code execution question.
+
 TITLE GENERATION RULE:
 Generate a short, catchy, and highly unique title for this quiz by combining the Subject ("{subject}") and the Focus/Topic ("{prompt_topic if prompt_topic else 'General'}").
-Ensure the title is unique and creative (e.g., "Python OOP Mastery: Class Combat", "Python Basics: Loop Ninja").
 
 QUESTION TYPES (mix them):
-1. Predict the output - Show a code snippet, ask what it prints.
-2. Find the error - Show code with a bug, ask what's wrong.
-3. Complete the code - Show code with a blank, ask what goes there.
-4. Choose the correct code - Ask which code snippet solves the problem.
-5. Time Complexity - Ask about Big-O of given code.
+1. Predict the output - Show a code snippet in {subject}, ask what it prints.
+2. Find the error - Show {subject} code with a bug, ask what's wrong.
+3. Complete the code - Show {subject} code with a blank, ask what goes there.
 
-FORMAT:
-- Each question must have a short code snippet (2-10 lines).
-- The code snippet MUST be inside a markdown code block with the language tag (e.g., ```python, ```cpp, ```java).
-- Use actual newlines in the question_text to format the code block properly.
-- Exactly 4 options, one correct.
-- The correct_answer must be the actual text of the correct option.
+OUTPUT FORMAT:
+- Each question MUST have a code snippet in {subject} syntax.
+- Exactly 4 options matching the output or code concepts.
+- The correct_answer must match one of the 4 options.
 
-OUTPUT - Return a JSON object with two fields: "quiz_title" (the unique catchy title generated) and "questions" (the array of exactly {num_questions} questions):
+Return ONLY valid JSON:
 {{
-  "quiz_title": "Python OOP Mastery: Class Combat",
+  "quiz_title": "{subject} Logic Combat",
   "questions": [
     {{
       "question_type": "Coding",
-      "question_text": "What is the output of the following C++ code?\\n\\n```cpp\\n#include <iostream>\\n\\nint main() {{\\n    std::cout << 10 / 3;\\n    return 0;\\n}}\\n```",
-      "options": ["3", "3.33", "3.0", "Error"],
-      "correct_answer": "3"
+      "question_text": "What is the output of the following {subject} code?\\n\\n\`\`\`{subject.lower()}\\n// code snippet in {subject}\\n\`\`\`",
+      "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+      "correct_answer": "Option 1"
     }}
   ]
 }}
-
-IMPORTANT:
-- The question_text MUST contain a markdown code block with proper syntax highlighting.
-- Use real newlines (\\n) in the question_text string for formatting.
-- Return ONLY valid JSON. No extra text.
 """
+        return self._call_openrouter(prompt, num_questions)
         return self._call_openrouter(prompt, num_questions)
 
     def _clean_json_strings(self, text):
