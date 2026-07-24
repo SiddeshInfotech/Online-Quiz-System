@@ -894,8 +894,10 @@ class ClaimBadgeView(APIView):
 
             from apps.users.services.points_service import recalculate_user_points_and_stats, XP_MAP
             recalculate_user_points_and_stats(user)
+            user.refresh_from_db()
 
-            xp_reward = getattr(badge, 'xp_reward', 25) or XP_MAP.get(badge.rarity, 25)
+            rarity_xp_map = {'COMMON': 25, 'RARE': 50, 'EPIC': 100, 'LEGENDARY': 250}
+            xp_reward = badge.xp_reward if (badge.xp_reward and badge.xp_reward != 10) else rarity_xp_map.get(badge.rarity, 25)
 
             cache.delete(f"badges_all_{user.id}")
             cache.delete(f"user_badges_{user.id}")
@@ -914,8 +916,16 @@ class ClaimBadgeView(APIView):
                 "status": "CLAIMED",
                 "claimed_at": user_badge.claimed_at.isoformat(),
                 "xp_earned": xp_reward,
+                "xp_gained": xp_reward,
+                "current_xp": user.xp,
+                "xp": user.xp,
+                "user_xp": user.xp,
                 "new_total_xp": user.xp,
                 "total_points": user.total_points,
+                "points": user.total_points,
+                "user_points": user.total_points,
+                "level": user.level,
+                "user_level": user.level,
                 "badge": {
                     "badge_id": badge.badge_id,
                     "badge_name": badge.name,
@@ -925,6 +935,7 @@ class ClaimBadgeView(APIView):
                     "image_url": badge.image_url,
                     "rarity": badge.rarity,
                     "category": badge.category,
+                    "xp_reward": xp_reward
                 },
                 "celebrate": True,
             }, status=status.HTTP_200_OK)

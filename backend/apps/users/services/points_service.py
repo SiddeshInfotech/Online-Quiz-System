@@ -7,7 +7,7 @@ XP_MAP = {
     'COMMON': 25,
     'RARE': 50,
     'EPIC': 100,
-    'LEGENDARY': 200,
+    'LEGENDARY': 250,
 }
 
 def recalculate_user_points_and_stats(user):
@@ -40,7 +40,10 @@ def recalculate_user_points_and_stats(user):
         status='CLAIMED'
     ).select_related('badge')
 
-    badge_xp = sum(XP_MAP.get(ub.badge.rarity, 25) for ub in claimed_badges)
+    badge_xp = sum(
+        ub.badge.xp_reward if (ub.badge.xp_reward and ub.badge.xp_reward != 10) else XP_MAP.get(ub.badge.rarity, 25)
+        for ub in claimed_badges
+    )
 
     # 4. Sum total penalty points deducted from UserPenaltyLog
     from apps.custom_admin.models import UserPenaltyLog

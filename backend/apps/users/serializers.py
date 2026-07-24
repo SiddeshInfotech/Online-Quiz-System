@@ -398,8 +398,17 @@ class UserBadgeSerializer(serializers.ModelSerializer):
         return self.get_required_target(obj)
 
     def get_xp_reward(self, obj):
-        xp_map = {'COMMON': 25, 'RARE': 50, 'EPIC': 100, 'LEGENDARY': 200}
-        return getattr(obj, 'xp_reward', xp_map.get(obj.rarity, 25))
+        rarity_xp_map = {
+            'COMMON': 25,
+            'RARE': 50,
+            'EPIC': 100,
+            'LEGENDARY': 250
+        }
+        badge_xp = getattr(obj, 'xp_reward', None)
+        if badge_xp and badge_xp != 10:
+            return badge_xp
+        rarity_upper = (getattr(obj, 'rarity', '') or 'COMMON').upper()
+        return rarity_xp_map.get(rarity_upper, 25)
 
 AllBadgeSerializer = UserBadgeSerializer
 

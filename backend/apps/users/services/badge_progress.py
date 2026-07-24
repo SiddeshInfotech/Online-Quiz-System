@@ -52,13 +52,15 @@ class BadgeProgressHelper:
             q_counts = Question.objects.filter(quiz_id__in=quiz_ids).values('quiz_id').annotate(count=Count('id'))
             question_counts = {item['quiz_id']: item['count'] for item in q_counts}
         
-        # Precompute QuizAttempt counts per quiz to avoid N+1 for hidden_gem
-        quiz_attempts_counts = {
-            item['quiz_id']: item['count']
-            for item in QuizAttempt.objects.filter(submitted_at__isnull=False)
-            .values('quiz_id')
-            .annotate(count=Count('id'))
-        }
+        # Precompute QuizAttempt counts per quiz (scoped to user's quizzes)
+        quiz_attempts_counts = {}
+        if quiz_ids:
+            quiz_attempts_counts = {
+                item['quiz_id']: item['count']
+                for item in QuizAttempt.objects.filter(quiz_id__in=quiz_ids, submitted_at__isnull=False)
+                .values('quiz_id')
+                .annotate(count=Count('id'))
+            }
         
         # Precompute UserAnswer mistake flags for all user's attempts in one query
         attempts_with_mistakes = set(
@@ -186,11 +188,9 @@ class BadgeProgressHelper:
         max_day_quizzes = max([len(atts) for atts in attempts_by_date.values()], default=0)
         max_day_questions = 0
         for day, day_atts in attempts_by_date.items():
-            day_att_ids = [a.id for a in day_atts]
-            if day_att_ids:
-                q_cnt = UserAnswer.objects.filter(attempt_id__in=day_att_ids).count()
-                if q_cnt > max_day_questions:
-                    max_day_questions = q_cnt
+            q_cnt = sum(question_counts.get(a.quiz_id, 0) for a in day_atts)
+            if q_cnt > max_day_questions:
+                max_day_questions = q_cnt
         
         # Consecutive days (for badge 34)
         consecutive_days = 0
