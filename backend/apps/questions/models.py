@@ -17,7 +17,7 @@ class Question(models.Model):
     question_order = models.IntegerField()
 
     def __str__(self):
-        return self.question_text[:50]
+        return str(self.question_text)[:50]
 
 class QuestionOption(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
