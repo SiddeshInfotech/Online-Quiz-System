@@ -16,9 +16,15 @@ class RegisterSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
     full_name = serializers.CharField(required=False, allow_blank=True)
 
-    # ✅ Removed UniqueValidator – we handle existence manually in the view
     email = serializers.EmailField()
     username = serializers.CharField()
+
+    def validate_username(self, value):
+        if not value:
+            return value
+        import re
+        sanitized = re.sub(r'\s+', '_', value.strip())
+        return sanitized
 
     class Meta:
         model = User
@@ -111,6 +117,7 @@ class LoginSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(required=False, validators=[])
     profile_picture = serializers.SerializerMethodField()
     profile_completion = serializers.SerializerMethodField()
     missing_fields = serializers.SerializerMethodField()
@@ -140,10 +147,14 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def validate_username(self, value):
+        if not value:
+            return value
+        import re
+        sanitized = re.sub(r'\s+', '_', value.strip())
         user = self.context.get('request').user if self.context and self.context.get('request') else self.instance
-        if user and User.objects.filter(username__iexact=value).exclude(pk=user.pk).exists():
+        if user and User.objects.filter(username__iexact=sanitized).exclude(pk=user.pk).exists():
             raise serializers.ValidationError("This username is already taken.")
-        return value
+        return sanitized
 
     def validate_email(self, value):
         user = self.context.get('request').user if self.context and self.context.get('request') else self.instance

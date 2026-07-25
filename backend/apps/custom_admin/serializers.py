@@ -97,22 +97,25 @@ class AdminQuizSerializer(serializers.ModelSerializer):
         ret['time_limit'] = instance.duration_minutes
         ret['quiz_type'] = 'Coding' if instance.question_type == 'Coding' else 'Theory'
         
-        # Include full question objects list safely
-        from apps.questions.models import Question
-        qs = Question.objects.filter(quiz=instance).prefetch_related('options')
+        # Include heavy nested question objects list ONLY for detail view or if explicitly requested via context
+        if self.context.get('include_questions', False):
+            from apps.questions.models import Question
+            qs = Question.objects.filter(quiz=instance).prefetch_related('options')
 
-        questions_list = []
-        for q in qs:
-            options_qs = q.options.all()
-            opts = [opt.option_text for opt in options_qs]
-            questions_list.append({
-                "id": q.id,
-                "question_text": q.question_text,
-                "options": opts,
-                "correct_answer": q.correct_answer,
-                "question_type": q.question_type
-            })
-        ret['questions'] = questions_list
+            questions_list = []
+            for q in qs:
+                options_qs = q.options.all()
+                opts = [opt.option_text for opt in options_qs]
+                questions_list.append({
+                    "id": q.id,
+                    "question_text": q.question_text,
+                    "options": opts,
+                    "correct_answer": q.correct_answer,
+                    "question_type": q.question_type
+                })
+            ret['questions'] = questions_list
+        else:
+            ret['questions'] = []
         return ret
 
     def create(self, validated_data):

@@ -274,6 +274,11 @@ class AdminQuizDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = AdminQuizSerializer
     permission_classes = [IsCustomAdmin]
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['include_questions'] = True
+        return context
+
     def perform_update(self, serializer):
         from django.core.cache import cache
         serializer.save()
