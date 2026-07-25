@@ -328,24 +328,25 @@ class DashboardSummaryView(APIView):
             },
             "quick_actions": quick_actions
         }
-        cache.set(cache_key, res_data, 5)
+        cache.set(cache_key, res_data, 15)
         return Response(res_data)
 
     def _calculate_streak(self, user):
         try:
             today = timezone.localdate()
-            attempts = QuizAttempt.objects.filter(
+            from django.db.models.functions import TruncDate
+            dates_list = QuizAttempt.objects.filter(
                 user=user,
                 submitted_at__isnull=False
-            ).values_list('submitted_at', flat=True)
+            ).annotate(sub_date=TruncDate('submitted_at')).values_list('sub_date', flat=True).distinct()
 
-            if not attempts:
+            if not dates_list:
                 if user.current_streak != 0:
                     user.current_streak = 0
                     user.save(update_fields=['current_streak'])
                 return 0
 
-            dates_set = {timezone.localtime(dt).date() for dt in attempts}
+            dates_set = set(dates_list)
 
             streak = 0
             check_date = today

@@ -682,7 +682,7 @@ class UserBadgesView(APIView):
                 claimed_ids.add(ub.badge.badge_id)
                 claimed_at_map[ub.badge.badge_id] = ub.claimed_at
 
-        progress_map = BadgeProgressHelper.get_all_progress(user, None)
+        progress_map = {}
         claimed_badge_objs = [ub.badge for ub in user_badges if ub.status == 'CLAIMED']
 
         context = {

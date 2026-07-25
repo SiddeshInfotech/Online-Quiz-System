@@ -44,13 +44,13 @@ class AdminAnalyticsView(APIView):
         # 1. Total actual registered accounts currently in DB
         total_users = User.objects.count()
 
-        # Admin quizzes = quizzes created by staff or Admin-role users
+        # Admin quizzes = quizzes created by official admin superuser
         admin_quizzes = Quiz.objects.filter(
-            Q(created_by__is_staff=True) | Q(created_by__role='Admin')
-        ).distinct().count()
+            Q(created_by__username__iexact='admin') | Q(created_by__is_superuser=True)
+        ).count()
         # User quizzes = all other quizzes (created by regular users)
         user_quizzes = Quiz.objects.exclude(
-            Q(created_by__is_staff=True) | Q(created_by__role='Admin')
+            Q(created_by__username__iexact='admin') | Q(created_by__is_superuser=True)
         ).count()
 
         # 3. Total actual attempts taken by real students in DB
