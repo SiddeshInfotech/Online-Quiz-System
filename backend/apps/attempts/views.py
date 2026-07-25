@@ -363,6 +363,10 @@ class SubmitAttemptView(APIView):
                 },
             )
 
+        # Invalidate user dashboard summary cache so recent attempts update immediately
+        from django.core.cache import cache
+        cache.delete(f"dashboard_summary_{request.user.id}")
+
         # Minified response
         elapsed_ms = int((time.time() - start_time) * 1000)
         print(f"[SUCCESS] Quiz submitted in {elapsed_ms}ms")

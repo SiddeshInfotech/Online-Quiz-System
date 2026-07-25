@@ -116,13 +116,18 @@ class DashboardSummaryView(APIView):
         recent_attempts_data = []
         for attempt in recent_attempts:
             recent_attempts_data.append({
+                "id": attempt.id,
                 "attempt_id": attempt.id,
+                "quiz_id": attempt.quiz.id,
                 "quiz_title": attempt.quiz.title,
+                "title": attempt.quiz.title,
+                "subject": attempt.quiz.subject or "General",
+                "difficulty": attempt.quiz.difficulty or "Medium",
                 "score": attempt.score,
                 "percentage": attempt.percentage,
                 "date": attempt.submitted_at.strftime("%Y-%m-%d %H:%M") if attempt.submitted_at else None,
-                "status": "Passed" if attempt.percentage >= 40 else "Failed",
-                "quiz_id": attempt.quiz.id
+                "submitted_at": attempt.submitted_at.isoformat() if attempt.submitted_at else None,
+                "status": "Passed" if attempt.percentage >= 40 else "Failed"
             })
 
         # ✅ OPTIMIZATION: Batch completed attempts statistics in a single aggregate query
@@ -217,6 +222,9 @@ class DashboardSummaryView(APIView):
             "current_xp": current_xp,
             "next_level_xp": next_level_xp,
             "remaining_xp": remaining_xp,
+            "recent_attempts": recent_attempts_data,
+            "recent_quiz_attempts": recent_attempts_data,
+            "recentQuizAttempts": recent_attempts_data,
             "user": {
                 "id": user.id,
                 "username": user.username,
@@ -265,7 +273,8 @@ class DashboardSummaryView(APIView):
                 "accuracy": accuracy,
                 "total_time_spent_seconds": total_time_spent,
                 "weekly_data": weekly_data,
-                "subject_performance": subject_performance
+                "subject_performance": subject_performance,
+                "recent_attempts": recent_attempts_data
             },
             "quick_actions": quick_actions
         }
