@@ -52,9 +52,7 @@ class QuizLibrarySerializer(serializers.ModelSerializer):
             return not obj.is_ai_generated
         return (
             obj.created_by.username.lower() == 'admin' or
-            obj.created_by.is_staff or
-            getattr(obj.created_by, 'role', '') == 'Admin' or
-            not obj.is_ai_generated
+            obj.created_by.is_superuser
         )
 
     def get_created_by_label(self, obj):
@@ -107,9 +105,7 @@ class QuizSerializer(serializers.ModelSerializer):
             return not obj.is_ai_generated
         return (
             obj.created_by.username.lower() == 'admin' or
-            obj.created_by.is_staff or
-            getattr(obj.created_by, 'role', '') == 'Admin' or
-            not obj.is_ai_generated
+            obj.created_by.is_superuser
         )
 
     def get_created_by_label(self, obj):

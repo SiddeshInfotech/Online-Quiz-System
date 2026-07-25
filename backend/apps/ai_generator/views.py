@@ -90,10 +90,8 @@ class GenerateAIQuizView(APIView):
             request.data.get('is_admin') or
             request.data.get('is_admin_quiz') or
             request.data.get('from_admin') or
-            user.is_staff or
             user.is_superuser or
-            getattr(user, 'role', '') == 'Admin' or
-            user.username.lower() in ['admin', 'garammasala5747']
+            user.username.lower() == 'admin'
         )
 
         from apps.users.models import User as UserModel

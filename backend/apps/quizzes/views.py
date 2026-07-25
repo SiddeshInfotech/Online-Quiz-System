@@ -127,13 +127,11 @@ class QuizLibraryListView(generics.ListAPIView):
         # A normal user MUST see:
         # 1. Quizzes created by themselves (created_by = user)
         # 2. Quizzes created by an Admin/Staff user (is_staff=True or role='Admin')
-        if not user.is_staff and getattr(user, 'role', '') != 'Admin':
+        if not user.is_staff and not user.is_superuser and getattr(user, 'role', '') != 'Admin':
             queryset = queryset.filter(
                 Q(created_by=user) |
                 Q(created_by__username__iexact='admin') |
-                Q(created_by__is_staff=True) |
-                Q(created_by__role='Admin') |
-                Q(is_ai_generated=False)
+                Q(created_by__is_superuser=True)
             )
 
         from django.db.models import OuterRef, Subquery, Count
@@ -158,13 +156,11 @@ class RecommendedQuizzesListView(generics.ListAPIView):
         user_grade = user.grade_level if hasattr(user, 'grade_level') else None
         
         queryset = Quiz.objects.filter(Q(status='published') | Q(is_published=True)).select_related('category', 'created_by')
-        if not user.is_staff and getattr(user, 'role', '') != 'Admin':
+        if not user.is_staff and not user.is_superuser and getattr(user, 'role', '') != 'Admin':
             queryset = queryset.filter(
                 Q(created_by=user) |
                 Q(created_by__username__iexact='admin') |
-                Q(created_by__is_staff=True) |
-                Q(created_by__role='Admin') |
-                Q(is_ai_generated=False)
+                Q(created_by__is_superuser=True)
             )
 
         from django.db.models import OuterRef, Subquery, Count
