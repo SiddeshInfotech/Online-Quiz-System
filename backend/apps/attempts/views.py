@@ -828,58 +828,59 @@ class AttemptReviewView(APIView):
         correct_ans = str(q_data.get('correct_answer', '')).strip()
         selected_ans = str(q_data.get('selected_answer', '')).strip()
         is_correct = q_data.get('is_correct', False)
-        q_text = str(q_data.get('question_text', '') or q_data.get('question', '') or '').strip()
+        raw_q = str(q_data.get('question_text', '') or q_data.get('question', '') or '').strip()
+        
+        # Clean question text of any legacy prefixes
+        import re
+        q_text = re.sub(r'^Regarding\s+.*?:', '', raw_q, flags=re.IGNORECASE).strip()
         q_lower = q_text.lower()
         topic_name = subject if (subject and subject != "the topic") else "programming"
 
-        # Specialized concept detectors to eliminate all repetitive boilerplate:
-        if "===" in q_text or "==" in q_text or "type coercion" in q_lower:
+        # Topic detection for 100% natural, human-written sounding explanations:
+        if "error handling" in q_lower or "exception" in q_lower or "try-catch" in q_lower or "handling runtime" in q_lower:
+            detail = f"In {topic_name}, standard runtime exception management relies on `{correct_ans}` to handle unexpected failures gracefully and maintain application stability."
+        elif "type system" in q_lower or "type rules" in q_lower or "type checking" in q_lower:
+            detail = f"The type system design in {topic_name} `{correct_ans}` to guarantee data integrity and prevent invalid variable assignments."
+        elif "architectural philosophy" in q_lower or "paradigm" in q_lower or "philosophy" in q_lower:
+            detail = f"{topic_name} software design is built around `{correct_ans}` to promote clean separation of concerns and maintainable code structure."
+        elif "memory" in q_lower and ("allocation" in q_lower or "lifecycle" in q_lower or "model" in q_lower):
+            detail = f"{topic_name} manages runtime memory allocation by `{correct_ans}` during object initialization and execution."
+        elif "scope" in q_lower or "visibility" in q_lower or "scoped" in q_lower:
+            detail = f"In {topic_name}, variable scope and identifier visibility are `{correct_ans}`."
+        elif "performance" in q_lower or "efficiency" in q_lower:
+            detail = f"Optimizing runtime execution efficiency in {topic_name} is achieved by `{correct_ans}`."
+        elif "===" in q_text or "==" in q_text or "coercion" in q_lower:
             detail = f"In {topic_name}, the `===` operator checks both value and data type without implicit coercion, whereas `==` converts operands before comparison."
-            why_right = f"Therefore, `{correct_ans}` is the correct choice because it preserves strict type safety."
         elif "typeof nan" in q_lower or ("nan" in q_lower and "typeof" in q_lower):
-            detail = f"In JavaScript, `NaN` (Not-a-Number) is defined under the IEEE 754 floating-point standard as a numeric value representing an unrepresentable math result."
-            why_right = f"Evaluating `typeof NaN` returns `\"{correct_ans}\"` because `NaN` belongs to the primitive number data type."
+            detail = f"In JavaScript, `NaN` (Not-a-Number) is defined under the IEEE 754 floating-point standard as a numeric value, so `typeof NaN` evaluates to `\"number\"`."
         elif "closure" in q_lower:
             detail = f"A closure in {topic_name} occurs when an inner function retains access to variables declared in its outer lexical scope even after the outer function finishes executing."
-            why_right = f"`{correct_ans}` correctly defines this lexical environment scope binding."
         elif "virtual dom" in q_lower or ("dom" in q_lower and "react" in q_lower):
-            detail = f"In React, the Virtual DOM is a lightweight in-memory tree representation of real DOM nodes used to calculate minimal re-renders during state updates."
-            why_right = f"`{correct_ans}` accurately describes this DOM reconciliation mechanism."
+            detail = f"In React, the Virtual DOM is an in-memory tree representation of real DOM nodes used to calculate minimal re-renders during state updates."
         elif "list" in q_lower and "tuple" in q_lower:
             detail = f"In Python, lists are mutable sequences whose elements can be modified in-place after creation, while tuples are immutable and fixed in length."
-            why_right = f"`{correct_ans}` correctly distinguishes between mutable lists and immutable tuples."
         elif "malloc" in q_lower or "calloc" in q_lower or "dynamic memory" in q_lower:
-            detail = f"In {topic_name}, dynamic memory allocation on the heap is managed via standard functions like `{correct_ans}` which return raw memory address pointers."
-            why_right = f"`{correct_ans}` allocates requested memory bytes during runtime execution."
+            detail = f"In {topic_name}, dynamic memory allocation on the heap is managed via standard functions like `{correct_ans}` which return raw memory pointers."
         elif "sealed" in q_lower or "final" in q_lower or "subclass" in q_lower:
             detail = f"In {topic_name}, applying the `{correct_ans}` keyword to a class definition explicitly prevents other classes from inheriting from it."
-            why_right = f"This enforces class hierarchy immutability and prevents method overriding."
         elif "&" in q_text or "reference" in q_lower:
-            detail = f"In {topic_name}, reference variables act as direct memory aliases for existing variables."
-            why_right = f"Modifying a reference directly updates the original target variable, evaluating to `{correct_ans}`."
+            detail = f"In {topic_name}, reference variables act as direct memory aliases for existing variables, so modifying a reference directly updates the target variable."
         elif "*" in q_text or "pointer" in q_lower:
             detail = f"In {topic_name}, pointers store raw memory addresses, and dereferencing (`*ptr`) accesses the underlying value."
-            why_right = f"Following pointer dereferencing step-by-step resolves to `{correct_ans}`."
         elif "event loop" in q_lower or "async" in q_lower or "promise" in q_lower:
             detail = f"In {topic_name}, non-blocking asynchronous execution is managed by the Event Loop processing task queues."
-            why_right = f"`{correct_ans}` reflects the correct execution order of non-blocking callbacks."
-        elif "modular" in q_lower or "reusability" in q_lower or "architecture" in q_lower:
-            detail = f"Software architecture in {topic_name} relies on `{correct_ans}` to ensure clean separation of concerns and maintainable codebases."
-            why_right = f"This design pattern maximizes component reusability and system scalability."
         elif "```" in q_text or "output" in q_lower or "print" in q_lower or "cout" in q_lower:
             detail = f"Tracing variable assignments, arithmetic operations, and control structures in this {topic_name} snippet produces `{correct_ans}`."
-            why_right = f"Executing the instructions line-by-line leads directly to `{correct_ans}`."
         else:
-            q_clean = q_text.split("\n")[0][:80]
-            detail = f"For the question '{q_clean}', the correct technical principle is `{correct_ans}`."
-            why_right = f"This option accurately satisfies the core syntax and execution rules of {topic_name}."
+            clean_stem = q_text.split("\n")[0].strip()
+            detail = f"For the question '{clean_stem}', the correct technical principle is `{correct_ans}`."
 
         if is_correct:
-            return f"Correct! {detail} {why_right}"
+            return f"Correct! {detail}"
         else:
             choice_note = f"You selected '{selected_ans}'. " if selected_ans and selected_ans not in ["None", "Unknown", ""] else ""
-            wrong_reason = f"Note that '{selected_ans}' is incorrect because it violates the language rule. " if selected_ans and selected_ans not in ["None", "Unknown", ""] else ""
-            return f"The correct answer is '{correct_ans}'. {choice_note}{detail} {wrong_reason}{why_right}"
+            wrong_reason = f"Note that '{selected_ans}' does not satisfy the requirements. " if selected_ans and selected_ans not in ["None", "Unknown", ""] else ""
+            return f"The correct answer is '{correct_ans}'. {choice_note}{wrong_reason}{detail}"
 
     def _generate_ai_explanations(self, attempt, questions_data):
         """Generate explanations for all questions using OpenRouter."""

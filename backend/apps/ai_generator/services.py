@@ -503,7 +503,7 @@ class AIService:
                 else:
                     topic_title_sub, q_stem, opts, ans = subtopics_theory[(idx - len(pool)) % len(subtopics_theory)]
                     item = {
-                        "q": f"Regarding {subject} {topic_title_sub} (Topic #{var_num}): {q_stem}",
+                        "q": q_stem,
                         "opts": list(opts),
                         "ans": ans
                     }
