@@ -6,6 +6,7 @@ import {
   FileQuestion,
   ShieldAlert,
   Inbox,
+  MessageSquare,
   LogOut,
   Shield,
   Menu,
@@ -30,6 +31,7 @@ const AdminLayout = () => {
     { label: "Quiz Moderation", icon: FileQuestion, path: "/admin/quizzes" },
     { label: "Penalty Logs", icon: ShieldAlert, path: "/admin/penalties" },
     { label: "Support Inbox", icon: Inbox, path: "/admin/support" },
+    { label: "User Feedback", icon: MessageSquare, path: "/admin/feedback" },
   ];
 
   return (

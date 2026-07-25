@@ -1,111 +1,166 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Zap, CheckCircle2, Sparkles, Target } from "lucide-react";
+import { Zap, CheckCircle2, Sparkles, Target, ArrowUpRight } from "lucide-react";
 
-const StatCard = ({ icon: Icon, label, value, subtext, colorClass, delay = 0, onClick }) => (
+const StatCard = ({ icon: Icon, label, value, subtext, colorClass, borderGlow, delay = 0, onClick }) => (
   <motion.div
     initial={{ opacity: 0, y: 16 }}
     animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.4, delay }}
+    whileHover={{ y: -4, scale: 1.02 }}
+    transition={{ duration: 0.3, delay }}
     onClick={onClick}
-    className={`surface rounded-[20px] p-6 shadow-sm border border-app flex items-start gap-4 transition-all ${
-      onClick ? "cursor-pointer hover:shadow-md hover:border-violet-300 dark:hover:border-violet-700 hover:-translate-y-0.5" : "hover:shadow-md"
+    tabIndex={onClick ? 0 : undefined}
+    onKeyDown={(e) => {
+      if (onClick && (e.key === "Enter" || e.key === " ")) {
+        e.preventDefault();
+        onClick();
+      }
+    }}
+    className={`bg-slate-900/90 surface rounded-2xl p-5 shadow-lg border border-slate-800/90 flex items-start gap-4 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
+      onClick ? `cursor-pointer ${borderGlow || 'hover:border-violet-500/50 hover:shadow-violet-500/10'}` : "hover:border-slate-700"
     }`}
   >
-    <div className={`p-3 rounded-2xl ${colorClass}`}>
-      <Icon size={24} strokeWidth={2.5} />
+    <div className={`p-3 rounded-2xl shrink-0 ${colorClass}`}>
+      <Icon size={22} strokeWidth={2.5} />
     </div>
-    <div>
-      <p className="text-sm font-medium text-app-muted mb-1">{label}</p>
-      <h4 className="text-2xl font-bold text-app">{value}</h4>
-      {subtext && <p className="text-xs text-slate-400 mt-1">{subtext}</p>}
+    <div className="flex-1 min-w-0">
+      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{label}</p>
+      <h4 className="text-2xl font-bold text-slate-100 font-space-grotesk truncate">{value}</h4>
+      {subtext && <p className="text-xs font-medium text-slate-400 mt-1 truncate">{subtext}</p>}
     </div>
+    {onClick && <ArrowUpRight size={16} className="text-slate-500 shrink-0 mt-1" />}
   </motion.div>
 );
 
-const BadgeStats = ({ stats }) => {
+const BadgeStats = ({ stats, onScrollToClaimable }) => {
   const navigate = useNavigate();
   if (!stats) return null;
   
   const level = stats.level || 1;
   const currentXp = stats.current_xp ?? stats.total_xp ?? 0;
-  const nextLevelXp = stats.next_level_xp ?? 1000;
-  const currentLevelXp = stats.current_level_xp ?? 0;
+  const nextLevelXp = stats.next_level_xp ?? (level * 1000);
   const remainingXp = stats.remaining_xp ?? Math.max(0, nextLevelXp - currentXp);
 
-  // Exact level progress formula required: (current_xp - current_level_xp) / (next_level_xp - current_level_xp)
-  const levelXpSpan = Math.max(1, nextLevelXp - currentLevelXp);
-  const currentProgressXp = Math.max(0, currentXp - currentLevelXp);
-  const xpPercentage = Math.min(100, Math.max(0, Math.round((currentProgressXp / levelXpSpan) * 100)));
+  // Robust percentage calculation handling all backend stat formats
+  let xpPercentage = 0;
+
+  if (stats.progress_percentage !== undefined && stats.progress_percentage !== null) {
+    xpPercentage = Number(stats.progress_percentage);
+  } else if (stats.level_progress_percentage !== undefined && stats.level_progress_percentage !== null) {
+    xpPercentage = Number(stats.level_progress_percentage);
+  } else if (stats.level_progress !== undefined && stats.level_progress !== null) {
+    xpPercentage = Number(stats.level_progress);
+  } else if (nextLevelXp > 0) {
+    if (
+      stats.current_level_xp !== undefined &&
+      stats.current_level_xp !== null &&
+      stats.current_level_xp < nextLevelXp &&
+      currentXp > stats.current_level_xp
+    ) {
+      const span = nextLevelXp - stats.current_level_xp;
+      const progress = currentXp - stats.current_level_xp;
+      xpPercentage = Math.round((progress / span) * 100);
+    } else {
+      xpPercentage = Math.round((currentXp / nextLevelXp) * 100);
+    }
+  }
+
+  xpPercentage = Math.min(100, Math.max(0, xpPercentage));
   
   const claimedCount = stats.claimed_badges ?? 0;
   const claimableCount = stats.claimable_badges ?? 0;
 
   return (
-    <div className="flex flex-col gap-4 mb-8">
+    <div className="flex flex-col gap-4 mb-6">
+      {/* 4 Stats Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Level Badge */}
         <StatCard
           icon={Target}
           label="Level Badge"
           value={`Level ${level}`}
-          subtext={`${currentLevelXp} → ${nextLevelXp} XP`}
-          colorClass="bg-violet-100 text-violet-600"
+          subtext={`Next Level in ${remainingXp.toLocaleString()} XP`}
+          colorClass="bg-violet-500/15 text-violet-400 border border-violet-500/30"
           delay={0.05}
         />
+
+        {/* Card 2: Total XP */}
         <StatCard
           icon={Zap}
           label="Total XP"
-          value={currentXp.toLocaleString()}
-          subtext={`${remainingXp} XP remaining`}
-          colorClass="bg-amber-100 text-amber-600"
+          value={`${currentXp.toLocaleString()} XP`}
+          subtext={`${remainingXp.toLocaleString()} XP remaining`}
+          colorClass="bg-amber-500/15 text-amber-400 border border-amber-500/30"
           delay={0.1}
         />
+
+        {/* Card 3: Claimed Badges */}
         <StatCard
           icon={CheckCircle2}
           label="Claimed Badges"
           value={claimedCount}
           subtext="Click to view all badges"
-          colorClass="bg-emerald-100 text-emerald-600"
+          colorClass="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+          borderGlow="hover:border-emerald-500/50 hover:shadow-emerald-500/10"
           delay={0.15}
           onClick={() => navigate("/profile/badges")}
         />
+
+        {/* Card 4: Claimable Badges */}
         <StatCard
           icon={Sparkles}
           label="Claimable"
           value={claimableCount}
-          subtext="Ready to unlock!"
-          colorClass="bg-fuchsia-100 text-fuchsia-600"
+          subtext={claimableCount > 0 ? "Ready to unlock!" : "No rewards ready"}
+          colorClass="bg-fuchsia-500/15 text-fuchsia-400 border border-fuchsia-500/30"
+          borderGlow="hover:border-fuchsia-500/50 hover:shadow-fuchsia-500/10"
           delay={0.2}
+          onClick={onScrollToClaimable}
         />
       </div>
 
-      {/* Level XP Progress Bar */}
+      {/* Level XP Progress Section */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.25 }}
-        className="surface rounded-[20px] p-6 shadow-sm border border-app"
+        className="bg-slate-900/90 surface rounded-2xl p-5 shadow-lg border border-slate-800/90 relative overflow-hidden"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-violet-600 text-white shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-500/20">
               Level {level}
             </span>
-            <h4 className="text-sm font-semibold text-app">Level Progress</h4>
-            <span className="text-xs font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-md border border-violet-100">
+            <h4 className="text-base font-bold text-slate-100 font-space-grotesk">
+              Progress to Level {level + 1}
+            </h4>
+          </div>
+
+          <div className="flex items-center gap-3 text-xs font-medium text-slate-400">
+            <div>
+              Current XP: <span className="text-slate-100 font-bold">{currentXp.toLocaleString()}</span> / Next Level: <span className="text-slate-100 font-bold">{nextLevelXp.toLocaleString()}</span>
+              <span className="ml-2 text-violet-400 font-semibold">({remainingXp.toLocaleString()} XP Remaining)</span>
+            </div>
+            <span className="text-xs font-extrabold text-violet-400 bg-violet-500/10 px-2.5 py-1 rounded-lg border border-violet-500/20">
               {xpPercentage}%
             </span>
           </div>
-          <div className="text-xs font-medium text-app-muted">
-            <span className="text-violet-600 font-bold">{currentXp}</span> / {nextLevelXp} XP ({remainingXp} XP left to Level {level + 1})
-          </div>
         </div>
-        <div className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden relative">
+
+        {/* Animated Progress Bar */}
+        <div
+          className="w-full h-3.5 bg-slate-950 rounded-full p-0.5 border border-slate-800 overflow-hidden relative"
+          role="progressbar"
+          aria-valuenow={xpPercentage}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`Progress to Level ${level + 1}: ${xpPercentage}%`}
+        >
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${xpPercentage}%` }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="h-full bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500 rounded-full"
+            className="h-full bg-gradient-to-r from-violet-600 via-purple-500 to-indigo-500 rounded-full shadow-lg shadow-violet-500/30"
           />
         </div>
       </motion.div>

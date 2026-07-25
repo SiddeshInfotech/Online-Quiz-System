@@ -10,20 +10,21 @@ const BadgeCategory = ({ category, badges, onClaim }) => {
   if (!badges || badges.length === 0) return null;
 
   return (
-    <div className="mb-12">
+    <div className="mb-8">
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full mb-6 group cursor-pointer"
+        className="flex items-center justify-between w-full mb-4 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 rounded-xl p-1"
+        aria-expanded={isOpen}
       >
         <div className="flex items-center gap-3">
-          <h2 className="text-xl font-bold font-space-grotesk text-app group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+          <h2 className="text-xl font-bold font-space-grotesk text-slate-100 group-hover:text-violet-400 transition-colors">
             {category}
           </h2>
-          <span className="text-sm font-medium text-app-muted surface-elev px-2 py-0.5 rounded-md">
+          <span className="text-xs font-bold text-slate-400 bg-slate-800/80 px-2.5 py-0.5 rounded-full border border-slate-700/80">
             {badges.length}
           </span>
         </div>
-        <div className="p-1 rounded-md text-app-muted group-hover:bg-[var(--bg-elevated)] group-hover:text-app transition-colors">
+        <div className="p-1.5 rounded-lg text-slate-400 group-hover:bg-slate-800 group-hover:text-slate-200 transition-colors">
           {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </div>
       </button>
@@ -39,7 +40,7 @@ const BadgeCategory = ({ category, badges, onClaim }) => {
           >
             <BadgeGrid>
               {badges.map((badge) => (
-                <BadgeCard key={badge.id} badge={badge} onClaim={onClaim} />
+                <BadgeCard key={badge.id || badge.badge_id} badge={badge} onClaim={onClaim} />
               ))}
             </BadgeGrid>
           </motion.div>

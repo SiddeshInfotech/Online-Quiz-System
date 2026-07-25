@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { Sparkles, CheckCircle2 } from "lucide-react";
 import achievementService from "../../services/achievementService";
 import BadgeStats from "../../components/achievements/BadgeStats";
 import BadgeCategory from "../../components/achievements/BadgeCategory";
@@ -98,6 +99,14 @@ const AchievementPage = () => {
     setSelectedBadge(null);
   };
 
+  const handleScrollToClaimable = () => {
+    setActiveFilter("Claimable");
+    const el = document.getElementById("ready-to-claim");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   // Filtering & Sorting Logic per backend contract
   const filteredBadges = badges.filter(badge => {
     if (activeFilter === "All") return true;
@@ -137,67 +146,75 @@ const AchievementPage = () => {
   const claimableBadges = badges.filter(b => b.is_unlocked === true && b.is_claimed === false);
 
   return (
-    <div className="w-full max-w-7xl mx-auto pb-12">
-      {/* Toast */}
+    <div className="w-full max-w-7xl mx-auto pb-12 font-inter text-slate-100">
+      {/* Toast Notification */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-emerald-50 text-emerald-600 px-6 py-3 rounded-full font-medium shadow-lg border border-emerald-200">
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 border border-emerald-500/30 text-emerald-400 px-5 py-3 rounded-2xl font-semibold text-xs shadow-2xl flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-5">
+          <CheckCircle2 size={16} />
           {toast}
         </div>
       )}
 
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="mb-8">
-        <h1 className="text-3xl font-bold font-space-grotesk text-app mb-2">🏆 Achievements</h1>
-        <p className="text-base text-app-muted">Complete challenges, earn badges, collect XP, and level up your learning journey.</p>
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="mb-6">
+        <h1 className="text-3xl font-bold font-space-grotesk text-slate-100 mb-1.5 flex items-center gap-2.5">
+          🏆 Achievements
+        </h1>
+        <p className="text-sm text-slate-400">
+          Complete challenges, earn badges, collect XP, and level up your learning journey.
+        </p>
       </motion.div>
 
+      {/* Statistics Section */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-28 surface-elev rounded-[20px] animate-pulse" />)}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-28 bg-slate-900 rounded-2xl animate-pulse" />)}
         </div>
       ) : (
-        <BadgeStats stats={stats} />
+        <BadgeStats stats={stats} onScrollToClaimable={handleScrollToClaimable} />
       )}
 
-      {/* Claimable Section */}
+      {/* Ready to Claim Header Section (Requirement 4) */}
       {!loading && claimableBadges.length > 0 && (
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold font-space-grotesk text-slate-800 flex items-center gap-2">
-              <span className="relative flex h-3 w-3">
+        <div id="ready-to-claim" className="mb-8 scroll-mt-24">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold font-space-grotesk text-slate-100 flex items-center gap-3">
+              <span className="relative flex h-3.5 w-3.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-violet-500"></span>
+                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-violet-500"></span>
               </span>
-              Ready to Claim
+              <Sparkles className="text-violet-400" size={24} />
+              Ready to Claim ({claimableBadges.length})
             </h2>
           </div>
           <BadgeGrid>
             {claimableBadges.map(badge => (
-              <BadgeCard key={badge.id} badge={badge} onClaim={handleClaim} />
+              <BadgeCard key={badge.id || badge.badge_id} badge={badge} onClaim={handleClaim} />
             ))}
           </BadgeGrid>
         </div>
       )}
 
-      {/* Controls */}
-      <div className="flex justify-end items-center mb-8 surface p-4 rounded-2xl shadow-sm border border-app">
-        <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-          <span className="text-sm font-medium text-app-muted shrink-0">Sort by:</span>
+      {/* Filter Bar & Sort Controls (Requirement 8 Spacing Polish) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 bg-slate-900/90 surface p-4 rounded-2xl border border-slate-800/90 shadow-sm">
+        <BadgeFilters filters={FILTERS} activeFilter={activeFilter} onFilterChange={setActiveFilter} />
+
+        <div className="flex items-center gap-3 self-end sm:self-auto shrink-0 mb-6 sm:mb-0">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sort by:</span>
           <select
             value={activeSort}
             onChange={(e) => setActiveSort(e.target.value)}
-            className="surface-subtle border border-app text-app-2 text-sm rounded-xl focus:ring-violet-500 focus:border-violet-500 block p-2.5 outline-none cursor-pointer"
+            className="bg-slate-950 border border-slate-800 text-slate-200 text-xs font-semibold rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 px-3 py-2 outline-none cursor-pointer"
           >
             {SORT_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
           </select>
         </div>
       </div>
 
-      <BadgeFilters filters={FILTERS} activeFilter={activeFilter} onFilterChange={setActiveFilter} />
-
-      {/* Categories */}
+      {/* Categories & Badges List */}
       {loading ? (
         <BadgeGrid>
-          {[1, 2, 3, 4].map(i => <SkeletonBadge key={i} />)}
+          {[1, 2, 3, 4, 5, 6].map(i => <SkeletonBadge key={i} />)}
         </BadgeGrid>
       ) : sortedBadges.length > 0 ? (
         <div>

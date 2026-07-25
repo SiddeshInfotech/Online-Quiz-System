@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, MessageSquarePlus, CheckCircle2, Edit2, PlusCircle } from 'lucide-react';
+import { AlertCircle, MessageSquarePlus, CheckCircle2, Edit2, PlusCircle, Clock } from 'lucide-react';
+import { motion } from 'framer-motion';
 import feedbackService from '../../services/feedbackService';
 import achievementService from '../../services/achievementService';
 import RatingDistribution from './components/RatingDistribution';
-import FeedbackCard from './components/FeedbackCard';
+import FeedbackCard, { normalizeFeedback, formatReplyDate } from './components/FeedbackCard';
 import StarRating from './components/StarRating';
 import Button from '../../components/ui/Button/Button';
 
@@ -24,6 +25,7 @@ const FeedbackPage = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [myFeedbacks, setMyFeedbacks] = useState([]);
   const [maxAllowed, setMaxAllowed] = useState(2);
+  const [showAllMyFeedbacks, setShowAllMyFeedbacks] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -36,20 +38,33 @@ const FeedbackPage = () => {
       const [summaryRes, feedbackRes, myFeedbackRes] = await Promise.all([
         feedbackService.getSummary(),
         feedbackService.getFeedback(),
-        feedbackService.getMyFeedback().catch(() => null) // Ignore error if no previous feedback
+        feedbackService.getMyFeedback().catch(() => null)
       ]);
 
-      setSummary(summaryRes);
-      setFeedbacks(Array.isArray(feedbackRes) ? feedbackRes : feedbackRes.results || []);
+      let mainList = Array.isArray(feedbackRes)
+        ? feedbackRes
+        : feedbackRes?.results || feedbackRes?.data || [];
 
-      if (myFeedbackRes && Array.isArray(myFeedbackRes.results)) {
-        setMyFeedbacks(myFeedbackRes.results);
+      let myResults = Array.isArray(myFeedbackRes)
+        ? myFeedbackRes
+        : myFeedbackRes?.results || myFeedbackRes?.data || [];
+
+      mainList = mainList.map(normalizeFeedback);
+      myResults = myResults.map(normalizeFeedback);
+
+      setSummary(summaryRes);
+      setFeedbacks(mainList);
+      setMyFeedbacks(myResults);
+
+      if (myFeedbackRes && typeof myFeedbackRes === 'object' && !Array.isArray(myFeedbackRes)) {
         setMaxAllowed(myFeedbackRes.max_allowed || 2);
-        
+      }
+
+      if (myResults.length > 0) {
         // Preserve edit mode if currently editing
         let currentlyEditing = null;
         setEditingId((prevId) => {
-          currentlyEditing = myFeedbackRes.results.find(f => f.id === prevId);
+          currentlyEditing = myResults.find(f => f.id === prevId);
           return currentlyEditing ? prevId : null;
         });
         
@@ -57,15 +72,13 @@ const FeedbackPage = () => {
           setRating(currentlyEditing.rating || 0);
           setMessage(currentlyEditing.message || '');
           setIsEditing(true);
-        } else if (myFeedbackRes.results.length >= (myFeedbackRes.max_allowed || 2)) {
-          // If max reached and not already editing one, default to editing the first one
-          const firstFb = myFeedbackRes.results[0];
+        } else if (myResults.length >= (myFeedbackRes?.max_allowed || 2)) {
+          const firstFb = myResults[0];
           setEditingId(firstFb.id);
           setRating(firstFb.rating || 0);
           setMessage(firstFb.message || '');
           setIsEditing(true);
         } else {
-          // If < max allowed and not currently editing, default to new
           setEditingId(null);
           setRating(0);
           setMessage('');
@@ -228,39 +241,95 @@ const FeedbackPage = () => {
             <h2 className="text-xl font-bold text-app mb-4">Share Your Feedback</h2>
 
             {myFeedbacks.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-sm font-semibold text-app-2 mb-3">Your Feedbacks</h3>
-                <div className="space-y-3">
-                  {myFeedbacks.map(fb => (
-                    <div key={fb.id} className={`p-4 rounded-xl border transition-all ${editingId === fb.id ? 'border-violet-500 bg-violet-50/10 shadow-sm' : 'border-app surface-subtle'}`}>
-                      <div className="flex justify-between items-start mb-2">
-                        <StarRating rating={fb.rating} size={16} readOnly />
-                        <span className="text-[11px] text-app-muted font-medium">
-                          {fb.created_at === fb.updated_at ? "Posted" : "Edited"} {new Date(fb.updated_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
-                        </span>
-                      </div>
-                      <p className="text-sm text-app-2 line-clamp-2 mb-3">{fb.message}</p>
-                      <Button
-                        variant={editingId === fb.id ? "primary" : "secondary"}
-                        size="sm"
-                        className="w-full text-xs h-8"
-                        onClick={() => handleEditClick(fb)}
-                      >
-                        {editingId === fb.id ? "Currently Editing" : "Edit"}
-                      </Button>
-                    </div>
-                  ))}
+              <div className="mb-5">
+                <div className="flex items-center justify-between mb-2.5">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-app-muted">Your Feedbacks</h3>
+                  {myFeedbacks.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllMyFeedbacks(!showAllMyFeedbacks)}
+                      className="text-[11px] font-semibold text-violet-600 dark:text-violet-400 hover:underline"
+                    >
+                      {showAllMyFeedbacks ? "Show Latest Only" : `View All (${myFeedbacks.length})`}
+                    </button>
+                  )}
                 </div>
+
+                <div className="space-y-2.5">
+                  {(showAllMyFeedbacks ? myFeedbacks : myFeedbacks.slice(0, 1)).map(rawFb => {
+                    const fb = normalizeFeedback(rawFb);
+                    const hasReply = !!fb.reply_message && fb.reply_message.trim().length > 0;
+
+                    return (
+                      <div
+                        key={fb.id}
+                        className={`p-3.5 rounded-xl border transition-all ${
+                          editingId === fb.id ? 'border-violet-500 bg-violet-500/10 shadow-sm' : 'border-app surface-subtle'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <StarRating rating={fb.rating} size={14} readOnly />
+                          <span className="text-[10px] text-app-muted font-medium whitespace-nowrap">
+                            {fb.created_at === fb.updated_at ? "Posted" : "Edited"} {new Date(fb.updated_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                          </span>
+                        </div>
+                        <p className="text-xs text-app-2 line-clamp-2 mb-2 font-normal leading-snug">{fb.message}</p>
+                        
+                        <Button
+                          variant={editingId === fb.id ? "primary" : "secondary"}
+                          size="sm"
+                          className="w-full text-[11px] h-7 py-0 font-medium"
+                          onClick={() => handleEditClick(fb)}
+                        >
+                          {editingId === fb.id ? "Currently Editing" : "Edit Feedback"}
+                        </Button>
+
+                        {/* Admin Reply Card Section */}
+                        {hasReply ? (
+                          <motion.div
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="mt-2.5 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs space-y-1"
+                          >
+                            <div className="flex items-center justify-between border-b border-emerald-500/20 pb-1.5">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400">
+                                <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+                                ✔ Admin Reply
+                              </span>
+                              {fb.reply_date && (
+                                <span className="text-[10px] text-emerald-400/80">
+                                  {formatReplyDate(fb.reply_date)}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-200 dark:text-slate-100 leading-snug font-normal whitespace-pre-wrap">
+                              "{fb.reply_message}"
+                            </p>
+                            <div className="text-[10px] text-emerald-400/90 font-semibold pt-0.5">
+                              — {fb.replied_by_username || "admin"}
+                            </div>
+                          </motion.div>
+                        ) : (
+                          <div className="mt-2 text-[10px] text-app-muted flex items-center gap-1 font-medium">
+                            <Clock size={11} className="text-amber-500/70 shrink-0" /> No reply from admin yet.
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
                 {myFeedbacks.length < maxAllowed && (
                   <Button
                     variant={editingId === null ? "primary" : "secondary"}
-                    className="w-full mt-3 text-sm"
+                    className="w-full mt-2.5 text-xs h-8"
                     onClick={handleWriteNewClick}
                   >
                     Write New Feedback
                   </Button>
                 )}
-                <div className="h-px w-full border-b border-app my-6" />
+                <div className="h-px w-full border-b border-app my-4" />
               </div>
             )}
 

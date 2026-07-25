@@ -1,5 +1,6 @@
 import axios from "axios";
 import customAdminService from "./customAdminService";
+import adminFeedbackService from "./adminFeedbackService";
 
 /**
  * Dedicated Axios instance for Custom Admin Panel.
@@ -49,7 +50,6 @@ const adminService = {
       return res.data;
     } catch (err) {
       if (err.response && err.response.status === 404) {
-        // Try fallback auth endpoints if 404
         try {
           const fallbackRes = await adminApi.post("auth/admin-login/", credentials);
           return fallbackRes.data;
@@ -160,6 +160,17 @@ const adminService = {
     const response = await adminApi.patch(`custom_admin/support/${ticketId}/`, { status });
     return response.data;
   },
+
+  /**
+   * Feedback Management Delegates
+   */
+  getAdminFeedbacks: (params) => adminFeedbackService.getFeedbacks(params),
+  getFeedbackStats: () => adminFeedbackService.getStats(),
+  getFeedbackDetails: (id) => adminFeedbackService.getFeedback(id),
+  replyAdminFeedback: (id, replyText) => adminFeedbackService.replyFeedback(id, { reply_message: replyText }),
+  updateAdminFeedback: (id, payload) => adminFeedbackService.updateFeedback(id, payload),
+  toggleHideAdminFeedback: (id) => adminFeedbackService.hideFeedback(id),
+  deleteAdminFeedback: (id) => adminFeedbackService.deleteFeedback(id),
 };
 
 export default adminService;

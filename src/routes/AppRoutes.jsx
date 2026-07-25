@@ -36,6 +36,7 @@ const AdminUsersPage = lazy(() => import("../pages/admin/AdminUsersPage"));
 const AdminQuizzesPage = lazy(() => import("../pages/admin/AdminQuizzesPage"));
 const AdminPenaltiesPage = lazy(() => import("../pages/admin/AdminPenaltiesPage"));
 const AdminSupportPage = lazy(() => import("../pages/admin/AdminSupportPage"));
+const AdminFeedbackPage = lazy(() => import("../pages/admin/AdminFeedbackPage"));
 const AdminLayout = lazy(() => import("../layouts/AdminLayout"));
 const AdminProtectedRoute = lazy(() => import("../components/admin/AdminProtectedRoute"));
 
@@ -105,6 +106,7 @@ const AppRoutes = () => {
               <Route path="/admin/quizzes" element={<AdminQuizzesPage />} />
               <Route path="/admin/penalties" element={<AdminPenaltiesPage />} />
               <Route path="/admin/support" element={<AdminSupportPage />} />
+              <Route path="/admin/feedback" element={<AdminFeedbackPage />} />
             </Route>
           </Route>
         </Route>
