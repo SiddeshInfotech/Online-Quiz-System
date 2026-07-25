@@ -34,6 +34,33 @@ class AIService:
         quiz_title = f"{subject}: {topic_title} Mastery"
 
         coding_pools = {
+            "csharp": [
+                {
+                    "q": "What will be the output of the following C# code?\n\n```csharp\nusing System;\nclass Program {\n    static void Main() {\n        int x = 5;\n        Console.WriteLine(x++);\n    }\n}\n```",
+                    "opts": ["5", "6", "4", "Compilation Error"],
+                    "ans": "5"
+                },
+                {
+                    "q": "What is the output of this C# code snippet?\n\n```csharp\nusing System;\nclass Program {\n    static void Main() {\n        string text = \"C# .NET\";\n        Console.WriteLine(text.Length);\n    }\n}\n```",
+                    "opts": ["7", "6", "8", "0"],
+                    "ans": "7"
+                },
+                {
+                    "q": "What will the following C# code print?\n\n```csharp\nusing System;\nclass Program {\n    static void Main() {\n        int[] numbers = { 10, 20, 30 };\n        Console.WriteLine(numbers[1]);\n    }\n}\n```",
+                    "opts": ["20", "10", "30", "IndexOutOfRangeException"],
+                    "ans": "20"
+                },
+                {
+                    "q": "What is the output of this C# ternary operation?\n\n```csharp\nusing System;\nclass Program {\n    static void Main() {\n        int age = 18;\n        string result = (age >= 18) ? \"Adult\" : \"Minor\";\n        Console.WriteLine(result);\n    }\n}\n```",
+                    "opts": ["Adult", "Minor", "True", "Compilation Error"],
+                    "ans": "Adult"
+                },
+                {
+                    "q": "What does the following C# method return?\n\n```csharp\nusing System;\nclass Program {\n    static int Add(int a, int b = 10) {\n        return a + b;\n    }\n    static void Main() {\n        Console.WriteLine(Add(5));\n    }\n}\n```",
+                    "opts": ["15", "5", "10", "Error"],
+                    "ans": "15"
+                }
+            ],
             "c": [
                 {
                     "q": "What will be the output of the following C code?\n\n```c\n#include <stdio.h>\nint main() {\n    int a = 5;\n    printf(\"%d\", a++);\n    return 0;\n}\n```",
@@ -137,6 +164,28 @@ class AIService:
         }
 
         theory_pools = {
+            "csharp": [
+                {
+                    "q": "Which keyword is used to define a class that cannot be inherited in C#?",
+                    "opts": ["sealed", "static", "final", "abstract"],
+                    "ans": "sealed"
+                },
+                {
+                    "q": "What framework execution engine powers C# applications?",
+                    "opts": ["CLR (Common Language Runtime)", "JVM", "Node.js", "V8 Engine"],
+                    "ans": "CLR (Common Language Runtime)"
+                },
+                {
+                    "q": "Which method is the main entry point for a C# application?",
+                    "opts": ["Main()", "start()", "run()", "init()"],
+                    "ans": "Main()"
+                },
+                {
+                    "q": "Which data type is recommended for high-precision financial operations in C#?",
+                    "opts": ["decimal", "double", "float", "int"],
+                    "ans": "decimal"
+                }
+            ],
             "c": [
                 {
                     "q": "Which standard library function is used for dynamic memory allocation in C?",
@@ -219,12 +268,14 @@ class AIService:
             ]
         }
 
-        # ✅ Precise Subject Identification Engine
+        # ✅ Precise Subject Identification Engine (Prioritize C# before C)
         subj_lower = subject.lower().strip()
-        if subj_lower in ["c", "c programming", "c language"] or (subj_lower.startswith("c ") and "++" not in subj_lower and "#" not in subj_lower):
-            subj_key = "c"
+        if "c#" in subj_lower or "csharp" in subj_lower or "c sharp" in subj_lower or subj_lower == "cs":
+            subj_key = "csharp"
         elif "c++" in subj_lower or "cpp" in subj_lower:
             subj_key = "c++"
+        elif subj_lower in ["c", "c programming", "c language"] or (subj_lower.startswith("c ") and "++" not in subj_lower and "#" not in subj_lower):
+            subj_key = "c"
         elif "java" in subj_lower and "script" not in subj_lower:
             subj_key = "java"
         elif "script" in subj_lower or "js" in subj_lower:
@@ -232,41 +283,48 @@ class AIService:
         elif "python" in subj_lower or "py" in subj_lower:
             subj_key = "python"
         else:
-            subj_key = "c" if "c" in subj_lower else "python"
+            subj_key = "csharp" if ("c#" in subj_lower or "csharp" in subj_lower) else ("c" if "c" in subj_lower else "python")
 
         target_pools = coding_pools if quiz_mode == "Coding" else theory_pools
-        pool = target_pools.get(subj_key, target_pools.get("c" if "c" in subj_lower else "python", []))
+        pool = target_pools.get(subj_key, target_pools.get("csharp" if "c#" in subj_lower else "python", []))
 
         questions = []
         seen_texts = set()
+        idx = 0
 
-        for i in range(num_questions):
-            if i < len(pool):
-                item = pool[i]
+        while len(questions) < num_questions:
+            if idx < len(pool):
+                item = pool[idx]
             else:
-                # Dynamically generate unique variation if pool is smaller than num_questions
-                base_item = pool[i % len(pool)]
-                var_num = (i // len(pool)) + 1
+                var_num = idx + 1
                 if quiz_mode == "Coding":
-                    if subj_key == "c":
+                    if subj_key == "csharp":
                         item = {
-                            "q": f"What will be the output of the following {subject} code (Variation {var_num})?\n\n```c\n#include <stdio.h>\nint main() {{\n    int val{var_num} = {var_num * 10};\n    printf(\"%d\", val{var_num} + 5);\n    return 0;\n}}\n```",
+                            "q": f"What is the output of the following {subject} code (Example #{var_num})?\n\n```csharp\nusing System;\nclass Program {{\n    static void Main() {{\n        int num{var_num} = {var_num * 5};\n        Console.WriteLine(num{var_num} + 2);\n    }}\n}}\n```",
+                            "opts": [str(var_num * 5 + 2), str(var_num * 5), str(var_num * 5 - 2), "Error"],
+                            "ans": str(var_num * 5 + 2)
+                        }
+                    elif subj_key == "c":
+                        item = {
+                            "q": f"What will be the output of the following {subject} code (Variation #{var_num})?\n\n```c\n#include <stdio.h>\nint main() {{\n    int val{var_num} = {var_num * 10};\n    printf(\"%d\", val{var_num} + 5);\n    return 0;\n}}\n```",
                             "opts": [str(var_num * 10 + 5), str(var_num * 10), str(var_num * 10 - 5), "Error"],
                             "ans": str(var_num * 10 + 5)
                         }
                     else:
                         item = {
-                            "q": f"What is the output of the following {subject} snippet (Variation {var_num})?\n\n```{subj_key}\n// {subject} execution logic {var_num}\nint num = {var_num * 2};\nprintf(\"%d\", num);\n```",
+                            "q": f"What is the output of the following {subject} snippet (Variation #{var_num})?\n\n```{subj_key}\n// {subject} execution logic #{var_num}\nint num = {var_num * 2};\nSystem.out.println(num);\n```",
                             "opts": [str(var_num * 2), str(var_num), str(var_num + 1), "0"],
                             "ans": str(var_num * 2)
                         }
                 else:
+                    base_item = pool[idx % len(pool)] if pool else {"q": f"Core concept in {subject}", "opts": ["Option 1", "Option 2", "Option 3", "Option 4"], "ans": "Option 1"}
                     item = {
-                        "q": f"Regarding {subject} {topic_title} (Concept #{i+1}): {base_item['q']}",
+                        "q": f"Regarding {subject} {topic_title} (Concept #{var_num}): {base_item['q']}",
                         "opts": list(base_item["opts"]),
                         "ans": base_item["ans"]
                     }
 
+            idx += 1
             if item["q"] not in seen_texts:
                 seen_texts.add(item["q"])
                 questions.append({

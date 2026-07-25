@@ -117,8 +117,20 @@ class GenerateAIQuizView(APIView):
                 )
 
                 if options:
-                    trimmed_options = [str(opt).strip() for opt in options]
-                    trimmed_correct = str(correct_answer).strip()
+                    from apps.questions.serializers import clean_quiz_text
+                    trimmed_options = []
+                    seen_opts = set()
+                    for opt in options:
+                        clean_opt = clean_quiz_text(str(opt))
+                        if clean_opt and clean_opt.lower() not in seen_opts:
+                            seen_opts.add(clean_opt.lower())
+                            trimmed_options.append(clean_opt)
+
+                    # Strictly cap to maximum 4 options per question
+                    if len(trimmed_options) > 4:
+                        trimmed_options = trimmed_options[:4]
+
+                    trimmed_correct = clean_quiz_text(str(correct_answer)).strip()
 
                     try:
                         correct_index = trimmed_options.index(trimmed_correct)
