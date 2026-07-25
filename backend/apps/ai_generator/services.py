@@ -330,7 +330,7 @@ Focus: {prompt_topic if prompt_topic else 'General'}
 
 CRITICAL STRICT RULES:
 1. SUBJECT MATCHING: All questions MUST be 100% focused on "{subject}". Do NOT generate questions about Python if the subject is "{subject}".
-2. ZERO DUPLICATES: Every single question in the returned array MUST be completely unique.
+2. ZERO DUPLICATES (MANDATORY): Every single question in the returned array MUST be completely unique. Ensure each question tests a DISTINCT and DIFFERENT sub-topic or concept. If generating {num_questions} questions, they must cover {num_questions} completely DIFFERENT concepts. Do NOT repeat the same question or options.
 
 TITLE GENERATION RULE:
 Generate a short, catchy, and highly unique title for this quiz by combining the Subject ("{subject}") and the Focus/Topic ("{prompt_topic if prompt_topic else 'General'}").
@@ -366,7 +366,7 @@ Focus: {prompt_topic if prompt_topic else 'General'}
 
 CRITICAL STRICT RULES:
 1. SUBJECT LANGUAGE MATCHING: Every code snippet MUST be written in valid {subject} syntax inside a markdown code block tagged ```{subject.lower()}. NEVER output Python code when the subject is "{subject}".
-2. ZERO DUPLICATES: Every single question MUST be unique. Do not repeat code snippets or question text.
+2. ZERO DUPLICATES (MANDATORY): Every single question MUST be unique. Do not repeat code snippets or question text. Each snippet must test a completely DIFFERENT concept, function, or logic flaw.
 3. OPTIONS MATCH CODE: The 4 options MUST be the exact outputs or values produced by running that specific code snippet.
 
 TITLE GENERATION RULE:
@@ -553,8 +553,8 @@ Return ONLY valid JSON.
                         {"role": "user", "content": prompt}
                     ],
                     "response_format": {"type": "json_object"},
-                    "temperature": 0.7,
-                    "max_tokens": 1200,
+                    "temperature": 0.9,
+                    "max_tokens": 4000,
                 }
 
                 response = requests.post(
