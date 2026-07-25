@@ -19,7 +19,13 @@ import {
   Camera,
   Target,
   Trophy,
-  Award
+  Award,
+  Crown,
+  Zap,
+  RotateCcw,
+  Code2,
+  ArrowRight,
+  Sparkles
 } from "lucide-react";
 
 import achievementService from "../../services/achievementService";
@@ -32,6 +38,7 @@ import PasswordInput from "../../components/auth/PasswordInput";
 import PasswordStrengthIndicator, { isPasswordStrong } from "../../components/auth/PasswordStrengthIndicator";
 import { AuthContext } from "../../context/AuthContext";
 import authService from "../../services/authService";
+import { getCurrentPlan } from "../pricing/PricingPage";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -757,6 +764,19 @@ const ProfilePage = () => {
   const [toast, setToast] = useState(null);
   const [recentBadges, setRecentBadges] = useState([]);
   const [totalClaimedBadges, setTotalClaimedBadges] = useState(0);
+  const [currentPlan, setCurrentPlanState] = useState(() => getCurrentPlan(currentUser));
+
+  useEffect(() => {
+    const handlePlanChange = (e) => {
+      if (e.detail?.plan) {
+        setCurrentPlanState(e.detail.plan);
+      }
+    };
+    window.addEventListener("app:refresh-plan", handlePlanChange);
+    return () => window.removeEventListener("app:refresh-plan", handlePlanChange);
+  }, []);
+
+  const isPro = currentPlan === "pro";
 
   const showToast = (message, type = "success") =>
     setToast({ message, type });
@@ -1088,6 +1108,145 @@ const ProfilePage = () => {
 
           {/* Right Column - Info & Security Cards */}
           <div className="lg:col-span-2 flex flex-col gap-6">
+            {/* Subscription & Plan Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.12 }}
+            >
+              <Card className={`p-8 hover:shadow-xl transition-shadow duration-300 relative overflow-hidden border-2 ${
+                isPro ? "border-violet-500/40" : "border-app"
+              }`}>
+                {isPro && (
+                  <div className="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-amber-600 text-white text-[10px] font-extrabold uppercase px-3 py-1 rounded-bl-xl shadow flex items-center gap-1">
+                    <Crown size={12} /> PRO MEMBER
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-app">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                      isPro
+                        ? "bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-md shadow-violet-600/30"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                    }`}>
+                      <Crown size={20} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-bold font-space-grotesk text-app">Subscription & Quota</h3>
+                        <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${
+                          isPro
+                            ? "bg-gradient-to-r from-amber-400 to-amber-600 text-white border-amber-300 shadow-sm"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700"
+                        }`}>
+                          {isPro ? "👑 PRO MEMBER" : "Free Tier"}
+                        </span>
+                      </div>
+                      <p className="text-xs text-app-muted">Manage your daily limits and active plan</p>
+                    </div>
+                  </div>
+
+                  <Link to="/pricing">
+                    <Button variant={isPro ? "secondary" : "primary"} size="sm" className="gap-1.5 text-xs font-bold">
+                      {isPro ? "Manage Subscription" : "Upgrade to Pro"}
+                      <ArrowRight size={14} />
+                    </Button>
+                  </Link>
+                </div>
+
+                {/* 4 Metadata Fields */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 p-4 rounded-2xl surface-subtle border border-app">
+                  <div>
+                    <span className="text-[10px] font-bold text-app-muted uppercase tracking-wider block mb-0.5">Plan</span>
+                    <span className="text-sm font-extrabold text-app flex items-center gap-1">
+                      {isPro ? <span className="text-amber-500">👑 Premium</span> : "Free Tier"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-app-muted uppercase tracking-wider block mb-0.5">Billing</span>
+                    <span className="text-sm font-extrabold text-app">{isPro ? "Monthly ($9.99)" : "Free"}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-app-muted uppercase tracking-wider block mb-0.5">Started</span>
+                    <span className="text-sm font-semibold text-app">{isPro ? "Jul 18, 2026" : "Account Creation"}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-app-muted uppercase tracking-wider block mb-0.5">Renews</span>
+                    <span className="text-sm font-semibold text-violet-600 dark:text-violet-400">{isPro ? "Aug 18, 2026" : "N/A"}</span>
+                  </div>
+                </div>
+
+                {/* Usage Progress Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                  {/* Daily Quizzes */}
+                  <div className="p-4 rounded-xl surface-subtle border border-app flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-app flex items-center gap-1.5">
+                        <Book size={15} className="text-violet-600" /> Daily Quizzes
+                      </span>
+                      <span className="text-xs font-extrabold text-violet-600 dark:text-violet-400">
+                        {isPro ? "7 / 10 Used Today" : "2 / 3 Used Today"}
+                      </span>
+                    </div>
+                    {/* Progress Bar */}
+                    <div className="h-2 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-full transition-all duration-500"
+                        style={{ width: isPro ? "70%" : "66%" }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-app-muted font-medium pt-0.5">
+                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                        {isPro ? "3 Remaining" : "1 Remaining"}
+                      </span>
+                      <span>Resets in 12h</span>
+                    </div>
+                  </div>
+
+                  {/* Coding Questions */}
+                  <div className="p-4 rounded-xl surface-subtle border border-app flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-app flex items-center gap-1.5">
+                        <Code2 size={15} className="text-violet-600" /> Coding Questions
+                      </span>
+                      <span className="text-xs font-extrabold text-violet-600 dark:text-violet-400">
+                        {isPro ? "18 / 25 Used Today" : "6 / 10 Used Today"}
+                      </span>
+                    </div>
+                    {/* Progress Bar */}
+                    <div className="h-2 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-full transition-all duration-500"
+                        style={{ width: isPro ? "72%" : "60%" }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-app-muted font-medium pt-0.5">
+                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                        {isPro ? "7 Remaining" : "4 Remaining"}
+                      </span>
+                      <span>Resets in 12h</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Compact Benefits Summary */}
+                <div className="pt-4 border-t border-app flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-bold text-app block mb-1">Premium Benefits</span>
+                    <div className="flex items-center gap-4 text-xs text-app-muted">
+                      <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium"><Check size={14} /> Unlimited AI</span>
+                      <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium"><Check size={14} /> Advanced Analytics</span>
+                      <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium"><Check size={14} /> Priority Support</span>
+                    </div>
+                  </div>
+                  <Link to="/pricing" className="text-xs font-bold text-violet-600 hover:text-violet-700 transition-colors flex items-center gap-1">
+                    View All Benefits →
+                  </Link>
+                </div>
+              </Card>
+            </motion.div>
+
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}

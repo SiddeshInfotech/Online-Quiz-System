@@ -1,4 +1,8 @@
+import { useContext, useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Crown, Book, Code2, ArrowRight } from "lucide-react";
 import { useDashboardContext } from "../../context/DashboardContext";
+import { AuthContext } from "../../context/AuthContext";
 import WelcomeBanner from "../../components/dashboard/WelcomeBanner";
 import ProfileCompletionCard from "../../components/dashboard/ProfileCompletionCard";
 import { DailyStreakCard, OverallProgressCard } from "../../components/dashboard/StatsOverview";
@@ -6,6 +10,121 @@ import { TopNotificationsPanel } from "../../components/dashboard/RightSidebar";
 import QuizActivityCards from "../../components/dashboard/QuizActivityCards";
 import RecentAttempts from "../../components/dashboard/RecentAttempts";
 import PerformanceChart from "../../components/dashboard/PerformanceChart";
+import Card from "../../components/ui/Card/Card";
+import { getCurrentPlan } from "../pricing/PricingPage";
+
+const SubscriptionWidget = () => {
+  const { currentUser } = useContext(AuthContext);
+  const [currentPlan, setCurrentPlanState] = useState(() => getCurrentPlan(currentUser));
+
+  useEffect(() => {
+    const handlePlanChange = (e) => {
+      if (e.detail?.plan) {
+        setCurrentPlanState(e.detail.plan);
+      }
+    };
+    window.addEventListener("app:refresh-plan", handlePlanChange);
+    return () => window.removeEventListener("app:refresh-plan", handlePlanChange);
+  }, []);
+
+  const isPro = currentPlan === "pro";
+  const quizUsed = isPro ? 7 : 2;
+  const quizTotal = isPro ? 10 : 3;
+  const quizPct = Math.round((quizUsed / quizTotal) * 100);
+
+  const codeUsed = isPro ? 18 : 6;
+  const codeTotal = isPro ? 25 : 10;
+  const codePct = Math.round((codeUsed / codeTotal) * 100);
+
+  return (
+    <Card className={`p-5 sm:p-6 relative overflow-hidden transition-all duration-300 border-2 shadow-sm hover:shadow-md ${
+      isPro
+        ? "border-violet-500/40 surface shadow-violet-500/5"
+        : "border-app surface"
+    }`}>
+      {/* Background Subtle Gradient Glow */}
+      <div className="absolute -right-12 -top-12 w-44 h-44 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative z-10">
+        {/* Left Info */}
+        <div className="flex items-center gap-3.5 shrink-0">
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-md ${
+            isPro
+              ? "bg-gradient-to-br from-violet-600 via-fuchsia-600 to-amber-500 shadow-violet-600/30"
+              : "bg-slate-700 dark:bg-slate-800"
+          }`}>
+            <Crown size={22} className={isPro ? "animate-pulse" : ""} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-bold font-space-grotesk text-app">Subscription</h3>
+              <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${
+                isPro
+                  ? "bg-gradient-to-r from-amber-400 to-amber-600 text-white border-amber-300 shadow-sm"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700"
+              }`}>
+                {isPro ? "👑 PRO MEMBER" : "Free Tier"}
+              </span>
+            </div>
+            <p className="text-xs text-app-muted mt-0.5 font-medium">
+              Next Renewal: <strong className="text-app font-bold">{isPro ? "Aug 18, 2026" : "N/A"}</strong>
+            </p>
+          </div>
+        </div>
+
+        {/* Middle Usage Progress Bar Section */}
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 py-2.5 px-5 rounded-2xl surface-subtle border border-app flex-1 max-w-xl">
+          {/* Daily Quizzes Item */}
+          <div className="flex-1 w-full flex flex-col gap-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-app-muted text-[10px] uppercase tracking-wider flex items-center gap-1.5">
+                <Book size={14} className="text-violet-600 dark:text-violet-400" /> Daily Quizzes
+              </span>
+              <span className="font-extrabold text-app font-space-grotesk text-xs">
+                {quizUsed} / {quizTotal} <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold ml-1">({quizTotal - quizUsed} left)</span>
+              </span>
+            </div>
+            <div className="h-2 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden p-0.5 border border-app/50">
+              <div
+                className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-500 rounded-full transition-all duration-700"
+                style={{ width: `${quizPct}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="hidden sm:block h-8 w-px bg-app" />
+
+          {/* Coding Questions Item */}
+          <div className="flex-1 w-full flex flex-col gap-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-app-muted text-[10px] uppercase tracking-wider flex items-center gap-1.5">
+                <Code2 size={14} className="text-violet-600 dark:text-violet-400" /> Coding Questions
+              </span>
+              <span className="font-extrabold text-app font-space-grotesk text-xs">
+                {codeUsed} / {codeTotal} <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold ml-1">({codeTotal - codeUsed} left)</span>
+              </span>
+            </div>
+            <div className="h-2 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden p-0.5 border border-app/50">
+              <div
+                className="h-full bg-gradient-to-r from-violet-600 to-amber-500 rounded-full transition-all duration-700"
+                style={{ width: `${codePct}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Right Action */}
+        <Link
+          to="/pricing"
+          className="group text-xs font-bold text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 transition-colors flex items-center gap-1.5 shrink-0 self-end lg:self-center bg-violet-500/10 hover:bg-violet-500/20 px-3.5 py-2 rounded-xl border border-violet-500/20"
+        >
+          Manage Subscription
+          <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+        </Link>
+      </div>
+    </Card>
+  );
+};
 
 /**
  * Student Dashboard page
@@ -59,6 +178,9 @@ const Dashboard = () => {
           <TopNotificationsPanel notifications={notifications} />
         </div>
       </div>
+
+      {/* Subscription & Today's Usage Widget */}
+      <SubscriptionWidget />
 
       {/* Row 2: Full-width Performance Overview Chart */}
       <div className="w-full">

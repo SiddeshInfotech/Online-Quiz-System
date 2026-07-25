@@ -10,6 +10,7 @@ import { AdminAuthProvider } from "../context/AdminAuthContext";
 const TermsOfServicePage = lazy(() => import("../pages/legal/TermsOfServicePage"));
 const PrivacyPolicyPage = lazy(() => import("../pages/legal/PrivacyPolicyPage"));
 const ContactPage = lazy(() => import("../pages/contact/ContactPage"));
+const PricingPage = lazy(() => import("../pages/pricing/PricingPage"));
 
 const Dashboard = lazy(() => import("../pages/dashboard/Dashboard"));
 const LibraryPage = lazy(() => import("../pages/library/LibraryPage"));
@@ -62,6 +63,7 @@ const AppRoutes = () => {
         <Route path="/terms" element={<TermsOfServicePage />} />
         <Route path="/privacy" element={<PrivacyPolicyPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
 
         {/* Authentication Routes (Now open Modal over Landing Page) */}
         <Route path="/login" element={<LandingPage />} />
@@ -88,6 +90,7 @@ const AppRoutes = () => {
             <Route path="/badges/:id" element={<BadgeDetailsPage />} />
             <Route path="/profile/badges" element={<UserBadgesPage />} />
             <Route path="/feedback" element={<FeedbackPage />} />
+            <Route path="/pricing" element={<PricingPage />} />
           </Route>
           
           {/* Full-screen protected routes (no sidebar) */}

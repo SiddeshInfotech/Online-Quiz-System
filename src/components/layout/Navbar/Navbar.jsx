@@ -11,6 +11,7 @@ import { useAuthModal } from "../../../context/AuthModalContext";
 const navLinks = [
   { label: "About", href: "#about", isAnchor: true },
   { label: "How It Works", href: "#how-it-works", isAnchor: true },
+  { label: "Pricing", to: "/pricing", isAnchor: false },
   { label: "Contact", to: "/contact", isAnchor: false },
 ];
 

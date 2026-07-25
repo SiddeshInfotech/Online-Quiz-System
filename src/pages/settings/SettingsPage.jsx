@@ -11,13 +11,17 @@ import {
   MessageSquare,
   Moon,
   Sun,
-  Palette
+  Palette,
+  Crown,
+  Sparkles,
+  CreditCard
 } from "lucide-react";
 import Card from "../../components/ui/Card/Card";
 import Button from "../../components/ui/Button/Button";
 import { AuthContext } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import authService from "../../services/authService";
+import { getCurrentPlan } from "../pricing/PricingPage";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Delete Account Modal
@@ -162,11 +166,24 @@ const Toggle = ({ checked, onChange }) => (
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SettingsPage = () => {
-  const { logout } = useContext(AuthContext);
+  const { currentUser, logout } = useContext(AuthContext);
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [currentPlan, setCurrentPlanState] = useState(() => getCurrentPlan(currentUser));
+
+  useEffect(() => {
+    const handlePlanChange = (e) => {
+      if (e.detail?.plan) {
+        setCurrentPlanState(e.detail.plan);
+      }
+    };
+    window.addEventListener("app:refresh-plan", handlePlanChange);
+    return () => window.removeEventListener("app:refresh-plan", handlePlanChange);
+  }, []);
+
+  const isPro = currentPlan === "pro";
 
   const handleLogout = () => {
     logout();
@@ -199,6 +216,46 @@ const SettingsPage = () => {
         </motion.div>
 
         <div className="flex flex-col gap-6">
+
+          {/* Product & Pricing Section */}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.02 }}>
+            <Card className="p-0 overflow-hidden hover:shadow-xl transition-shadow duration-300 border-violet-500/20">
+              <div
+                className="p-6 sm:p-8 flex items-center justify-between cursor-pointer hover:bg-[var(--bg-elevated)] transition-colors"
+                onClick={() => navigate('/pricing')}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-md ${
+                    isPro
+                      ? "bg-gradient-to-br from-violet-600 via-fuchsia-600 to-amber-500 shadow-violet-600/30"
+                      : "bg-slate-700"
+                  }`}>
+                    <Crown size={24} />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold text-app-muted uppercase tracking-wider block mb-0.5">Current Plan</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${
+                        isPro
+                          ? "bg-gradient-to-r from-amber-400 to-amber-600 text-white border-amber-300 shadow-sm"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700"
+                      }`}>
+                        {isPro ? "👑 PRO MEMBER" : "FREE TIER"}
+                      </span>
+                      <span className="text-sm font-semibold text-app">
+                        {isPro ? "10 Daily Quizzes • 25 Coding Questions" : "3 Daily Quizzes • 10 Coding Questions"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-violet-600 dark:text-violet-400">
+                    Manage Subscription →
+                  </span>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
 
           {/* Appearance Section */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.05 }}>

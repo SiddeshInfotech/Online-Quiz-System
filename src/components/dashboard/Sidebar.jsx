@@ -1,3 +1,4 @@
+import { useState, useEffect, useContext } from "react";
 import { NavLink, Link } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -12,11 +13,29 @@ import {
   X,
   MessageSquare,
   Trophy,
+  Crown,
 } from "lucide-react";
 import Button from "../ui/Button/Button";
 import Logo from "../ui/Logo";
+import { AuthContext } from "../../context/AuthContext";
+import { getCurrentPlan } from "../../pages/pricing/PricingPage";
 
 const Sidebar = ({ user, dailyGoal, onMenuClose }) => {
+  const { currentUser } = useContext(AuthContext);
+  const [currentPlan, setCurrentPlanState] = useState(() => getCurrentPlan(currentUser || user));
+
+  useEffect(() => {
+    const handlePlanChange = (e) => {
+      if (e.detail?.plan) {
+        setCurrentPlanState(e.detail.plan);
+      }
+    };
+    window.addEventListener("app:refresh-plan", handlePlanChange);
+    return () => window.removeEventListener("app:refresh-plan", handlePlanChange);
+  }, []);
+
+  const isPro = currentPlan === "pro";
+
   const mainLinks = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { name: "Quiz Library", path: "/library", icon: BookOpen },
@@ -28,6 +47,7 @@ const Sidebar = ({ user, dailyGoal, onMenuClose }) => {
   ];
 
   const bottomLinks = [
+    { name: "Pricing", path: "/pricing", icon: Crown },
     { name: "Profile", path: "/profile", icon: User },
     { name: "Settings", path: "/settings", icon: Settings },
   ];
@@ -128,20 +148,40 @@ const Sidebar = ({ user, dailyGoal, onMenuClose }) => {
       {/* User Profile */}
       <div className="mt-auto border-t border-app p-4">
         <Link to="/profile" className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-[var(--bg-elevated)] cursor-pointer group">
-          <img
-            src={user?.profile_picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || user?.username || "User")}&background=6D5EF9&color=fff`}
-            alt={user?.full_name || user?.username || "User"}
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || user?.username || "User")}&background=6D5EF9&color=fff`;
-            }}
-            className="h-10 w-10 rounded-full object-cover shadow-sm group-hover:ring-2 ring-violet-100 transition-all"
-          />
+          <div className="relative">
+            <img
+              src={user?.profile_picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || user?.username || "User")}&background=6D5EF9&color=fff`}
+              alt={user?.full_name || user?.username || "User"}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || user?.username || "User")}&background=6D5EF9&color=fff`;
+              }}
+              className="h-10 w-10 rounded-full object-cover shadow-sm group-hover:ring-2 ring-violet-100 transition-all"
+            />
+            {isPro && (
+              <div className="absolute -top-1 -right-1 bg-amber-400 text-slate-900 p-0.5 rounded-full shadow border border-white" title="Pro Tier">
+                <Crown size={10} className="fill-slate-900" />
+              </div>
+            )}
+          </div>
           <div className="flex-1 overflow-hidden">
-            <h4 className="truncate text-sm font-semibold text-app group-hover:text-violet-700 transition-colors">
-              {user?.full_name || user?.username || "Student User"}
-            </h4>
-            <p className="truncate text-[10px] text-app-muted">View Profile</p>
+            <div className="flex items-center gap-1.5">
+              <h4 className="truncate text-sm font-semibold text-app group-hover:text-violet-700 transition-colors">
+                {user?.full_name || user?.username || "Student User"}
+              </h4>
+            </div>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase border ${
+                isPro
+                  ? "bg-gradient-to-r from-amber-400 to-amber-600 text-white border-amber-300 shadow-sm"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700"
+              }`}>
+                {isPro ? "👑 PRO MEMBER" : "Free Tier"}
+              </span>
+              <span className="text-[10px] text-app-muted truncate font-medium">
+                {isPro ? "• 24 days left" : "• Upgrade →"}
+              </span>
+            </div>
           </div>
           <ChevronDown size={16} className="text-app-muted group-hover:text-violet-500 transition-colors" />
         </Link>
