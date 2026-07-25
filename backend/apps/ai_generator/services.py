@@ -380,6 +380,8 @@ Return ONLY valid JSON:
     def _call_openrouter(self, prompt, num_questions):
         models_to_try = [
             "google/gemini-2.0-flash-001",
+            "meta-llama/llama-3.3-70b-instruct:free",
+            "google/gemini-2.0-flash-lite-001",
             "openai/gpt-4o-mini"
         ]
 
@@ -398,7 +400,7 @@ Return ONLY valid JSON:
                     ],
                     "response_format": {"type": "json_object"},
                     "temperature": 0.7,
-                    "max_tokens": 3500,
+                    "max_tokens": 1200,
                 }
 
                 response = requests.post(
@@ -519,8 +521,8 @@ Return ONLY valid JSON:
         """
         models_to_try = [
             "google/gemini-2.0-flash-001",
-            "openai/gpt-4o-mini",
-            "deepseek/deepseek-chat"
+            "meta-llama/llama-3.3-70b-instruct:free",
+            "openai/gpt-4o-mini"
         ]
 
         last_error = None
@@ -537,7 +539,7 @@ Return ONLY valid JSON:
                         {"role": "user", "content": prompt}
                     ],
                     "temperature": 0.7,
-                    "max_tokens": 2000,
+                    "max_tokens": 800,
                 }
 
                 response = requests.post(
