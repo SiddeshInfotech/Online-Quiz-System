@@ -137,21 +137,108 @@ class AdminUserToggleStatusView(APIView):
         user = get_object_or_404(User, id=pk)
         
         # Do NOT allow toggling staff/superusers (or promoting)
-        if user.is_staff or user.is_superuser:
+        if user.is_staff or user.is_superuser or user.role == 'Admin':
             return Response(
                 {"error": "Cannot change status of staff or admin users."},
                 status=status.HTTP_400_BAD_REQUEST
             )
             
         user.is_active = not user.is_active
+        user.status = 'active' if user.is_active else 'suspended'
+        if not user.is_active:
+            from django.utils import timezone
+            user.suspended_at = timezone.now()
+            user.suspension_reason = "Suspended by admin via panel"
+        else:
+            user.suspended_at = None
+            user.suspension_reason = None
         user.save()
         
         return Response({
             "id": user.id,
             "username": user.username,
             "is_active": user.is_active,
+            "status": user.status,
             "message": f"User status successfully updated to {'Active' if user.is_active else 'Suspended'}."
         }, status=status.HTTP_200_OK)
+
+
+class AdminUserSuspendView(APIView):
+    permission_classes = [IsCustomAdmin]
+
+    def post(self, request, pk):
+        user = get_object_or_404(User, id=pk)
+
+        if user.is_staff or user.is_superuser or user.role == 'Admin':
+            return Response(
+                {"error": "Cannot suspend staff or admin users."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        reason = request.data.get('reason') or request.data.get('suspension_reason') or "Suspended by admin via panel"
+
+        from django.utils import timezone
+        user.is_active = False
+        user.status = "suspended"
+        user.suspension_reason = str(reason).strip()
+        user.suspended_at = timezone.now()
+        user.save()
+
+        return Response({
+            "message": "User suspended successfully",
+            "user_id": str(user.id),
+            "is_active": False,
+            "status": "suspended",
+            "suspension_reason": user.suspension_reason,
+            "suspended_at": user.suspended_at
+        }, status=status.HTTP_200_OK)
+
+
+class AdminUserActivateView(APIView):
+    permission_classes = [IsCustomAdmin]
+
+    def post(self, request, pk):
+        user = get_object_or_404(User, id=pk)
+
+        user.is_active = True
+        user.status = "active"
+        user.suspension_reason = None
+        user.suspended_at = None
+        user.is_deleted = False
+        user.save()
+
+        return Response({
+            "message": "User reactivated successfully",
+            "user_id": str(user.id),
+            "is_active": True,
+            "status": "active"
+        }, status=status.HTTP_200_OK)
+
+
+class AdminUserDeleteView(APIView):
+    permission_classes = [IsCustomAdmin]
+
+    def delete(self, request, pk):
+        user = get_object_or_404(User, id=pk)
+
+        if user.is_staff or user.is_superuser or user.role == 'Admin':
+            return Response(
+                {"error": "Cannot delete staff or admin users."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.is_deleted = True
+        user.is_active = False
+        user.status = "deleted"
+        user.save()
+
+        return Response({
+            "message": "User deleted successfully",
+            "user_id": str(user.id)
+        }, status=status.HTTP_200_OK)
+
+    def post(self, request, pk):
+        return self.delete(request, pk)
 
 
 # C. Admin Quiz Creation & Moderation Views

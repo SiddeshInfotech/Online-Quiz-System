@@ -27,6 +27,16 @@ class User(AbstractUser):
     push_notifications = models.BooleanField(default=False)
     daily_quiz_goal = models.IntegerField(default=3)
     deactivated_at = models.DateTimeField(null=True, blank=True)
+    STATUS_CHOICES = (
+        ('active', 'Active'),
+        ('suspended', 'Suspended'),
+        ('deleted', 'Deleted'),
+    )
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    suspension_reason = models.TextField(blank=True, null=True)
+    suspended_at = models.DateTimeField(blank=True, null=True)
+    is_deleted = models.BooleanField(default=False)
     xp = models.IntegerField(default=0)
     level = models.IntegerField(default=1)
     

@@ -142,9 +142,24 @@ class LoginView(generics.GenericAPIView):
         if serializer.is_valid():
             user = serializer.validated_data['user']
 
+            # ✅ Check if user is suspended or deleted FIRST
+            if getattr(user, 'status', None) == 'suspended' or (not user.is_active and getattr(user, 'suspension_reason', None)):
+                return Response({
+                    "error": "Account Suspended",
+                    "detail": "Your account has been suspended by an administrator. Please contact support for assistance.",
+                    "reason": getattr(user, 'suspension_reason', None) or "Suspended by admin"
+                }, status=status.HTTP_403_FORBIDDEN)
+
+            if getattr(user, 'status', None) == 'deleted' or getattr(user, 'is_deleted', False):
+                return Response({
+                    "error": "Account Deleted",
+                    "detail": "This account has been deleted. Please contact support if you believe this is an error."
+                }, status=status.HTTP_403_FORBIDDEN)
+
             # If user is admin/staff/superuser, ensure active status and bypass verification
             if user.is_staff or user.is_superuser or user.role == 'Admin' or user.email == 'admin@test.com':
                 user.is_active = True
+                user.status = 'active'
                 user.is_staff = True
                 user.is_superuser = True
                 if user.role != 'Admin':

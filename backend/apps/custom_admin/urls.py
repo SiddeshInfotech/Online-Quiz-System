@@ -4,6 +4,9 @@ from .views import (
     AdminDashboardAnalyticsView,
     AdminUserListView,
     AdminUserToggleStatusView,
+    AdminUserSuspendView,
+    AdminUserActivateView,
+    AdminUserDeleteView,
     AdminQuizListCreateView,
     AdminQuizDetailUpdateDeleteView,
     AdminQuizToggleVisibilityView,
@@ -30,6 +33,9 @@ urlpatterns = [
 
     # B. Users
     path('users/', AdminUserListView.as_view(), name='admin-users-list'),
+    path('users/<int:pk>/', AdminUserDeleteView.as_view(), name='admin-users-detail-delete'),
+    path('users/<int:pk>/suspend/', AdminUserSuspendView.as_view(), name='admin-users-suspend'),
+    path('users/<int:pk>/activate/', AdminUserActivateView.as_view(), name='admin-users-activate'),
     path('users/<int:pk>/toggle-status/', AdminUserToggleStatusView.as_view(), name='admin-users-toggle-status'),
 
     # C. Quizzes & Moderation

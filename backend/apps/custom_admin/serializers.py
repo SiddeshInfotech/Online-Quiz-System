@@ -16,7 +16,8 @@ class AdminUserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'username', 'email', 'full_name', 'total_points', 
-            'xp', 'level', 'role', 'is_active', 'is_staff', 'is_superuser',
+            'xp', 'level', 'role', 'is_active', 'status', 'suspension_reason',
+            'suspended_at', 'is_deleted', 'is_staff', 'is_superuser',
             'total_attempts', 'penalty_count', 'date_joined'
         ]
         read_only_fields = fields
