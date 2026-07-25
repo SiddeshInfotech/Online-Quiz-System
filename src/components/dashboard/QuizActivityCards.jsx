@@ -7,9 +7,9 @@ import { getLanguageIcon } from "../../utils/languageIcons";
 const QuizActivityCards = ({ lastQuiz, availableQuizzesCount, isLoading }) => {
   const { icon: LangIcon, color: iconColor } = getLanguageIcon(lastQuiz?.subject);
   return (
-    <div className="w-full">
+    <div className="w-full h-full flex flex-col">
       {/* Continue Last Quiz / No Quiz In Progress */}
-      <Card hover className="p-5 sm:p-6 flex flex-col justify-between border-app">
+      <Card hover className="p-6 flex flex-col justify-between border-app h-full flex-1">
         <h3 className="font-semibold text-app-2 text-sm mb-4">Continue Last Quiz</h3>
 
         {isLoading ? (

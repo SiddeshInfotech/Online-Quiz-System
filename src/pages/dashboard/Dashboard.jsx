@@ -60,18 +60,18 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Row 2: Quiz Activity Cards (Continue Last Quiz & Available Quizzes) */}
-      <div>
+      {/* Row 2: Full-width Performance Overview Chart */}
+      <div className="w-full">
+        <PerformanceChart stats={performanceStats} chartData={chartData} />
+      </div>
+
+      {/* Row 3: Recent Quiz Attempts & Continue Last Quiz */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+        <RecentAttempts attempts={recentAttempts} />
         <QuizActivityCards
           lastQuiz={lastQuiz}
           availableQuizzesCount={availableQuizzesCount}
         />
-      </div>
-
-      {/* Row 3: Recent Attempts & Performance Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RecentAttempts attempts={recentAttempts} />
-        <PerformanceChart stats={performanceStats} chartData={chartData} />
       </div>
     </div>
   );
