@@ -107,5 +107,5 @@ class UserPenaltyLogSerializer(serializers.ModelSerializer):
 class AdminSupportMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactMessage
-        fields = ['id', 'name', 'email', 'subject', 'category', 'message', 'created_at', 'is_resolved']
+        fields = ['id', 'name', 'email', 'subject', 'category', 'message', 'created_at', 'is_resolved', 'reply_message', 'replied_at']
         read_only_fields = ['name', 'email', 'subject', 'category', 'message', 'created_at']

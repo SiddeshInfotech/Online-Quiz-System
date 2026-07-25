@@ -9,7 +9,8 @@ from .views import (
     AdminQuizToggleVisibilityView,
     AdminPenaltyLogListView,
     AdminSupportMessageListView,
-    AdminSupportMessageToggleResolveView
+    AdminSupportMessageToggleResolveView,
+    AdminSupportMessageReplyView
 )
 from apps.feedback.admin_views import (
     AdminFeedbackListView,
@@ -44,6 +45,7 @@ urlpatterns = [
     # E. Support
     path('support/', AdminSupportMessageListView.as_view(), name='admin-support-list'),
     path('support/<int:pk>/', AdminSupportMessageToggleResolveView.as_view(), name='admin-support-toggle-resolve'),
+    path('support/<int:pk>/reply/', AdminSupportMessageReplyView.as_view(), name='admin-support-reply'),
 
     # F. Feedback Moderation
     path('feedback/', AdminFeedbackListView.as_view(), name='custom-admin-feedback-list'),

@@ -103,7 +103,7 @@ class AdminFeedbackReplyView(APIView):
     permission_classes = [IsCustomAdmin]
 
     def post(self, request, pk):
-        feedback = get_object_or_404(Feedback, id=pk)
+        feedback = get_object_or_404(Feedback.objects.select_related('user'), id=pk)
         reply_msg = request.data.get('reply_message', '').strip()
 
         if not reply_msg:
@@ -118,8 +118,20 @@ class AdminFeedbackReplyView(APIView):
         feedback.replied_by = request.user
         feedback.save()
 
+        # ✅ Send resolution email notification to user
+        if feedback.user and feedback.user.email:
+            from apps.support.utils import send_resolution_email
+            send_resolution_email(
+                recipient_email=feedback.user.email,
+                recipient_name=feedback.user.full_name or feedback.user.username,
+                ticket_subject=f"Feedback #{feedback.id} ({feedback.rating}★)",
+                original_message=feedback.message,
+                reply_message=feedback.reply_message,
+                is_resolved=True
+            )
+
         return Response({
-            "message": "Reply sent successfully.",
+            "message": "Reply sent and email notification dispatched to user successfully.",
             "feedback": AdminFeedbackSerializer(feedback).data
         }, status=status.HTTP_200_OK)
 

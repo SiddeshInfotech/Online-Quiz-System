@@ -210,11 +210,67 @@ class AdminSupportMessageToggleResolveView(APIView):
     def patch(self, request, pk):
         message = get_object_or_404(ContactMessage, id=pk)
         message.is_resolved = not message.is_resolved
+        reply_text = request.data.get('reply_message') or request.data.get('reply')
+        if reply_text:
+            message.reply_message = str(reply_text).strip()
+            from django.utils import timezone
+            message.replied_at = timezone.now()
         message.save()
+
+        # ✅ Send email notification to user when support ticket is resolved or replied
+        if message.is_resolved or reply_text:
+            from apps.support.utils import send_resolution_email
+            send_resolution_email(
+                recipient_email=message.email,
+                recipient_name=message.name,
+                ticket_subject=message.subject,
+                original_message=message.message,
+                reply_message=message.reply_message,
+                is_resolved=message.is_resolved
+            )
+
         return Response({
             "id": message.id,
             "subject": message.subject,
             "is_resolved": message.is_resolved,
+            "reply_message": message.reply_message,
             "message": f"Support message status updated to {'Resolved' if message.is_resolved else 'Unresolved'}."
+        }, status=status.HTTP_200_OK)
+
+    def post(self, request, pk):
+        return self.patch(request, pk)
+
+
+class AdminSupportMessageReplyView(APIView):
+    permission_classes = [IsCustomAdmin]
+
+    def post(self, request, pk):
+        message = get_object_or_404(ContactMessage, id=pk)
+        reply_msg = request.data.get('reply_message') or request.data.get('reply') or request.data.get('message', '').strip()
+
+        if not reply_msg:
+            return Response({"error": "Reply message cannot be empty."}, status=status.HTTP_400_BAD_REQUEST)
+
+        from django.utils import timezone
+        message.reply_message = str(reply_msg).strip()
+        message.is_resolved = True
+        message.replied_at = timezone.now()
+        message.save()
+
+        # ✅ Send email notification to user
+        from apps.support.utils import send_resolution_email
+        send_resolution_email(
+            recipient_email=message.email,
+            recipient_name=message.name,
+            ticket_subject=message.subject,
+            original_message=message.message,
+            reply_message=message.reply_message,
+            is_resolved=True
+        )
+
+        return Response({
+            "success": True,
+            "message": "Resolution reply sent and email dispatched to user successfully.",
+            "data": AdminSupportMessageSerializer(message).data
         }, status=status.HTTP_200_OK)
 
