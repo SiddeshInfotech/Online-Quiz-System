@@ -233,11 +233,13 @@ class UserSerializer(serializers.ModelSerializer):
 class GoogleAuthSerializer(serializers.Serializer):
     id_token = serializers.CharField(required=False, allow_blank=True)
     access_token = serializers.CharField(required=False, allow_blank=True)
+    token = serializers.CharField(required=False, allow_blank=True)
+    credential = serializers.CharField(required=False, allow_blank=True)
 
     def validate(self, data):
-        token = data.get('id_token') or data.get('access_token')
+        token = data.get('id_token') or data.get('access_token') or data.get('token') or data.get('credential')
         if not token:
-            raise serializers.ValidationError("Google token is required (id_token or access_token)")
+            raise serializers.ValidationError("Google token is required (id_token, access_token, or credential)")
 
         client_id = getattr(settings, 'GOOGLE_CLIENT_ID', None)
         if not client_id:
