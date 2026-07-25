@@ -258,7 +258,16 @@ class AdminQuizListCreateView(generics.ListCreateAPIView):
         ).order_by('-created_at')
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        """Admin-created quizzes are always curated (is_ai_generated=False) and published."""
+        from django.core.cache import cache
+        serializer.save(
+            created_by=self.request.user,
+            is_ai_generated=False,
+            is_published=True,
+            status='published'
+        )
+        # Invalidate admin analytics cache so the new quiz appears immediately
+        cache.delete("admin_analytics_summary")
 
 class AdminQuizDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Quiz.objects.all().select_related('category', 'created_by')

@@ -63,9 +63,12 @@ class QuizLibrarySerializer(serializers.ModelSerializer):
             return obj.created_by.username
         return "QuizGen AI"
 
+    def get_created_by_name(self, obj):
+        return self.get_created_by_label(obj)
+
 class QuizSerializer(serializers.ModelSerializer):
     category_name = serializers.ReadOnlyField(source='category.category_name')
-    created_by_name = serializers.ReadOnlyField(source='created_by.username')
+    created_by_name = serializers.SerializerMethodField()
     question_count = serializers.SerializerMethodField() 
     created_by_me = serializers.SerializerMethodField()
     created_by_label = serializers.SerializerMethodField()
@@ -109,3 +112,6 @@ class QuizSerializer(serializers.ModelSerializer):
         if obj.created_by:
             return obj.created_by.username
         return "QuizGen AI"
+
+    def get_created_by_name(self, obj):
+        return self.get_created_by_label(obj)

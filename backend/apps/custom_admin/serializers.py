@@ -27,7 +27,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
 
 class AdminQuizSerializer(serializers.ModelSerializer):
     category_name = serializers.ReadOnlyField(source='category.category_name')
-    created_by_name = serializers.ReadOnlyField(source='created_by.username')
+    created_by_name = serializers.SerializerMethodField()
     question_count = serializers.SerializerMethodField()
     questions = serializers.JSONField(required=False, write_only=False)
     created_by_label = serializers.SerializerMethodField()
@@ -58,6 +58,9 @@ class AdminQuizSerializer(serializers.ModelSerializer):
             return obj.created_by.username
         return "QuizGen AI"
 
+    def get_created_by_name(self, obj):
+        return self.get_created_by_label(obj)
+
     def get_question_count(self, obj):
         if hasattr(obj, 'annotated_question_count'):
             return obj.annotated_question_count or 0
@@ -76,6 +79,12 @@ class AdminQuizSerializer(serializers.ModelSerializer):
 
         if 'duration_minutes' not in data:
             data['duration_minutes'] = 30
+
+        # Admin panel quizzes are always curated (not AI-generated) and published
+        data.setdefault('is_ai_generated', False)
+        data.setdefault('is_published', True)
+        data.setdefault('status', 'published')
+
         if 'category' not in data or not data['category']:
             from apps.quizzes.models import QuizCategory
             cat_name = data.get('subject', 'General')
