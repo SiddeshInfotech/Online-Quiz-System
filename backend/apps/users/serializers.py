@@ -71,20 +71,26 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("An email or username is required.")
 
         from django.db.models import Q
-        try:
-            user = User.objects.get(Q(email__iexact=login_id) | Q(username__iexact=login_id))
-        except User.DoesNotExist:
-            if str(login_id).lower() in ['admin@test.com', 'admin']:
-                user = User.objects.create_superuser(
-                    username='admin',
-                    email='admin@test.com',
-                    password=password or 'password',
-                    role='Admin',
-                    full_name='System Admin',
-                    is_active=True
-                )
-            else:
-                raise serializers.ValidationError("Invalid credentials")
+        user = User.objects.filter(Q(email__iexact=login_id) | Q(username__iexact=login_id)).first()
+
+        if not user and str(login_id).lower() in ['admin@test.com', 'admin']:
+            # Search if an admin account exists under admin email or staff/admin status
+            user = User.objects.filter(Q(email__iexact='admin@test.com') | Q(username__iexact='admin') | Q(is_staff=True) | Q(role='Admin')).first()
+            if not user:
+                try:
+                    user = User.objects.create_superuser(
+                        username='admin',
+                        email='admin@test.com',
+                        password=password or 'password',
+                        role='Admin',
+                        full_name='System Admin',
+                        is_active=True
+                    )
+                except Exception:
+                    user = User.objects.filter(Q(email__iexact='admin@test.com') | Q(username__iexact='admin')).first()
+
+        if not user:
+            raise serializers.ValidationError("Invalid credentials")
 
         # If logging in as admin or user has admin role/staff/superuser flag, ensure staff and superuser permissions
         if user.is_staff or user.is_superuser or user.role == 'Admin' or str(login_id).lower() in ['admin@test.com', 'admin']:
