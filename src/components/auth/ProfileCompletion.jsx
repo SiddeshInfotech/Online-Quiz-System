@@ -157,24 +157,47 @@ const ProfileCompletion = ({ inModal = true }) => {
           </label>
           <input
             type="text"
-            placeholder="Type a subject and press Enter (e.g. Physics, History)"
+            placeholder="Type a subject and press Enter (e.g. C, C++, Python, React)"
             value={subjectInput}
             onChange={(e) => setSubjectInput(e.target.value)}
             onKeyDown={handleAddSubject}
             className="w-full rounded-xl border border-app bg-[var(--bg-elevated)] px-4 py-2.5 text-sm text-[var(--text-app)] placeholder:text-app-muted focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
           />
+
+          {/* Quick selection chips for programming subjects */}
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {["C", "C++", "Python", "JavaScript", "React", "Java", "Django", "Node.js"].map((tech) => (
+              <button
+                key={tech}
+                type="button"
+                onClick={() => {
+                  if (!subjectInterests.includes(tech)) {
+                    setSubjectInterests([...subjectInterests, tech]);
+                  }
+                }}
+                className={`text-[11px] px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
+                  subjectInterests.includes(tech)
+                    ? "bg-violet-600 text-white border-violet-600 font-semibold"
+                    : "surface-subtle text-app-muted hover:text-app border-app hover:border-violet-400"
+                }`}
+              >
+                + {tech}
+              </button>
+            ))}
+          </div>
+
           {subjectInterests.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-2">
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-app/50 mt-2">
               {subjectInterests.map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-violet-100 dark:bg-violet-900/40 px-3 py-1 text-xs font-medium text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-violet-100 dark:bg-violet-900/40 px-3 py-1 text-xs font-semibold text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800"
                 >
                   {tag}
                   <button
                     type="button"
                     onClick={() => handleRemoveSubject(tag)}
-                    className="hover:text-violet-900 focus:outline-none"
+                    className="hover:text-violet-900 focus:outline-none cursor-pointer"
                   >
                     ×
                   </button>

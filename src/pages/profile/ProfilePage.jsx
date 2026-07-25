@@ -431,22 +431,45 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
                     <Input
                       label="Subject Interests"
                       name="subject_interests"
-                      placeholder="Type subject and press Enter"
+                      placeholder="e.g. C, C++, Python, React (press Enter)"
                       value={subjectInput}
                       onChange={(e) => setSubjectInput(e.target.value)}
                       onKeyDown={handleAddSubject}
                       onBlur={handleBlurSubject}
                       leftIcon={Book}
                     />
+
+                    {/* Quick selection chips for programming subjects */}
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {["C", "C++", "Python", "JavaScript", "React", "Java", "Django", "Node.js"].map((tech) => (
+                        <button
+                          key={tech}
+                          type="button"
+                          onClick={() => {
+                            if (!subjectInterests.includes(tech)) {
+                              setSubjectInterests([...subjectInterests, tech]);
+                            }
+                          }}
+                          className={`text-[11px] px-2 py-0.5 rounded-lg border transition-all cursor-pointer ${
+                            subjectInterests.includes(tech)
+                              ? "bg-violet-600 text-white border-violet-600 font-semibold"
+                              : "surface-subtle text-app-muted hover:text-app border-app hover:border-violet-400"
+                          }`}
+                        >
+                          + {tech}
+                        </button>
+                      ))}
+                    </div>
+
                     {subjectInterests.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {subjectInterests.map((subject, idx) => (
-                          <div key={subject} className="flex items-center gap-1 bg-violet-50 text-violet-700 px-3 py-1 rounded-full text-xs font-medium border border-violet-100">
+                      <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-app/50">
+                        {subjectInterests.map((subject) => (
+                          <div key={subject} className="flex items-center gap-1 bg-violet-50 text-violet-700 px-3 py-1 rounded-full text-xs font-semibold border border-violet-100">
                             {subject}
                             <button
                               type="button"
                               onClick={() => removeSubject(subject)}
-                              className="text-violet-400 hover:text-violet-600 focus:outline-none"
+                              className="text-violet-400 hover:text-violet-600 focus:outline-none cursor-pointer"
                             >
                               <X size={12} />
                             </button>
