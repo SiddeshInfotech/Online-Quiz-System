@@ -1,9 +1,10 @@
 import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles } from "lucide-react";
+import { X } from "lucide-react";
 import { useAuthModal } from "../../context/AuthModalContext";
-import DashboardPreview from "../Landing/Hero/DashboardPreview";
 import Logo from "../ui/Logo";
+
+import authImage from "../../assets/videos/authentication .png";
 
 import Login from "../../pages/auth/Login";
 import SignupForm from "./SignupForm";
@@ -33,8 +34,6 @@ const PrivacyPolicyView = ({ onBack }) => (
     <PrivacyPolicyPage />
   </div>
 );
-
-
 
 const AuthModal = () => {
   const { isOpen, view, closeModal, changeView } = useAuthModal();
@@ -95,9 +94,9 @@ const AuthModal = () => {
             onClick={closeModal}
           />
 
-          {/* Modal Container */}
+          {/* Modal Container: 50 / 50 Split */}
           <motion.div
-            className="relative w-full max-w-[1000px] max-h-[95vh] overflow-hidden rounded-2xl md:rounded-3xl shadow-2xl surface border border-app/50 flex flex-col md:flex-row bg-[var(--bg-surface)] text-[var(--text-app)]"
+            className="relative w-full max-w-[950px] max-h-[92vh] overflow-hidden rounded-2xl md:rounded-3xl shadow-2xl surface border border-app/50 flex flex-col md:flex-row bg-[var(--bg-surface)] text-[var(--text-app)]"
             initial={{ scale: 0.95, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -111,39 +110,22 @@ const AuthModal = () => {
               <X size={20} />
             </button>
 
-            {/* Left Side: Illustration / Branding */}
-            <div className="hidden md:flex flex-col justify-between w-5/12 bg-gradient-to-br from-violet-600 to-indigo-900 p-10 text-white relative overflow-hidden">
-              {/* Decorative shapes */}
-              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white/10 blur-3xl"></div>
-              <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-violet-400/20 blur-3xl"></div>
-
-              <div className="relative z-10 flex flex-col h-full">
-                <div>
-                  <Logo className="mb-10" isDarkBg={true} />
-                
-                <h2 className="text-3xl lg:text-4xl font-bold mb-4 font-space-grotesk leading-tight">
-                  Master any topic with AI quizzes.
-                </h2>
-                <p className="text-violet-200 text-sm lg:text-base">
-                  Join thousands of learners generating personalized assessments in seconds.
-                </p>
-
-                </div>
-
-                {/* Dashboard Mockup Injection */}
-                <div className="mt-8 relative -mx-4 lg:-mx-2 transform scale-[0.85] origin-top opacity-90 hover:opacity-100 transition-opacity">
-                   <DashboardPreview />
-                </div>
-              </div>
+            {/* Left Side: 50% Full-bleed Image with no text or extra overlays */}
+            <div className="hidden md:block w-1/2 relative overflow-hidden bg-slate-950 min-h-[450px]">
+              <img
+                src={authImage}
+                alt="Authentication"
+                className="w-full h-full object-cover select-none"
+              />
             </div>
 
-            {/* Mobile Header (replaces left side on small screens) */}
+            {/* Mobile Header (replaces left side image on small screens) */}
             <div className="md:hidden flex items-center gap-3 p-6 pb-0">
                <Logo isDarkBg={false} />
             </div>
 
-            {/* Right Side: Form */}
-            <div className="w-full md:w-7/12 flex-1 overflow-y-auto no-scrollbar">
+            {/* Right Side: 50% Form */}
+            <div className="w-full md:w-1/2 flex flex-col justify-center overflow-y-auto no-scrollbar">
               <div className="p-6 sm:p-8 md:p-10 min-h-full flex flex-col justify-center">
                 {renderView()}
               </div>
