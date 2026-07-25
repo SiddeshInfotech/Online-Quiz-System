@@ -133,7 +133,32 @@ const AdminDashboardPage = () => {
     data?.penalty_points_count ??
     0;
 
-  // 1. & 5. Subject Performance with Single Fallback Chain
+  // 1. & 5. Subject Performance & Distribution Normalization (Restricted to 11 valid subjects)
+  const VALID_SUBJECTS = [
+    "C", "JavaScript", "Java", "Python", "C++", "TypeScript",
+    "Rust", "Node.js", "Flask", "Django", "React"
+  ];
+
+  const normalizeSubject = (name) => {
+    if (!name) return null;
+    const n = String(name).trim().toLowerCase();
+
+    if (n === "c" || n === "c programming") return "C";
+    if (n === "javascript" || n === "js") return "JavaScript";
+    if (n === "java") return "Java";
+    if (n === "python" || n === "python programming") return "Python";
+    if (n === "c++" || n === "cpp") return "C++";
+    if (n === "typescript" || n === "ts") return "TypeScript";
+    if (n === "rust") return "Rust";
+    if (n === "node.js" || n === "node" || n === "nodejs" || n === "express.js" || n === "express") return "Node.js";
+    if (n === "flask") return "Flask";
+    if (n === "django") return "Django";
+    if (n === "react" || n === "react.js" || n === "reactjs") return "React";
+
+    const match = VALID_SUBJECTS.find((s) => s.toLowerCase() === n);
+    return match || null;
+  };
+
   const rawSubjectPerformance =
     analytics?.subject_performance ??
     analytics?.performance?.subject_performance ??
@@ -143,27 +168,32 @@ const AdminDashboardPage = () => {
     overview?.top_subjects ??
     [];
 
-  const subjectPerformance = Array.isArray(rawSubjectPerformance)
-    ? rawSubjectPerformance.map((item, i) => {
-        if (typeof item === "string") {
-          return { subject: item, attempts: 0, average_score: null };
-        }
-        const subject = item.subject || item.name || item.category || `Subject ${i + 1}`;
-        const attempts = item.attempts ?? item.count ?? item.attempts_count ?? item.total_attempts ?? 0;
-        const avgScore =
-          item.average_score ??
-          item.avg_score ??
-          item.score ??
-          item.accuracy ??
-          item.average ??
-          null;
-        return {
-          subject,
-          attempts,
-          average_score: avgScore != null && !isNaN(Number(avgScore)) ? Number(avgScore) : null,
-        };
-      })
-    : [];
+  const performanceMap = {};
+  if (Array.isArray(rawSubjectPerformance)) {
+    rawSubjectPerformance.forEach((item, i) => {
+      const rawName = typeof item === "string" ? item : item.subject || item.name || item.category || `Subject ${i + 1}`;
+      const normName = normalizeSubject(rawName);
+      if (!normName) return;
+
+      const attempts = typeof item === "object" ? (item.attempts ?? item.count ?? item.attempts_count ?? item.total_attempts ?? 0) : 0;
+      const avgScore = typeof item === "object" ? (item.average_score ?? item.avg_score ?? item.score ?? item.accuracy ?? item.average ?? null) : null;
+
+      if (!performanceMap[normName]) {
+        performanceMap[normName] = { subject: normName, attempts: 0, totalScore: 0, scoreCount: 0 };
+      }
+      performanceMap[normName].attempts += Number(attempts) || 0;
+      if (avgScore != null && !isNaN(Number(avgScore))) {
+        performanceMap[normName].totalScore += Number(avgScore);
+        performanceMap[normName].scoreCount += 1;
+      }
+    });
+  }
+
+  const subjectPerformance = Object.values(performanceMap).map((item) => ({
+    subject: item.subject,
+    attempts: item.attempts,
+    average_score: item.scoreCount > 0 ? Number((item.totalScore / item.scoreCount).toFixed(1)) : null,
+  }));
 
   // 4. Subject Distribution (separate from performance)
   const rawSubjectDistribution =
@@ -176,19 +206,30 @@ const AdminDashboardPage = () => {
     data?.subject_distribution_chart ??
     [];
 
-  const subjectDistribution = Array.isArray(rawSubjectDistribution)
-    ? rawSubjectDistribution.map((item, i) => {
-        if (typeof item === "string") return { subject: item, attempts: 0 };
-        const subject = item.subject || item.name || item.category || `Category ${i + 1}`;
-        const attempts = item.attempts ?? item.count ?? item.quizzes_count ?? item.total_quizzes ?? item.user_quizzes ?? 0;
-        return { subject, attempts };
-      })
+  const distributionMap = {};
+  const rawDistList = Array.isArray(rawSubjectDistribution)
+    ? rawSubjectDistribution
     : typeof rawSubjectDistribution === "object" && rawSubjectDistribution !== null
     ? Object.entries(rawSubjectDistribution).map(([name, val]) => ({
         subject: name,
         attempts: typeof val === "number" ? val : val?.attempts ?? val?.count ?? 0,
       }))
     : [];
+
+  rawDistList.forEach((item, i) => {
+    const rawName = typeof item === "string" ? item : item.subject || item.name || item.category || `Category ${i + 1}`;
+    const normName = normalizeSubject(rawName);
+    if (!normName) return;
+
+    const attempts = typeof item === "object" ? (item.attempts ?? item.count ?? item.quizzes_count ?? item.total_quizzes ?? item.user_quizzes ?? 0) : 0;
+
+    if (!distributionMap[normName]) {
+      distributionMap[normName] = { subject: normName, attempts: 0 };
+    }
+    distributionMap[normName].attempts += Number(attempts) || 0;
+  });
+
+  const subjectDistribution = Object.values(distributionMap);
 
   const maxAttempts = Math.max(
     ...subjectDistribution.map((item) => item.attempts),

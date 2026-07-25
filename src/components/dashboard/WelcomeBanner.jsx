@@ -11,8 +11,8 @@ const WelcomeBanner = ({ user, isNewUser }) => {
         <p className="text-xs font-semibold text-app-muted uppercase tracking-wider mb-1">
           {isNewUser ? "Welcome," : "Welcome back,"}
         </p>
-        <h2 className="text-xl sm:text-2xl font-bold font-space-grotesk text-app mb-2 flex items-center gap-1.5 min-w-0" title={displayName}>
-          <span className="truncate flex-1">{displayName}</span>
+        <h2 className="text-xl sm:text-2xl font-bold font-space-grotesk text-app mb-2 flex items-center gap-1.5 flex-wrap" title={displayName}>
+          <span>{displayName}</span>
           <span className="text-xl shrink-0">{isNewUser ? "🎉" : "👋"}</span>
         </h2>
         <p className="text-app-2 text-xs leading-relaxed line-clamp-2 my-2 font-medium">

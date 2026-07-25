@@ -7,10 +7,9 @@ import { getLanguageIcon } from "../../utils/languageIcons";
 const QuizActivityCards = ({ lastQuiz, availableQuizzesCount, isLoading }) => {
   const { icon: LangIcon, color: iconColor } = getLanguageIcon(lastQuiz?.subject);
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      
+    <div className="w-full">
       {/* Continue Last Quiz / No Quiz In Progress */}
-      <Card hover className="p-5 flex flex-col justify-between border-app">
+      <Card hover className="p-5 sm:p-6 flex flex-col justify-between border-app">
         <h3 className="font-semibold text-app-2 text-sm mb-4">Continue Last Quiz</h3>
 
         {isLoading ? (
@@ -39,7 +38,7 @@ const QuizActivityCards = ({ lastQuiz, availableQuizzesCount, isLoading }) => {
                  <LangIcon size={30} />
               </div>
               <div className="flex-1 overflow-hidden">
-                <h4 className="font-semibold text-app truncate group-hover:text-violet-700 transition-colors">{lastQuiz.title}</h4>
+                <h4 className="font-semibold text-app text-base truncate group-hover:text-violet-700 transition-colors">{lastQuiz.title}</h4>
                 <p className="text-xs text-app-muted truncate">
                   {lastQuiz.subject}{lastQuiz.classLevel ? ` • ${lastQuiz.classLevel}` : ""}
                 </p>
@@ -69,16 +68,16 @@ const QuizActivityCards = ({ lastQuiz, availableQuizzesCount, isLoading }) => {
                     remainingTime: lastQuiz.remaining_time_seconds 
                   }}
                 >
-                  <Button variant="primary" size="sm" className="px-4 text-xs h-8 hover:scale-105 transition-transform">Continue</Button>
+                  <Button variant="primary" size="sm" className="px-5 text-xs h-9 hover:scale-105 transition-transform font-semibold">Continue</Button>
                 </Link>
               ) : (
-                <Button variant="primary" size="sm" className="px-4 text-xs h-8 opacity-50 cursor-not-allowed">Continue</Button>
+                <Button variant="primary" size="sm" className="px-5 text-xs h-9 opacity-50 cursor-not-allowed font-semibold">Continue</Button>
               )}
             </div>
           </>
         ) : (
           /* Empty State */
-          <div className="flex flex-col items-center justify-center flex-1 gap-3 py-4">
+          <div className="flex flex-col items-center justify-center flex-1 gap-3 py-4 text-center">
             <div className="w-12 h-12 rounded-xl surface-subtle flex items-center justify-center text-slate-400 group-hover:bg-violet-50 group-hover:text-violet-500 transition-colors">
               <BookOpen size={22} />
             </div>
@@ -93,31 +92,6 @@ const QuizActivityCards = ({ lastQuiz, availableQuizzesCount, isLoading }) => {
           </div>
         )}
       </Card>
-
-      {/* Available Quizzes */}
-      <Card hover className="p-5 flex flex-col items-center justify-center text-center border-app">
-        <h3 className="font-semibold text-app-2 text-sm w-full text-left absolute top-5 left-5">Available Quizzes</h3>
-        {isLoading ? (
-          <div className="mt-6 flex flex-col items-center gap-2 animate-pulse">
-            <div className="w-12 h-12 rounded-2xl surface-subtle mb-1"></div>
-            <div className="h-8 w-16 surface-subtle rounded-lg"></div>
-            <div className="h-3 w-24 surface-subtle rounded mb-4"></div>
-            <div className="h-8 w-full surface-subtle rounded-lg"></div>
-          </div>
-        ) : (
-          <div className="mt-6 flex flex-col items-center gap-2">
-            <div className="w-12 h-12 rounded-2xl bg-violet-500/15 text-violet-600 dark:text-violet-400 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform border border-violet-500/30">
-              <ClipboardList size={24} />
-            </div>
-            <h2 className="text-3xl font-bold font-space-grotesk text-app">{availableQuizzesCount}</h2>
-            <p className="text-xs text-app-muted font-medium mb-4">Quizzes Available</p>
-            <Link to="/library" className="w-full">
-              <Button variant="outline" size="sm" className="w-full text-xs font-semibold surface hover:border-violet-300 hover:text-violet-700 transition-colors">Browse Library</Button>
-            </Link>
-          </div>
-        )}
-      </Card>
-
     </div>
   );
 };

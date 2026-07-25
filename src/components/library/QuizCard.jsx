@@ -138,14 +138,19 @@ const QuizCard = ({ quiz: rawQuiz, viewMode = "grid" }) => {
             </span>
           </div>
 
-          {/* Created By You Badge */}
-          {(quiz.createdByMe || rawQuiz?.created_by_me) && (
-            <div className="absolute top-3 right-3 z-10">
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-violet-600 text-white shadow-md">
-                <UserCheck size={11} /> Created by You
-              </span>
-            </div>
-          )}
+          {/* Creator Badge */}
+          <div className="absolute top-3 right-3 z-10">
+            <span
+              className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-md ${
+                rawQuiz?.is_admin_quiz || quiz.isAdminQuiz
+                  ? "bg-purple-600 text-white"
+                  : "bg-slate-800 text-slate-200 border border-slate-700"
+              }`}
+            >
+              <UserCheck size={11} />
+              {rawQuiz?.created_by_label || (rawQuiz?.is_admin_quiz ? "QuizGen AI" : "Created by You")}
+            </span>
+          </div>
         </div>
 
         {/* Content */}

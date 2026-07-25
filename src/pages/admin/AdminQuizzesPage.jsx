@@ -1156,8 +1156,17 @@ const AdminQuizzesPage = () => {
                       {/* Title & Subject */}
                       <td className="px-6 py-4">
                         <div>
-                          <div className="font-semibold text-slate-100 flex items-center gap-2">
-                            {quiz.title || quiz.quiz_title || "Untitled Quiz"}
+                          <div className="font-semibold text-slate-100 flex items-center gap-2 flex-wrap">
+                            <span>{quiz.title || quiz.quiz_title || "Untitled Quiz"}</span>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                quiz.is_admin_quiz || quiz.created_by_label === "QuizGen AI"
+                                  ? "bg-purple-600/20 text-purple-300 border-purple-500/30"
+                                  : "bg-slate-800 text-slate-400 border-slate-700"
+                              }`}
+                            >
+                              {quiz.created_by_label || (quiz.is_admin_quiz ? "QuizGen AI" : "User")}
+                            </span>
                           </div>
                           <div className="text-[11px] text-slate-400 mt-0.5">
                             {quiz.subject || quiz.category || "General"}
