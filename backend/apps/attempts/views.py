@@ -106,7 +106,7 @@ class StartAttemptView(APIView):
                     started_at=timezone.now()
                 )
 
-                questions = quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order', 'id')
+                questions = quiz.question_set.all().prefetch_related('options').order_by('question_order', 'id')
                 question_data = AttemptQuestionSerializer(questions, many=True).data
                 elapsed = (timezone.now() - attempt.started_at).total_seconds()
                 remaining = max(0, (quiz.duration_minutes * 60) - elapsed)
@@ -135,7 +135,7 @@ class StartAttemptView(APIView):
                     status=status.HTTP_201_CREATED
                 )
 
-            questions = quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order', 'id')
+            questions = quiz.question_set.all().prefetch_related('options').order_by('question_order', 'id')
             question_data = AttemptQuestionSerializer(questions, many=True).data
             elapsed = (timezone.now() - existing_attempt.started_at).total_seconds()
             remaining = max(0, (quiz.duration_minutes * 60) - elapsed)
@@ -170,7 +170,7 @@ class StartAttemptView(APIView):
             started_at=timezone.now()
         )
 
-        questions = quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order', 'id')
+        questions = quiz.question_set.all().prefetch_related('options').order_by('question_order', 'id')
         question_data = AttemptQuestionSerializer(questions, many=True).data
         elapsed = (timezone.now() - attempt.started_at).total_seconds()
         remaining = max(0, (quiz.duration_minutes * 60) - elapsed)
@@ -216,12 +216,12 @@ class SubmitAttemptView(APIView):
 
         quiz = attempt.quiz
 
-        # ✅ OPTIMIZATION 1: Fetch all questions and options in ONE query
-        questions = Question.objects.filter(quiz=quiz).prefetch_related('questionoption_set')
+        # OPTIMIZATION 1: Fetch all questions and options in ONE query
+        questions = Question.objects.filter(quiz=quiz).prefetch_related('options')
         question_map = {q.id: q for q in questions}
         option_map = {}
         for q in questions:
-            for opt in q.questionoption_set.all():
+            for opt in q.options.all():
                 option_map[opt.id] = opt
 
         # ✅ OPTIMIZATION 2: Delete old answers
@@ -279,7 +279,7 @@ class SubmitAttemptView(APIView):
                 # Fallback to option text matching if option not found by ID
                 if not option:
                     target_str = str(selected_option_val).strip().lower()
-                    for opt in question.questionoption_set.all():
+                    for opt in question.options.all():
                         if opt.option_text.strip().lower() == target_str:
                             option = opt
                             break
@@ -514,7 +514,7 @@ class AttemptDetailView(generics.RetrieveAPIView):
             for ua in user_answers
         }
 
-        questions = attempt.quiz.question_set.all().prefetch_related('questionoption_set').order_by('question_order', 'id')
+        questions = attempt.quiz.question_set.all().prefetch_related('options').order_by('question_order', 'id')
         question_data = AttemptQuestionSerializer(questions, many=True).data
 
         for q in question_data:
@@ -746,21 +746,21 @@ class AttemptReviewView(APIView):
         answer_map = {ua.question_id: ua for ua in user_answers}
 
         # Query all questions linked to attempt's quiz or user_answers
-        questions = Question.objects.filter(quiz=attempt.quiz).prefetch_related('questionoption_set').order_by('question_order', 'id')
+        questions = Question.objects.filter(quiz=attempt.quiz).prefetch_related('options').order_by('question_order', 'id')
         if not questions.exists():
-            questions = Question.objects.filter(id__in=user_answers.values_list('question_id', flat=True)).prefetch_related('questionoption_set')
+            questions = Question.objects.filter(id__in=user_answers.values_list('question_id', flat=True)).prefetch_related('options')
 
         # Build question data
         questions_data = []
         for question in questions:
             user_answer = answer_map.get(question.id)
 
-            # Option retrieval
-            if hasattr(question, '_prefetched_objects_cache') and 'questionoption_set' in question._prefetched_objects_cache:
-                options_objs = list(question._prefetched_objects_cache['questionoption_set'].all())
+            # Option retrieval using related_name 'options'
+            if hasattr(question, '_prefetched_objects_cache') and 'options' in question._prefetched_objects_cache:
+                options_objs = list(question._prefetched_objects_cache['options'].all())
                 options_objs = sorted(options_objs, key=lambda x: x.id)
             else:
-                options_objs = list(question.questionoption_set.all().order_by('id'))
+                options_objs = list(question.options.all().order_by('id'))
 
             options_list = [opt.option_text for opt in options_objs]
 
@@ -950,11 +950,11 @@ class LogViolationView(APIView):
         if attempt.tab_switch_count >= 1:
             # Auto submit!
             quiz = attempt.quiz
-            questions = Question.objects.filter(quiz=quiz).prefetch_related('questionoption_set')
+            questions = Question.objects.filter(quiz=quiz).prefetch_related('options')
             question_map = {q.id: q for q in questions}
             option_map = {}
             for q in questions:
-                for opt in q.questionoption_set.all():
+                for opt in q.options.all():
                     option_map[opt.id] = opt
 
             existing_answers = UserAnswer.objects.filter(attempt=attempt)

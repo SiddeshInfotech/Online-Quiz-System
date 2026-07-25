@@ -90,14 +90,11 @@ class AdminQuizSerializer(serializers.ModelSerializer):
         
         # Include full question objects list safely
         from apps.questions.models import Question
-        try:
-            qs = Question.objects.filter(quiz=instance).prefetch_related('options')
-        except Exception:
-            qs = Question.objects.filter(quiz=instance).prefetch_related('questionoption_set')
+        qs = Question.objects.filter(quiz=instance).prefetch_related('options')
 
         questions_list = []
         for q in qs:
-            options_qs = q.options.all() if hasattr(q, 'options') else q.questionoption_set.all()
+            options_qs = q.options.all()
             opts = [opt.option_text for opt in options_qs]
             questions_list.append({
                 "id": q.id,

@@ -64,12 +64,12 @@ class QuestionSerializer(serializers.ModelSerializer):
     def get_options(self, obj):
         if hasattr(obj, 'options') and isinstance(obj.options, list) and obj.options:
             return [clean_quiz_text(opt) for opt in obj.options if opt is not None]
-        # Prefetch-friendly: check cache to avoid N+1 queries and database roundtrips
-        if hasattr(obj, '_prefetched_objects_cache') and 'questionoption_set' in obj._prefetched_objects_cache:
-            opts = obj._prefetched_objects_cache['questionoption_set'].all()
+        # Prefetch-friendly: use related_name 'options' (set on QuestionOption.question FK)
+        if hasattr(obj, '_prefetched_objects_cache') and 'options' in obj._prefetched_objects_cache:
+            opts = obj._prefetched_objects_cache['options'].all()
             opts = sorted(opts, key=lambda x: x.id)
         else:
-            opts = obj.questionoption_set.all().order_by('id')
+            opts = obj.options.all().order_by('id')
             
         return [clean_quiz_text(opt.option_text) for opt in opts if opt.option_text is not None]
 
@@ -92,12 +92,12 @@ class AttemptQuestionSerializer(serializers.ModelSerializer):
     def get_options(self, obj):
         if hasattr(obj, 'options') and isinstance(obj.options, list) and obj.options:
             return [clean_quiz_text(opt) for opt in obj.options if opt is not None]
-        # Prefetch-friendly: check cache to avoid N+1 queries and database roundtrips
-        if hasattr(obj, '_prefetched_objects_cache') and 'questionoption_set' in obj._prefetched_objects_cache:
-            opts = obj._prefetched_objects_cache['questionoption_set'].all()
+        # Prefetch-friendly: use related_name 'options' (set on QuestionOption.question FK)
+        if hasattr(obj, '_prefetched_objects_cache') and 'options' in obj._prefetched_objects_cache:
+            opts = obj._prefetched_objects_cache['options'].all()
             opts = sorted(opts, key=lambda x: x.id)
         else:
-            opts = obj.questionoption_set.all().order_by('id')
+            opts = obj.options.all().order_by('id')
             
         return [clean_quiz_text(opt.option_text) for opt in opts if opt.option_text is not None]
 

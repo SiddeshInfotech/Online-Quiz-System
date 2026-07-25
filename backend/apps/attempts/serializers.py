@@ -34,7 +34,7 @@ class SubmitAnswerSerializer(serializers.Serializer):
         
         elif q_type == 'Fill in the Blank':
             
-            has_options = question.questionoption_set.exists()
+            has_options = question.options.exists()
             
             if has_options:
                 
