@@ -10,8 +10,6 @@ from .services.badge_progress import BadgeProgressHelper
 from rest_framework.validators import UniqueValidator
 from apps.otp.models import OTPVerification
 
-User = get_user_model()
-
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=6)
     first_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
@@ -108,8 +106,8 @@ class LoginSerializer(serializers.Serializer):
             else:
                 raise serializers.ValidationError("Invalid credentials")
 
-        data['user'] = user
-        return data
+        attrs['user'] = user
+        return attrs
 
 
 class UserSerializer(serializers.ModelSerializer):
