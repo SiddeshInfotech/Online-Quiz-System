@@ -204,7 +204,7 @@ Difficulty: {difficulty}
 Focus: {prompt_topic if prompt_topic else 'General'}
 
 CRITICAL STRICT RULES:
-1. LANGUAGE CONSISTENCY: Every code snippet MUST be written in valid {subject} syntax inside a markdown code block with tag \`\`\`{subject.lower()}. NEVER output Python code when the subject is Java, C++, or JavaScript.
+1. LANGUAGE CONSISTENCY: Every code snippet MUST be written in valid {subject} syntax inside a markdown code block with tag ```{subject.lower()}. NEVER output Python code when the subject is Java, C++, or JavaScript.
 2. OPTIONS MATCH CODE: For "Predict the output" or code logic questions, the 4 options MUST be the exact outputs or values produced by running that code snippet (e.g., "3", "5", "Error", "None"). DO NOT mix theory questions or memory sizes as options for a code execution question.
 
 TITLE GENERATION RULE:
@@ -226,7 +226,7 @@ Return ONLY valid JSON:
   "questions": [
     {{
       "question_type": "Coding",
-      "question_text": "What is the output of the following {subject} code?\\n\\n\`\`\`{subject.lower()}\\n// code snippet in {subject}\\n\`\`\`",
+      "question_text": "What is the output of the following {subject} code?\\n\\n```{subject.lower()}\\n// code snippet in {subject}\\n```",
       "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
       "correct_answer": "Option 1"
     }}
