@@ -258,10 +258,16 @@ class AdminQuizListCreateView(generics.ListCreateAPIView):
         ).order_by('-created_at')
 
     def perform_create(self, serializer):
-        """Admin-created quizzes are always curated (is_ai_generated=False) and published."""
+        """Admin-created quizzes are always curated (is_ai_generated=False) and published under official Admin user."""
         from django.core.cache import cache
+        from apps.users.models import User as UserModel
+        from django.db.models import Q
+        admin_user = UserModel.objects.filter(
+            Q(username__iexact='admin') | Q(email__iexact='admin@test.com') | Q(is_staff=True)
+        ).first() or self.request.user
+
         serializer.save(
-            created_by=self.request.user,
+            created_by=admin_user,
             is_ai_generated=False,
             is_published=True,
             status='published'

@@ -80,6 +80,28 @@ class GenerateAIQuizView(APIView):
             
         quiz_description = f"AI-generated {quiz_mode} quiz on {subject} - {difficulty} difficulty"
 
+        is_from_admin = (
+            validated_data.get('is_admin') or
+            request.data.get('is_admin') or
+            request.data.get('is_admin_quiz') or
+            request.data.get('from_admin') or
+            user.is_staff or
+            user.is_superuser or
+            getattr(user, 'role', '') == 'Admin'
+        )
+
+        from apps.users.models import User as UserModel
+        from django.db.models import Q
+        if is_from_admin:
+            admin_user = UserModel.objects.filter(
+                Q(username__iexact='admin') | Q(email__iexact='admin@test.com') | Q(is_staff=True)
+            ).first() or user
+            quiz_creator = admin_user
+            is_ai_flag = False
+        else:
+            quiz_creator = user
+            is_ai_flag = True
+
         quiz = Quiz.objects.create(
             title=quiz_title,
             description=quiz_description,
@@ -91,8 +113,8 @@ class GenerateAIQuizView(APIView):
             status='published',
             duration_minutes=num_questions * 2,
             total_marks=num_questions,
-            is_ai_generated=True,
-            created_by=user,
+            is_ai_generated=is_ai_flag,
+            created_by=quiz_creator,
             category=category
         )
 
