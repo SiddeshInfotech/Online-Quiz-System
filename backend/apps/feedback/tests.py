@@ -1,14 +1,13 @@
+from typing import Any
 from django.test import TestCase
-from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
+from apps.users.models import User
 from .models import Feedback
-
-User = get_user_model()
 
 class AdminFeedbackApiTests(TestCase):
     def setUp(self):
-        self.client = APIClient()
+        self.client: Any = APIClient()
         
         self.student = User.objects.create_user(
             username='student1',

@@ -51,9 +51,9 @@ class DashboardSummaryView(APIView):
             total_duration = quiz.duration_minutes * 60
             remaining = max(0, total_duration - elapsed)
 
-            # Get answered questions count
+            from apps.questions.models import Question
             answered_count = UserAnswer.objects.filter(attempt=in_progress_attempt).count()
-            total_questions = quiz.question_set.count()
+            total_questions = Question.objects.filter(quiz=quiz).count()
 
             # Auto-submit if expired
             if remaining <= 0:
