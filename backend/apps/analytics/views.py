@@ -209,11 +209,22 @@ class DashboardSummaryView(APIView):
             })
 
         res_data = {
+            "current_streak": current_streak,
+            "longest_streak": longest_streak,
+            "daily_streak": current_streak,
             "level": level,
             "current_level_xp": current_level_xp,
             "current_xp": current_xp,
             "next_level_xp": next_level_xp,
             "remaining_xp": remaining_xp,
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "current_streak": current_streak,
+                "longest_streak": longest_streak,
+                "level": level,
+                "xp": current_xp
+            },
             "achievements": {
                 "level": level,
                 "current_level_xp": current_level_xp,
@@ -262,7 +273,42 @@ class DashboardSummaryView(APIView):
         return Response(res_data)
 
     def _calculate_streak(self, user):
-        from django.utils import timezone
+        try:
+            today = timezone.localdate()
+            attempts = QuizAttempt.objects.filter(
+                user=user,
+                submitted_at__isnull=False
+            ).dates('submitted_at', 'day', order='DESC')
+
+            dates_set = set(attempts)
+            if not dates_set:
+                if user.current_streak != 0:
+                    user.current_streak = 0
+                    user.save(update_fields=['current_streak'])
+                return 0
+
+            streak = 0
+            check_date = today
+
+            # If no submission today, start checking from yesterday
+            if today not in dates_set:
+                check_date = today - timedelta(days=1)
+
+            while check_date in dates_set:
+                streak += 1
+                check_date -= timedelta(days=1)
+
+            longest_streak = max(getattr(user, 'longest_streak', 0) or 0, streak)
+
+            if user.current_streak != streak or user.longest_streak != longest_streak:
+                user.current_streak = streak
+                user.longest_streak = longest_streak
+                user.save(update_fields=['current_streak', 'longest_streak'])
+
+            return streak
+        except Exception as e:
+            print(f"⚠️ Error calculating streak for {user.username}: {e}")
+            return getattr(user, 'current_streak', 0) or 0
 
 
 from rest_framework import status
