@@ -840,22 +840,24 @@ class AttemptReviewView(APIView):
             elif "```" in q_text or "output" in q_lower:
                 return f"Correct! Executing the given {topic_name} code step-by-step produces '{correct_ans}'."
             return (
-                f"Correct! '{correct_ans}' is the right answer. "
-                f"Your selection demonstrates a solid understanding of {topic_name} principles."
+                f"Correct! '{correct_ans}' is indeed the right answer. "
+                f"Great job understanding this aspect of {topic_name}!"
             )
         else:
             base = f"The correct answer is '{correct_ans}'."
             if selected_ans and selected_ans not in ["None", "Unknown", None, ""]:
-                base += f" You selected '{selected_ans}'."
+                base += f" You selected '{selected_ans}'. "
+            else:
+                base += " "
 
             if "subclass" in q_lower or "keyword" in q_lower or "final" in correct_ans:
-                base += f" In {topic_name}, declaring a class with the '{correct_ans}' keyword prevents other classes from inheriting from it."
+                base += f"In {topic_name}, declaring a class with the '{correct_ans}' keyword prevents other classes from inheriting from it."
             elif "size" in q_lower or "byte" in q_lower or "bit" in q_lower or "int" in q_lower:
-                base += f" In {topic_name}, primitive integer types occupy {correct_ans} of memory."
+                base += f"In {topic_name}, primitive integer types occupy {correct_ans} of memory."
             elif "```" in q_text or "output" in q_lower or "print" in q_lower:
-                base += f" Following the execution flow of the code snippet step-by-step yields '{correct_ans}'."
+                base += f"Following the execution flow of the code snippet yields '{correct_ans}'."
             else:
-                base += f" '{correct_ans}' is the standard specification for this concept in {topic_name}."
+                base += f"This is a fundamental concept in {topic_name}."
 
             return base
 
@@ -908,7 +910,7 @@ CRITICAL RULES:
 Questions & User Attempts:
 {questions_text}
 
-Return a JSON array of exactly {len(questions_data)} explanation strings. Return ONLY valid JSON.
+Return ONLY a valid JSON object containing an "explanations" key, whose value is an array of {len(questions_data)} explanation strings in the exact order of the questions. Example: {{"explanations": ["Logical explanation for Q1...", "Logical explanation for Q2..."]}}
 """
         return prompt
 

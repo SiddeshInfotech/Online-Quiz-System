@@ -703,12 +703,13 @@ Return ONLY valid JSON.
                     "messages": [
                         {
                             "role": "system",
-                            "content": "You are an AI explanation engine. Respond with 100% valid JSON array of explanation strings only."
+                            "content": "You are an AI explanation engine. Respond ONLY with a valid JSON object containing an 'explanations' key mapped to an array of explanation strings. Example: {\"explanations\": [\"exp1\", \"exp2\"]}"
                         },
                         {"role": "user", "content": prompt}
                     ],
-                    "temperature": 0.7,
-                    "max_tokens": 800,
+                    "response_format": {"type": "json_object"},
+                    "temperature": 0.8,
+                    "max_tokens": 2000,
                 }
 
                 response = requests.post(
@@ -725,8 +726,13 @@ Return ONLY valid JSON.
                 else:
                     raise ValueError(f"{model} failed with status {response.status_code}")
 
-                # Clean and parse JSON array
-                explanations = self._parse_json_robustly(raw_text)
+                # Clean and parse JSON
+                parsed_data = self._parse_json_robustly(raw_text)
+
+                if isinstance(parsed_data, dict):
+                    explanations = parsed_data.get('explanations', [])
+                else:
+                    explanations = parsed_data
 
                 # Normalize to expected length and list type
                 if not isinstance(explanations, list):
