@@ -12,6 +12,8 @@ class QuizLibrarySerializer(serializers.ModelSerializer):
     progress_percentage = serializers.SerializerMethodField()
     total_questions = serializers.SerializerMethodField()
     created_by_me = serializers.SerializerMethodField()
+    created_by_label = serializers.SerializerMethodField()
+    is_admin_quiz = serializers.SerializerMethodField()
 
     class Meta:
         model = Quiz
@@ -19,7 +21,7 @@ class QuizLibrarySerializer(serializers.ModelSerializer):
             'id', 'title', 'description', 'subject', 'difficulty',
             'duration_minutes', 'total_questions', 'grade_level', 'status',
             'category', 'category_name', 'created_at', 'progress_percentage',
-            'created_by_me', 'max_attempts'
+            'created_by_me', 'max_attempts', 'created_by_label', 'is_admin_quiz'
         ]
 
     def get_progress_percentage(self, obj):
@@ -45,11 +47,29 @@ class QuizLibrarySerializer(serializers.ModelSerializer):
             return obj.created_by_id == request.user.id
         return False
 
+    def get_is_admin_quiz(self, obj):
+        if not obj.created_by:
+            return not obj.is_ai_generated
+        return obj.created_by.is_staff or obj.created_by.role == 'Admin' or not obj.is_ai_generated
+
+    def get_created_by_label(self, obj):
+        request = self.context.get('request')
+        user = request.user if request else None
+        if user and user.is_authenticated and obj.created_by_id == user.id:
+            return "Created by You"
+        if self.get_is_admin_quiz(obj):
+            return "QuizGen AI"
+        if obj.created_by:
+            return obj.created_by.username
+        return "QuizGen AI"
+
 class QuizSerializer(serializers.ModelSerializer):
     category_name = serializers.ReadOnlyField(source='category.category_name')
     created_by_name = serializers.ReadOnlyField(source='created_by.username')
     question_count = serializers.SerializerMethodField() 
     created_by_me = serializers.SerializerMethodField()
+    created_by_label = serializers.SerializerMethodField()
+    is_admin_quiz = serializers.SerializerMethodField()
 
     class Meta:
         model = Quiz
@@ -59,7 +79,7 @@ class QuizSerializer(serializers.ModelSerializer):
             'total_marks', 'max_attempts', 'is_ai_generated', 'join_code', 'share_link',
             'category', 'category_name', 'created_by', 'created_by_name',
             'created_at', 'updated_at', 'grade_level',
-            'question_count', 'created_by_me'
+            'question_count', 'created_by_me', 'created_by_label', 'is_admin_quiz'
         ]
         read_only_fields = ['created_by', 'created_at', 'updated_at', 'join_code', 'share_link']
 
@@ -73,3 +93,19 @@ class QuizSerializer(serializers.ModelSerializer):
         if request and request.user and request.user.is_authenticated:
             return obj.created_by_id == request.user.id
         return False
+
+    def get_is_admin_quiz(self, obj):
+        if not obj.created_by:
+            return not obj.is_ai_generated
+        return obj.created_by.is_staff or obj.created_by.role == 'Admin' or not obj.is_ai_generated
+
+    def get_created_by_label(self, obj):
+        request = self.context.get('request')
+        user = request.user if request else None
+        if user and user.is_authenticated and obj.created_by_id == user.id:
+            return "Created by You"
+        if self.get_is_admin_quiz(obj):
+            return "QuizGen AI"
+        if obj.created_by:
+            return obj.created_by.username
+        return "QuizGen AI"

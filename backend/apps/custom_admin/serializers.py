@@ -30,6 +30,8 @@ class AdminQuizSerializer(serializers.ModelSerializer):
     created_by_name = serializers.ReadOnlyField(source='created_by.username')
     question_count = serializers.SerializerMethodField()
     questions = serializers.JSONField(required=False, write_only=False)
+    created_by_label = serializers.SerializerMethodField()
+    is_admin_quiz = serializers.SerializerMethodField()
 
     class Meta:
         model = Quiz
@@ -39,9 +41,22 @@ class AdminQuizSerializer(serializers.ModelSerializer):
             'total_marks', 'is_ai_generated', 'join_code', 'share_link',
             'category', 'category_name', 'created_by', 'created_by_name',
             'created_at', 'updated_at', 'grade_level', 'is_published',
-            'max_attempts', 'question_count', 'questions'
+            'max_attempts', 'question_count', 'questions',
+            'created_by_label', 'is_admin_quiz'
         ]
         read_only_fields = ['created_by', 'created_at', 'updated_at', 'join_code', 'share_link', 'question_count']
+
+    def get_is_admin_quiz(self, obj):
+        if not obj.created_by:
+            return not obj.is_ai_generated
+        return obj.created_by.is_staff or obj.created_by.role == 'Admin' or not obj.is_ai_generated
+
+    def get_created_by_label(self, obj):
+        if self.get_is_admin_quiz(obj):
+            return "QuizGen AI"
+        if obj.created_by:
+            return obj.created_by.username
+        return "QuizGen AI"
 
     def get_question_count(self, obj):
         if hasattr(obj, 'annotated_question_count'):
