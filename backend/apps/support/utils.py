@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 def send_resolution_email(recipient_email, recipient_name, ticket_subject, original_message, reply_message=None, is_resolved=True):
     """
-    Sends an automated email notification to the user when their support ticket,
+    Sends an automated HTML resolution email to the user when their support ticket,
     bug report, or feedback is resolved or replied to by an admin.
     """
     if not recipient_email:
@@ -20,60 +20,51 @@ def send_resolution_email(recipient_email, recipient_name, ticket_subject, origi
     subject = f"[Online Quiz System] Issue {status_label}: {ticket_subject}"
 
     display_name = recipient_name or 'Valued User'
-    reply_block = ""
-    if reply_message and str(reply_message).strip():
-        reply_block = f"""
-        <div style="background-color: #EEF2FF; padding: 16px; border-left: 4px solid #4F46E5; border-radius: 6px; margin: 20px 0;">
-            <p style="margin: 0; color: #3730A3; font-weight: bold; font-size: 14px;">Admin Response / Resolution Note:</p>
-            <p style="margin: 6px 0 0 0; color: #1E1B4B; font-size: 15px; line-height: 1.5;">{reply_message}</p>
-        </div>
-        """
+    admin_reply_note = str(reply_message).strip() if (reply_message and str(reply_message).strip()) else "Your ticket has been reviewed and marked as resolved by our moderation team."
 
-    html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <style>
-        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f9fafb; margin: 0; padding: 20px; }}
-        .card {{ max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 28px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }}
-        .header {{ border-bottom: 2px solid #6366f1; padding-bottom: 12px; margin-bottom: 20px; }}
-        .header h2 {{ color: #4f46e5; margin: 0; font-size: 22px; }}
-        .content {{ color: #374151; font-size: 15px; line-height: 1.6; }}
-        .details {{ background: #f3f4f6; border-radius: 8px; padding: 16px; margin: 18px 0; }}
-        .label {{ font-size: 12px; color: #6b7280; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }}
-        .value {{ color: #111827; font-size: 14px; margin-top: 4px; margin-bottom: 12px; }}
-        .footer {{ border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 28px; font-size: 12px; color: #9ca3af; text-align: center; }}
-      </style>
-    </head>
-    <body>
-      <div class="card">
-        <div class="header">
-          <h2>Online Quiz System Support</h2>
-        </div>
-        <div class="content">
-          <p>Hello <strong>{display_name}</strong>,</p>
-          <p>Your reported support ticket / bug report has been updated to <strong style="color: #059669;">{status_label}</strong> by our Support & Moderation Team.</p>
-          
-          <div class="details">
-            <div class="label">Ticket Subject</div>
-            <div class="value">{ticket_subject}</div>
-            
-            <div class="label">Your Message</div>
-            <div class="value" style="font-style: italic;">"{original_message}"</div>
-          </div>
-          
-          {reply_block}
-          
-          <p>If your issue persists or you need additional help, feel free to contact us again on the Support page.</p>
-        </div>
-        <div class="footer">
-          <p>Online Quiz System &copy; 2026. All rights reserved.</p>
-        </div>
-      </div>
-    </body>
-    </html>
-    """
+    html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }}
+    .card {{ max-width: 600px; margin: 0 auto; background-color: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 32px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }}
+    .logo {{ text-align: center; margin-bottom: 24px; font-size: 22px; font-weight: bold; color: #a855f7; }}
+    .badge {{ display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); margin-bottom: 16px; }}
+    .greeting {{ font-size: 18px; font-weight: 600; color: #f1f5f9; margin-bottom: 12px; }}
+    .message-box {{ background-color: #090d16; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin: 16px 0; font-size: 14px; color: #cbd5e1; line-height: 1.6; }}
+    .reply-box {{ background-color: rgba(168, 85, 247, 0.1); border-left: 4px solid #a855f7; border-radius: 8px; padding: 16px; margin: 20px 0; font-size: 14px; color: #e2e8f0; line-height: 1.6; }}
+    .footer {{ text-align: center; font-size: 12px; color: #64748b; margin-top: 32px; border-top: 1px solid #334155; padding-top: 16px; }}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">⚡ Online Quiz System</div>
+    <div class="badge">✓ ISSUE {status_label}</div>
+    
+    <div class="greeting">Hello {display_name},</div>
+    <p style="color: #94a3b8; font-size: 14px;">Great news! Your support ticket/feedback has been reviewed and resolved by our administration team.</p>
+    
+    <div style="font-size: 12px; font-weight: bold; color: #94a3b8; text-transform: uppercase; margin-top: 16px;">Original Inquiry:</div>
+    <div class="message-box">
+      <strong>Subject:</strong> {ticket_subject}<br><br>
+      {original_message}
+    </div>
+    
+    <div style="font-size: 12px; font-weight: bold; color: #c084fc; text-transform: uppercase; margin-top: 16px;">Admin Resolution Note:</div>
+    <div class="reply-box">
+      {admin_reply_note}
+    </div>
+    
+    <p style="color: #94a3b8; font-size: 13px; margin-top: 20px;">If you have any further questions or if your issue persists, feel free to submit a follow-up ticket via the platform support inbox.</p>
+    
+    <div class="footer">
+      © 2026 Online Quiz System Support Team. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>
+"""
 
     print(f"[send_resolution_email] Attempting email delivery to {recipient_email} for subject '{ticket_subject}'...")
 
@@ -101,7 +92,7 @@ def send_resolution_email(recipient_email, recipient_name, ticket_subject, origi
     try:
         send_mail(
             subject=subject,
-            message=f"Hello {display_name},\n\nYour reported ticket/feedback '{ticket_subject}' has been {status_label}.\n\nReply Note: {reply_message or 'Marked as resolved.'}\n\nThank you,\nOnline Quiz Support Team",
+            message=f"Hello {display_name},\n\nYour reported ticket/feedback '{ticket_subject}' has been {status_label}.\n\nAdmin Resolution Note:\n{admin_reply_note}\n\nThank you,\nOnline Quiz Support Team",
             from_email=from_email,
             recipient_list=[recipient_email],
             fail_silently=True,
