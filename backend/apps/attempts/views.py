@@ -832,37 +832,54 @@ class AttemptReviewView(APIView):
         q_lower = q_text.lower()
         topic_name = subject if (subject and subject != "the topic") else "programming"
 
-        # Topic detection for rich multi-sentence explanations
-        if "&" in q_text or "reference" in q_lower:
-            concept = f"In {topic_name}, reference variables act as direct aliases for existing variables in memory."
-            execution = f"Modifying a reference updates the underlying variable directly, evaluating to '{correct_ans}'."
-            takeaway = "Remember that reference modifications directly affect the original target memory address."
-        elif "*" in q_text or "pointer" in q_lower or "address" in q_lower:
-            concept = f"In {topic_name}, pointers store memory addresses and dereferencing (`*ptr`) retrieves or modifies the stored value."
-            execution = f"Following the pointer dereference yields the updated value '{correct_ans}'."
-            takeaway = "Always ensure pointers are properly initialized before dereferencing to prevent memory faults."
-        elif "mutable" in q_lower or "list" in q_lower or "tuple" in q_lower:
-            concept = f"In {topic_name}, mutable data structures allow elements to be modified in-place, whereas immutable types create new objects."
-            execution = f"Evaluating the data structure's mutability rules confirms '{correct_ans}' as the correct choice."
-            takeaway = "Use immutable data types (like tuples or frozen sets) when read-only integrity is required."
-        elif "virtual" in q_lower or "override" in q_lower or "polymorphism" in q_lower:
-            concept = f"Virtual methods in {topic_name} enable dynamic runtime dispatch, ensuring the derived class override executes."
-            execution = f"Relying on polymorphic dispatch resolves the correct outcome as '{correct_ans}'."
-            takeaway = "Always declare base class destructors as virtual when working with inheritance hierarchies."
+        # Specialized concept detectors to eliminate all repetitive boilerplate:
+        if "===" in q_text or "==" in q_text or "type coercion" in q_lower:
+            detail = f"In {topic_name}, the `===` operator checks both value and data type without implicit coercion, whereas `==` converts operands before comparison."
+            why_right = f"Therefore, `{correct_ans}` is the correct choice because it preserves strict type safety."
+        elif "typeof nan" in q_lower or ("nan" in q_lower and "typeof" in q_lower):
+            detail = f"In JavaScript, `NaN` (Not-a-Number) is defined under the IEEE 754 floating-point standard as a numeric value representing an unrepresentable math result."
+            why_right = f"Evaluating `typeof NaN` returns `\"{correct_ans}\"` because `NaN` belongs to the primitive number data type."
+        elif "closure" in q_lower:
+            detail = f"A closure in {topic_name} occurs when an inner function retains access to variables declared in its outer lexical scope even after the outer function finishes executing."
+            why_right = f"`{correct_ans}` correctly defines this lexical environment scope binding."
+        elif "virtual dom" in q_lower or ("dom" in q_lower and "react" in q_lower):
+            detail = f"In React, the Virtual DOM is a lightweight in-memory tree representation of real DOM nodes used to calculate minimal re-renders during state updates."
+            why_right = f"`{correct_ans}` accurately describes this DOM reconciliation mechanism."
+        elif "list" in q_lower and "tuple" in q_lower:
+            detail = f"In Python, lists are mutable sequences whose elements can be modified in-place after creation, while tuples are immutable and fixed in length."
+            why_right = f"`{correct_ans}` correctly distinguishes between mutable lists and immutable tuples."
+        elif "malloc" in q_lower or "calloc" in q_lower or "dynamic memory" in q_lower:
+            detail = f"In {topic_name}, dynamic memory allocation on the heap is managed via standard functions like `{correct_ans}` which return raw memory address pointers."
+            why_right = f"`{correct_ans}` allocates requested memory bytes during runtime execution."
+        elif "sealed" in q_lower or "final" in q_lower or "subclass" in q_lower:
+            detail = f"In {topic_name}, applying the `{correct_ans}` keyword to a class definition explicitly prevents other classes from inheriting from it."
+            why_right = f"This enforces class hierarchy immutability and prevents method overriding."
+        elif "&" in q_text or "reference" in q_lower:
+            detail = f"In {topic_name}, reference variables act as direct memory aliases for existing variables."
+            why_right = f"Modifying a reference directly updates the original target variable, evaluating to `{correct_ans}`."
+        elif "*" in q_text or "pointer" in q_lower:
+            detail = f"In {topic_name}, pointers store raw memory addresses, and dereferencing (`*ptr`) accesses the underlying value."
+            why_right = f"Following pointer dereferencing step-by-step resolves to `{correct_ans}`."
+        elif "event loop" in q_lower or "async" in q_lower or "promise" in q_lower:
+            detail = f"In {topic_name}, non-blocking asynchronous execution is managed by the Event Loop processing task queues."
+            why_right = f"`{correct_ans}` reflects the correct execution order of non-blocking callbacks."
+        elif "modular" in q_lower or "reusability" in q_lower or "architecture" in q_lower:
+            detail = f"Software architecture in {topic_name} relies on `{correct_ans}` to ensure clean separation of concerns and maintainable codebases."
+            why_right = f"This design pattern maximizes component reusability and system scalability."
         elif "```" in q_text or "output" in q_lower or "print" in q_lower or "cout" in q_lower:
-            concept = f"Tracing the step-by-step execution flow of this {topic_name} code snippet reveals how state updates during runtime."
-            execution = f"Following variable declarations, loop iterations, and operations produces the final result '{correct_ans}'."
-            takeaway = "Trace variable modifications line-by-line to verify accurate output during code evaluation."
+            detail = f"Tracing variable assignments, arithmetic operations, and control structures in this {topic_name} snippet produces `{correct_ans}`."
+            why_right = f"Executing the instructions line-by-line leads directly to `{correct_ans}`."
         else:
-            concept = f"This question evaluates a fundamental core concept in {topic_name}."
-            execution = f"Analyzing the theoretical principles confirms '{correct_ans}' as the definitive correct answer."
-            takeaway = "Reviewing core language specifications helps solidify these essential principles."
+            q_clean = q_text.split("\n")[0][:80]
+            detail = f"For the question '{q_clean}', the correct technical principle is `{correct_ans}`."
+            why_right = f"This option accurately satisfies the core syntax and execution rules of {topic_name}."
 
         if is_correct:
-            return f"Correct! {concept} {execution} {takeaway}"
+            return f"Correct! {detail} {why_right}"
         else:
             choice_note = f"You selected '{selected_ans}'. " if selected_ans and selected_ans not in ["None", "Unknown", ""] else ""
-            return f"The correct answer is '{correct_ans}'. {choice_note}{concept} {execution}"
+            wrong_reason = f"Note that '{selected_ans}' is incorrect because it violates the language rule. " if selected_ans and selected_ans not in ["None", "Unknown", ""] else ""
+            return f"The correct answer is '{correct_ans}'. {choice_note}{detail} {wrong_reason}{why_right}"
 
     def _generate_ai_explanations(self, attempt, questions_data):
         """Generate explanations for all questions using OpenRouter."""

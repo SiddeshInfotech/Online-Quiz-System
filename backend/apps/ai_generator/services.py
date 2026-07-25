@@ -888,11 +888,12 @@ Return ONLY valid JSON.
     def generate_explanations(self, prompt, num_items):
         """
         Generate AI explanations (list of strings) using OpenRouter.
-        This is a simpler version that doesn't validate question structure.
         """
         models_to_try = [
             "google/gemini-2.0-flash-001",
+            "google/gemini-2.0-flash-lite-001",
             "meta-llama/llama-3.3-70b-instruct:free",
+            "qwen/qwen-2.5-coder-32b-instruct:free",
             "openai/gpt-4o-mini"
         ]
 
@@ -905,12 +906,19 @@ Return ONLY valid JSON.
                     "messages": [
                         {
                             "role": "system",
-                            "content": "You are an AI explanation engine. Respond ONLY with a valid JSON object containing an 'explanations' key mapped to an array of explanation strings. Example: {\"explanations\": [\"exp1\", \"exp2\"]}"
+                            "content": (
+                                "You are an expert Computer Science professor. Respond ONLY with a valid JSON object containing an 'explanations' key "
+                                "mapped to an array of concise, 2-3 sentence educational explanations for each question. "
+                                "STRICT RULES: State the exact technical principle explaining why the correct choice is right. "
+                                "If the user choice was incorrect, explain why that choice is wrong/misleading. "
+                                "NEVER output robotic phrases like 'This question evaluates a fundamental concept' or 'Analyzing the theoretical principles confirms'. "
+                                "Write natural, direct technical explanations! Example: {\"explanations\": [\"In JavaScript, typeof NaN returns 'number' because NaN is defined under IEEE 754 as a numeric value.\"]}"
+                            )
                         },
                         {"role": "user", "content": prompt}
                     ],
                     "response_format": {"type": "json_object"},
-                    "temperature": 0.8,
+                    "temperature": 0.7,
                     "max_tokens": 2000,
                 }
 
@@ -918,7 +926,7 @@ Return ONLY valid JSON.
                     self.api_url,
                     headers=self.headers,
                     json=payload,
-                    timeout=25,
+                    timeout=15,
                     stream=False
                 )
 
@@ -942,7 +950,7 @@ Return ONLY valid JSON.
 
                 if len(explanations) < num_items:
                     while len(explanations) < num_items:
-                        explanations.append("No explanation available.")
+                        explanations.append("")
                 elif len(explanations) > num_items:
                     explanations = explanations[:num_items]
 
@@ -950,6 +958,5 @@ Return ONLY valid JSON.
 
             except Exception as e:
                 last_error = f"{model} error: {str(e)}"
-                print(f"Warning: {last_error}, trying next model...")
 
         raise ValueError(f"All AI models failed. Last error: {last_error}")
