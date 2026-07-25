@@ -213,3 +213,12 @@ button {
   opacity: 1;
   transform: translateZ(0) scale(1);
 }
+
+/* Utility to hide scrollbars while maintaining scroll functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

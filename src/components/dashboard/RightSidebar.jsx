@@ -21,20 +21,20 @@ const getNotificationIcon = (type) => {
 
 export const TopNotificationsPanel = ({ notifications = [] }) => {
   return (
-    <Card className="p-5 flex flex-col justify-between h-full">
+    <Card className="p-5 flex flex-col justify-between h-full border-app">
       <div className="flex items-center justify-between mb-3 border-b border-app/60 pb-2.5">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-slate-800 text-violet-400 shrink-0">
+          <div className="p-1.5 rounded-lg bg-violet-500/15 text-violet-600 dark:text-violet-400 shrink-0">
             <Bell size={16} />
           </div>
           <h3 className="font-bold text-app font-space-grotesk text-sm">Notifications</h3>
         </div>
-        <span className="text-xs font-bold text-violet-400 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded-full">
+        <span className="text-xs font-bold text-violet-600 dark:text-violet-400 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded-full">
           {notifications.length}
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto max-h-[220px] pr-1 space-y-2.5 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto max-h-[220px] pr-1 space-y-2.5 no-scrollbar">
         {notifications.length > 0 ? (
           notifications.map((notif) => {
             const isPinned = notif.id === "profile_completion_reminder" || notif.time === "Pinned";
@@ -50,7 +50,7 @@ export const TopNotificationsPanel = ({ notifications = [] }) => {
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-violet-600 text-white">
                       <Pin size={9} className="rotate-45" /> Pinned
                     </span>
-                    <span className="text-[10px] font-bold text-violet-400">Action Needed</span>
+                    <span className="text-[10px] font-bold text-violet-600 dark:text-violet-400">Action Needed</span>
                   </div>
 
                   <div className="flex items-start gap-2 mt-1">
@@ -66,7 +66,7 @@ export const TopNotificationsPanel = ({ notifications = [] }) => {
                       </p>
                       <Link
                         to={notif.actionUrl || "/profile"}
-                        className="inline-flex items-center gap-1 text-[11px] font-bold text-violet-400 hover:text-violet-300 mt-1.5 group"
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 mt-1.5 group"
                       >
                         <span>Complete Profile</span>
                         <ArrowRight size={11} className="transition-transform group-hover:translate-x-1" />

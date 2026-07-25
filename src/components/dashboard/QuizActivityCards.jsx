@@ -95,24 +95,24 @@ const QuizActivityCards = ({ lastQuiz, availableQuizzesCount, isLoading }) => {
       </Card>
 
       {/* Available Quizzes */}
-      <Card hover className="p-5 flex flex-col items-center justify-center text-center">
+      <Card hover className="p-5 flex flex-col items-center justify-center text-center border-app">
         <h3 className="font-semibold text-app-2 text-sm w-full text-left absolute top-5 left-5">Available Quizzes</h3>
         {isLoading ? (
           <div className="mt-6 flex flex-col items-center gap-2 animate-pulse">
-            <div className="w-12 h-12 rounded-2xl bg-slate-200 mb-1"></div>
-            <div className="h-8 w-16 bg-slate-200 rounded-lg"></div>
-            <div className="h-3 w-24 bg-slate-200 rounded mb-4"></div>
-            <div className="h-8 w-full bg-slate-200 rounded-lg"></div>
+            <div className="w-12 h-12 rounded-2xl surface-subtle mb-1"></div>
+            <div className="h-8 w-16 surface-subtle rounded-lg"></div>
+            <div className="h-3 w-24 surface-subtle rounded mb-4"></div>
+            <div className="h-8 w-full surface-subtle rounded-lg"></div>
           </div>
         ) : (
           <div className="mt-6 flex flex-col items-center gap-2">
-            <div className="w-12 h-12 rounded-2xl bg-violet-100 text-violet-600 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 rounded-2xl bg-violet-500/15 text-violet-600 dark:text-violet-400 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform border border-violet-500/30">
               <ClipboardList size={24} />
             </div>
             <h2 className="text-3xl font-bold font-space-grotesk text-app">{availableQuizzesCount}</h2>
             <p className="text-xs text-app-muted font-medium mb-4">Quizzes Available</p>
             <Link to="/library" className="w-full">
-              <Button variant="outline" size="sm" className="w-full text-xs font-semibold bg-white hover:border-violet-300 hover:text-violet-700 transition-colors">Browse Library</Button>
+              <Button variant="outline" size="sm" className="w-full text-xs font-semibold surface hover:border-violet-300 hover:text-violet-700 transition-colors">Browse Library</Button>
             </Link>
           </div>
         )}

@@ -36,10 +36,10 @@ export const DailyStreakCard = ({ user }) => {
               className={`w-4 h-4 rounded-full transition-all duration-300 ${
                 activeDays[idx]
                   ? "bg-violet-600 shadow-md shadow-violet-600/40 ring-2 ring-violet-500/30 scale-105"
-                  : "bg-[var(--bg-elevated)] border border-slate-700/50"
+                  : "bg-[var(--bg-elevated)] border border-app"
               }`} 
             />
-            <span className={`text-xs font-bold ${activeDays[idx] ? 'text-violet-400' : 'text-app-muted'}`}>
+            <span className={`text-xs font-bold ${activeDays[idx] ? 'text-violet-600 dark:text-violet-400' : 'text-app-muted'}`}>
               {day}
             </span>
           </div>
@@ -55,10 +55,10 @@ export const OverallProgressCard = ({ user }) => {
   const total = user?.totalQuizzes ?? 0;
 
   return (
-    <Card hover className="p-5 sm:p-6 flex flex-col justify-between items-center text-center h-full">
+    <Card hover className="p-5 sm:p-6 flex flex-col justify-between items-center text-center h-full border-app">
       <div className="flex items-center justify-between w-full mb-1">
         <div className="flex items-center gap-2">
-          <div className="p-2 rounded-xl bg-violet-500/15 border border-violet-500/30 text-violet-400 shrink-0">
+          <div className="p-2 rounded-xl bg-violet-500/15 border border-violet-500/30 text-violet-600 dark:text-violet-400 shrink-0">
             <Target size={18} />
           </div>
           <h3 className="font-bold text-app-2 text-sm font-space-grotesk text-left">Overall Progress</h3>
@@ -102,7 +102,7 @@ export const OverallProgressCard = ({ user }) => {
           </p>
         ) : (
           <p className="text-sm font-semibold text-app-2">
-            <span className="text-violet-400 font-bold">{completed}</span> of {total} quizzes
+            <span className="text-violet-600 dark:text-violet-400 font-bold">{completed}</span> of {total} quizzes
           </p>
         )}
       </div>
