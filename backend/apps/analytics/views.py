@@ -149,25 +149,58 @@ class DashboardSummaryView(APIView):
         correct_answers = user_answers_stats['correct_answers'] or 0
         accuracy = round((correct_answers / total_answered * 100), 2) if total_answered > 0 else 0
 
-        # ✅ OPTIMIZATION: Fetch and construct weekly scores chart in-memory with a single query
-        week_ago = timezone.now() - timedelta(days=7)
-        weekly_attempts_list = list(completed_attempts.filter(submitted_at__gte=week_ago).values('submitted_at', 'percentage'))
-        
-        # Initialize scores buckets for the last 7 days
-        day_scores = { (timezone.now().date() - timedelta(days=i)): [] for i in range(7) }
-        for att in weekly_attempts_list:
-            dt_local = timezone.localdate(att['submitted_at'])
-            if dt_local in day_scores:
-                day_scores[dt_local].append(float(att['percentage']))
-        
-        weekly_data = []
-        for i in range(6, -1, -1):
-            day = timezone.now().date() - timedelta(days=i)
-            percentages = day_scores.get(day, [])
-            day_avg = sum(percentages) / len(percentages) if percentages else 0
-            weekly_data.append({
-                "day": day.strftime("%a"),
-                "score": round(day_avg, 1)
+        # Calculate current week bounds (Sun - Sat)
+        now_dt = timezone.now()
+        today_date = timezone.localdate(now_dt)
+
+        # Sunday as start of week (0=Sunday, 1=Monday ... 6=Saturday)
+        # Python weekday: Mon=0, Tue=1, Wed=2, Thu=3, Fri=4, Sat=5, Sun=6
+        idx_sun = (today_date.weekday() + 1) % 7
+        start_of_week_date = today_date - timedelta(days=idx_sun)
+        start_of_week_dt = timezone.make_aware(datetime.combine(start_of_week_date, datetime.min.time()))
+
+        # Filter attempts completed in current week
+        weekly_attempts_qs = completed_attempts.filter(submitted_at__gte=start_of_week_dt)
+        if not weekly_attempts_qs.exists():
+            # Fallback to last 7 days window if no attempts in current calendar week
+            seven_days_ago = now_dt - timedelta(days=7)
+            weekly_attempts_qs = completed_attempts.filter(submitted_at__gte=seven_days_ago)
+
+        weekly_quizzes_attempted = weekly_attempts_qs.count()
+        weekly_avg_score = round(float(weekly_attempts_qs.aggregate(avg=Avg('percentage'))['avg'] or 0), 1)
+
+        # Time spent in current week formatted (e.g. 1h 45m or 45m)
+        weekly_time_sec = weekly_attempts_qs.aggregate(tot=Sum('time_spent_seconds'))['tot'] or 0
+        w_hours = weekly_time_sec // 3600
+        w_mins = (weekly_time_sec % 3600) // 60
+        time_spent_formatted = f"{w_hours}h {w_mins}m" if w_hours > 0 else f"{w_mins}m"
+
+        # Accuracy in current week
+        weekly_answers_stats = UserAnswer.objects.filter(attempt__in=weekly_attempts_qs).aggregate(
+            total_answered=Count('id', filter=~Q(selected_option_id__isnull=True)),
+            correct_answers=Count('id', filter=Q(is_correct=True))
+        )
+        w_total_ans = weekly_answers_stats['total_answered'] or 0
+        w_correct_ans = weekly_answers_stats['correct_answers'] or 0
+        weekly_accuracy = round((w_correct_ans / w_total_ans * 100), 1) if w_total_ans > 0 else 0
+
+        # Construct Sun - Sat 7-day chart array
+        day_names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+        day_scores_map = { d: [] for d in range(7) }
+
+        all_weekly_attempts = list(weekly_attempts_qs.values('submitted_at', 'percentage'))
+        for att in all_weekly_attempts:
+            local_d = timezone.localdate(att['submitted_at'])
+            d_idx = (local_d.weekday() + 1) % 7
+            day_scores_map[d_idx].append(float(att['percentage']))
+
+        weekly_activity = []
+        for d_idx in range(7):
+            scores = day_scores_map[d_idx]
+            d_avg = round(sum(scores) / len(scores), 1) if scores else 0
+            weekly_activity.append({
+                "day": day_names[d_idx],
+                "score": d_avg
             })
 
         quick_actions = {
@@ -222,6 +255,14 @@ class DashboardSummaryView(APIView):
             "current_xp": current_xp,
             "next_level_xp": next_level_xp,
             "remaining_xp": remaining_xp,
+            "quizzes_attempted": weekly_quizzes_attempted,
+            "average_score": weekly_avg_score,
+            "accuracy": weekly_accuracy,
+            "time_spent": time_spent_formatted,
+            "time_spent_formatted": time_spent_formatted,
+            "weekly_activity": weekly_activity,
+            "chart_data": weekly_activity,
+            "weekly_data": weekly_activity,
             "recent_attempts": recent_attempts_data,
             "recent_quiz_attempts": recent_attempts_data,
             "recentQuizAttempts": recent_attempts_data,
@@ -267,14 +308,26 @@ class DashboardSummaryView(APIView):
             "subject_performance": subject_performance,
             "performance": {
                 "quizzes_completed": quizzes_completed,
-                "quizzes_attempted": total_attempts,
+                "quizzes_attempted": weekly_quizzes_attempted,
                 "total_attempts": total_attempts,
-                "average_score": round(avg_score, 2),
-                "accuracy": accuracy,
+                "average_score": weekly_avg_score,
+                "accuracy": weekly_accuracy,
+                "time_spent": time_spent_formatted,
+                "time_spent_formatted": time_spent_formatted,
                 "total_time_spent_seconds": total_time_spent,
-                "weekly_data": weekly_data,
+                "weekly_activity": weekly_activity,
+                "chart_data": weekly_activity,
+                "weekly_data": weekly_activity,
                 "subject_performance": subject_performance,
                 "recent_attempts": recent_attempts_data
+            },
+            "stats": {
+                "quizzes_attempted": weekly_quizzes_attempted,
+                "average_score": weekly_avg_score,
+                "accuracy": weekly_accuracy,
+                "time_spent": time_spent_formatted,
+                "weekly_activity": weekly_activity,
+                "chart_data": weekly_activity
             },
             "quick_actions": quick_actions
         }

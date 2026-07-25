@@ -43,6 +43,7 @@ urlpatterns = [
     path('api/attempts/', include('apps.attempts.urls')),
     path('api/leaderboard/', include('apps.leaderboard.urls')),
     path('api/notifications/', include('apps.notifications.urls')),
+    path('api/dashboard/', include('apps.analytics.urls')),
     path('api/analytics/', include('apps.analytics.urls')),
     path('api/otp/', include('apps.otp.urls')),
     path('api/ai/', include('apps.ai_generator.urls')),
