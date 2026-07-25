@@ -57,10 +57,10 @@ class LoginSerializer(serializers.Serializer):
     username = serializers.CharField(required=False, allow_blank=True)
     password = serializers.CharField(write_only=True)
 
-    def validate(self, data):
-        email = data.get('email')
-        username = data.get('username')
-        password = data.get('password')
+    def validate(self, attrs):
+        email = attrs.get('email')
+        username = attrs.get('username')
+        password = attrs.get('password')
 
         login_id = email or username
         if not login_id:
@@ -236,8 +236,8 @@ class GoogleAuthSerializer(serializers.Serializer):
     token = serializers.CharField(required=False, allow_blank=True)
     credential = serializers.CharField(required=False, allow_blank=True)
 
-    def validate(self, data):
-        token = data.get('id_token') or data.get('access_token') or data.get('token') or data.get('credential')
+    def validate(self, attrs):
+        token = attrs.get('id_token') or attrs.get('access_token') or attrs.get('token') or attrs.get('credential')
         if not token:
             raise serializers.ValidationError("Google token is required (id_token, access_token, or credential)")
 
@@ -277,7 +277,7 @@ class GoogleAuthSerializer(serializers.Serializer):
                     OTPVerification.objects.filter(user=user, purpose='Email Verification').delete()
 
                 self.context['user'] = user
-                return data
+                return attrs
 
             # ✅ Create new user with auto-verification
             user = User.objects.create(
@@ -294,7 +294,7 @@ class GoogleAuthSerializer(serializers.Serializer):
             OTPVerification.objects.filter(user=user, purpose='Email Verification').delete()
 
             self.context['user'] = user
-            return data
+            return attrs
 
         except ValueError as e:
             raise serializers.ValidationError(f"Invalid Google token: {str(e)}")
@@ -381,7 +381,7 @@ class UserBadgeSerializer(serializers.ModelSerializer):
         if target is None:
             return 1
         try:
-            return int(target)
+            return target if isinstance(target, int) else int(target)
         except (ValueError, TypeError):
             return 1
 
@@ -391,7 +391,7 @@ class UserBadgeSerializer(serializers.ModelSerializer):
         if not target or target <= 0:
             return 100.0 if current > 0 else 0.0
         pct = (current / target) * 100.0
-        return min(100.0, round(float(pct), 2))
+        return min(100.0, round(pct, 2))
 
     def get_progress(self, obj):
         return self.get_current_progress(obj)
