@@ -84,6 +84,13 @@ class GlobalLeaderboardView(APIView):
 
     def get(self, request):
         from django.core.cache import cache
+        from apps.users.services.points_service import recalculate_user_points_and_stats
+
+        # Self-healing check: If current user has completed attempts but total_points is 0, recalculate!
+        if request.user.is_authenticated and request.user.total_points == 0:
+            if QuizAttempt.objects.filter(user=request.user, submitted_at__isnull=False).exists():
+                recalculate_user_points_and_stats(request.user)
+                cache.delete("leaderboard_all_rankings")
 
         all_rankings = cache.get("leaderboard_all_rankings")
         if not all_rankings:

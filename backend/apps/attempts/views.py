@@ -363,6 +363,10 @@ class SubmitAttemptView(APIView):
                 },
             )
 
+        # Automatically recalculate user total_points, quizzes_completed, and flush leaderboard cache
+        from apps.users.services.points_service import recalculate_user_points_and_stats
+        recalculate_user_points_and_stats(request.user)
+
         # Invalidate user dashboard summary cache so recent attempts update immediately
         from django.core.cache import cache
         cache.delete(f"dashboard_summary_{request.user.id}")
