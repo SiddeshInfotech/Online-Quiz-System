@@ -156,7 +156,9 @@ const AdminQuizzesPage = () => {
       setErrorStatus(status);
 
       let msg = "Failed to fetch quiz list.";
-      if (status === 403) {
+      if (err.code === "ECONNABORTED" || err.message?.includes("timeout")) {
+        msg = "Request timed out while loading quizzes. The backend server might be spinning up or responding slowly — please click retry.";
+      } else if (status === 403) {
         msg = "You don't have permission to perform this action.";
       } else if (status === 404) {
         msg = "Quiz endpoint not found.";

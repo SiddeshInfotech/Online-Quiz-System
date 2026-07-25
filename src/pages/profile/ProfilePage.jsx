@@ -152,6 +152,7 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
 
   const [form, setForm] = useState({
     full_name: profile?.full_name ?? "",
+    username: profile?.username ?? "",
     bio: profile?.bio ?? "",
     school: profile?.school ?? "",
     grade: profile?.grade ?? "",
@@ -215,6 +216,10 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
       setFieldError("Full name is required.");
       return;
     }
+    if (!form.username.trim()) {
+      setFieldError("Username is required.");
+      return;
+    }
 
     let currentSubjects = [...subjectInterests];
     const pendingSubject = subjectInput.trim();
@@ -224,6 +229,8 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
       setSubjectInput("");
     }
 
+    const cleanUsername = form.username.trim();
+
     setSaving(true);
     try {
       let payload;
@@ -231,7 +238,7 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
 
       if (profilePicture) {
         payload = new FormData();
-        if (profile?.username) payload.append("username", profile.username);
+        payload.append("username", cleanUsername);
         if (profile?.email) payload.append("email", profile.email);
         payload.append("full_name", form.full_name.trim());
         payload.append("bio", form.bio.trim());
@@ -243,7 +250,7 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
         isFormData = true;
       } else {
         payload = {
-          ...(profile?.username ? { username: profile.username } : {}),
+          username: cleanUsername,
           ...(profile?.email ? { email: profile.email } : {}),
           full_name: form.full_name.trim(),
           bio: form.bio.trim(),
@@ -261,7 +268,7 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
             console.warn("Multipart upload failed, attempting Base64 fallback...");
             const base64Image = await fileToBase64(profilePicture);
             const base64Payload = {
-              ...(profile?.username ? { username: profile.username } : {}),
+              username: cleanUsername,
               ...(profile?.email ? { email: profile.email } : {}),
               full_name: form.full_name.trim(),
               bio: form.bio.trim(),
@@ -485,12 +492,11 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
             <Input
               label="Username"
               name="username"
-              value={profile?.username ?? ""}
+              placeholder="Choose your username"
+              value={form.username}
+              onChange={handleChange}
               leftIcon={AtSign}
-              readOnly
-              disabled
-              helperText="Username cannot be changed."
-              className="surface-subtle text-app-muted cursor-not-allowed"
+              helperText="Letters, numbers, and @/./+/-/_ characters allowed."
             />
 
             <Input
