@@ -274,6 +274,16 @@ class AdminQuizDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = AdminQuizSerializer
     permission_classes = [IsCustomAdmin]
 
+    def perform_update(self, serializer):
+        from django.core.cache import cache
+        serializer.save()
+        cache.delete("admin_analytics_summary")
+
+    def perform_destroy(self, instance):
+        from django.core.cache import cache
+        instance.delete()
+        cache.delete("admin_analytics_summary")
+
 class AdminQuizToggleVisibilityView(APIView):
     permission_classes = [IsCustomAdmin]
 
@@ -284,6 +294,8 @@ class AdminQuizToggleVisibilityView(APIView):
         else:
             quiz.is_published = not quiz.is_published
         quiz.save()
+        from django.core.cache import cache
+        cache.delete("admin_analytics_summary")
         return Response({
             "id": quiz.id,
             "title": quiz.title,

@@ -804,6 +804,9 @@ class AllBadgesView(APIView):
         
         cache_key = f"badges_all_{user.id}"
         cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return Response(cached_data)
+
         progress_cache_key = f"badge_progress_{user.id}"
         progress_cached = cache.get(progress_cache_key)
         if not progress_cached:
@@ -917,6 +920,7 @@ class ClaimBadgeView(APIView):
             cache.delete(f"badges_all_{user.id}")
             cache.delete(f"user_badges_{user.id}")
             cache.delete(f"badge_count_{user.id}")
+            cache.delete(f"dashboard_summary_{user.id}")
             BadgeProgressHelper.clear_progress_cache(user)
 
             try:
