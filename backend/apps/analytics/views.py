@@ -159,12 +159,8 @@ class DashboardSummaryView(APIView):
         start_of_week_date = today_date - timedelta(days=idx_sun)
         start_of_week_dt = timezone.make_aware(datetime.combine(start_of_week_date, datetime.min.time()))
 
-        # Filter attempts completed in current week
+        # Filter attempts completed in current week (Sun - Sat)
         weekly_attempts_qs = completed_attempts.filter(submitted_at__gte=start_of_week_dt)
-        if not weekly_attempts_qs.exists():
-            # Fallback to last 7 days window if no attempts in current calendar week
-            seven_days_ago = now_dt - timedelta(days=7)
-            weekly_attempts_qs = completed_attempts.filter(submitted_at__gte=seven_days_ago)
 
         weekly_quizzes_attempted = weekly_attempts_qs.count()
         weekly_avg_score = round(float(weekly_attempts_qs.aggregate(avg=Avg('percentage'))['avg'] or 0), 1)
@@ -327,7 +323,8 @@ class DashboardSummaryView(APIView):
                 "accuracy": weekly_accuracy,
                 "time_spent": time_spent_formatted,
                 "weekly_activity": weekly_activity,
-                "chart_data": weekly_activity
+                "chart_data": weekly_activity,
+                "recent_attempts": recent_attempts_data
             },
             "quick_actions": quick_actions
         }
