@@ -278,14 +278,15 @@ class DashboardSummaryView(APIView):
             attempts = QuizAttempt.objects.filter(
                 user=user,
                 submitted_at__isnull=False
-            ).dates('submitted_at', 'day', order='DESC')
+            ).values_list('submitted_at', flat=True)
 
-            dates_set = set(attempts)
-            if not dates_set:
+            if not attempts:
                 if user.current_streak != 0:
                     user.current_streak = 0
                     user.save(update_fields=['current_streak'])
                 return 0
+
+            dates_set = {timezone.localtime(dt).date() for dt in attempts}
 
             streak = 0
             check_date = today
@@ -293,6 +294,13 @@ class DashboardSummaryView(APIView):
             # If no submission today, start checking from yesterday
             if today not in dates_set:
                 check_date = today - timedelta(days=1)
+
+            # If yesterday ALSO had no submission, the streak is broken (0)
+            if check_date not in dates_set:
+                if user.current_streak != 0:
+                    user.current_streak = 0
+                    user.save(update_fields=['current_streak'])
+                return 0
 
             while check_date in dates_set:
                 streak += 1

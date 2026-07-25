@@ -45,8 +45,14 @@ class AdminAnalyticsView(APIView):
         total_users = User.objects.count()
 
         # 2. Total actual quizzes created by admins vs students
-        admin_quizzes = Quiz.objects.filter(Q(created_by__is_staff=True) | Q(created_by__role='Admin')).count()
-        user_quizzes = Quiz.objects.filter(created_by__is_staff=False, created_by__role='Student').count()
+        admin_quizzes = Quiz.objects.filter(
+            Q(created_by__is_staff=True) | Q(created_by__role='Admin') | Q(is_ai_generated=False)
+        ).count()
+        user_quizzes = Quiz.objects.filter(
+            is_ai_generated=True
+        ).exclude(
+            Q(created_by__is_staff=True) | Q(created_by__role='Admin')
+        ).count()
 
         # 3. Total actual attempts taken by real students in DB
         total_attempts = QuizAttempt.objects.count()

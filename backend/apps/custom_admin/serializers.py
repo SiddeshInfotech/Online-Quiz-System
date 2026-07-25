@@ -52,12 +52,15 @@ class AdminQuizSerializer(serializers.ModelSerializer):
         data = data.copy() if hasattr(data, 'copy') else dict(data)
         if 'time_limit' in data and 'duration_minutes' not in data:
             data['duration_minutes'] = data['time_limit']
-        if 'quiz_type' in data and 'question_type' not in data:
-            data['question_type'] = data['quiz_type']
+        
+        quiz_t = data.get('quiz_type') or data.get('question_type')
+        if str(quiz_t).strip().lower() == 'coding':
+            data['question_type'] = 'Coding'
+        else:
+            data['question_type'] = 'MCQ'
+
         if 'duration_minutes' not in data:
             data['duration_minutes'] = 30
-        if 'question_type' not in data:
-            data['question_type'] = 'MCQ'
         if 'category' not in data or not data['category']:
             from apps.quizzes.models import QuizCategory
             cat_name = data.get('subject', 'General')
