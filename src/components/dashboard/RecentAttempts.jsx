@@ -47,16 +47,21 @@ const RecentAttempts = ({ attempts, isLoading }) => {
         <div className="flex flex-col gap-4 flex-1 mt-2">
           {attempts.map((attempt) => {
             const { icon: Icon, bg } = getIconConfig(attempt);
+            const targetId = attempt.id ?? attempt.attempt_id ?? attempt.quiz_id;
 
             return (
-              <div key={attempt.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-[var(--bg-elevated)] transition-all duration-300 border border-transparent hover:border-app group cursor-pointer hover:shadow-sm">
+              <Link
+                key={attempt.id || targetId}
+                to={`/results/${targetId}`}
+                className="flex items-center justify-between p-3 rounded-xl hover:bg-[var(--bg-elevated)] transition-all duration-300 border border-transparent hover:border-app group cursor-pointer hover:shadow-sm"
+              >
                 <div className="flex items-center gap-4">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${bg} group-hover:scale-110 transition-transform duration-300`}>
                     <Icon size={20} />
                   </div>
                   <div>
                     <h4 className="font-semibold text-sm text-app group-hover:text-violet-700 transition-colors">{attempt.title}</h4>
-                    <p className="text-xs text-app-muted mt-0.5">{attempt.subject} • {attempt.classLevel}</p>
+                    <p className="text-xs text-app-muted mt-0.5">{attempt.subject}{attempt.classLevel ? ` • ${attempt.classLevel}` : ""}</p>
                   </div>
                 </div>
 
@@ -66,7 +71,7 @@ const RecentAttempts = ({ attempts, isLoading }) => {
                   </span>
                   <span className="text-[10px] text-app-muted font-medium">{attempt.date}</span>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>

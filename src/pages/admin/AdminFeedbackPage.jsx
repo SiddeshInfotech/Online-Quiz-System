@@ -183,6 +183,16 @@ const AdminFeedbackPage = () => {
     setToast({ message, type });
   }, []);
 
+  // Lock background scroll when any modal/drawer is open
+  useEffect(() => {
+    if (selectedFeedback || editingFeedback || deleteTarget) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [selectedFeedback, editingFeedback, deleteTarget]);
+
   // Section 12: Backend Error Handling Helper
   const handleApiError = useCallback((err, fallbackMsg = "An error occurred.") => {
     let msg = fallbackMsg;

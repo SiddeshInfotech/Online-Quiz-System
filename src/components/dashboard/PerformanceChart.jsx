@@ -1,4 +1,4 @@
-import { ChevronDown, BarChart2, Activity } from "lucide-react";
+import { Target, Award, Zap, Clock, BarChart2, Activity } from "lucide-react";
 import Card from "../ui/Card/Card";
 import Button from "../ui/Button/Button";
 import { Link } from "react-router-dom";
@@ -9,38 +9,73 @@ const PerformanceChart = ({ stats, chartData, isLoading }) => {
   return (
     <Card className="p-6 flex flex-col h-full">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="font-semibold text-app-2 text-sm">Performance Overview</h3>
-        <button className="flex items-center gap-1 text-xs font-medium text-app-muted hover:text-app-2 surface-subtle px-2.5 py-1.5 rounded-lg border border-app transition-colors">
-          This Week <ChevronDown size={14} />
-        </button>
+        <h3 className="font-semibold text-app-2 text-sm font-space-grotesk">Performance Overview</h3>
+        <span className="text-xs font-semibold text-violet-600 dark:text-violet-400 surface-subtle px-3 py-1 rounded-lg border border-violet-500/20">
+          This Week
+        </span>
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="animate-pulse">
-              <div className="h-3 w-16 surface-subtle rounded mb-2"></div>
-              <div className="h-6 w-12 surface-subtle rounded"></div>
+            <div key={i} className="animate-pulse p-4 surface-subtle rounded-2xl border border-app">
+              <div className="h-3 w-20 surface-subtle rounded mb-3"></div>
+              <div className="h-8 w-16 surface-subtle rounded"></div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-4 gap-4 mb-8">
-          <div>
-            <p className="text-[10px] text-app-muted font-medium mb-1">Quizzes Attempted</p>
-            <p className="text-xl font-bold font-space-grotesk text-app">{stats?.quizzesAttempted ?? 0}</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+          {/* Quizzes Attempted */}
+          <div className="surface-subtle border border-app rounded-2xl p-4 flex flex-col justify-between shadow-sm transition-all hover:border-violet-500/30">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-bold text-app-muted uppercase tracking-wider">Attempted</span>
+              <div className="p-2 rounded-xl bg-violet-500/15 text-violet-600 dark:text-violet-400 border border-violet-500/20 shrink-0">
+                <Target size={16} />
+              </div>
+            </div>
+            <p className="text-2xl sm:text-3xl font-extrabold font-space-grotesk text-app mt-1">
+              {stats?.quizzesAttempted ?? 0}
+            </p>
           </div>
-          <div>
-            <p className="text-[10px] text-app-muted font-medium mb-1">Average Score</p>
-            <p className="text-xl font-bold font-space-grotesk text-app">{stats?.averageScore ?? 0}%</p>
+
+          {/* Average Score */}
+          <div className="surface-subtle border border-app rounded-2xl p-4 flex flex-col justify-between shadow-sm transition-all hover:border-emerald-500/30">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-bold text-app-muted uppercase tracking-wider">Avg Score</span>
+              <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
+                <Award size={16} />
+              </div>
+            </div>
+            <p className="text-2xl sm:text-3xl font-extrabold font-space-grotesk text-app mt-1">
+              {stats?.averageScore ?? 0}%
+            </p>
           </div>
-          <div>
-            <p className="text-[10px] text-app-muted font-medium mb-1">Accuracy</p>
-            <p className="text-xl font-bold font-space-grotesk text-app">{stats?.accuracy ?? 0}%</p>
+
+          {/* Accuracy */}
+          <div className="surface-subtle border border-app rounded-2xl p-4 flex flex-col justify-between shadow-sm transition-all hover:border-cyan-500/30">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-bold text-app-muted uppercase tracking-wider">Accuracy</span>
+              <div className="p-2 rounded-xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 shrink-0">
+                <Zap size={16} />
+              </div>
+            </div>
+            <p className="text-2xl sm:text-3xl font-extrabold font-space-grotesk text-app mt-1">
+              {stats?.accuracy ?? 0}%
+            </p>
           </div>
-          <div>
-            <p className="text-[10px] text-app-muted font-medium mb-1">Time Spent</p>
-            <p className="text-xl font-bold font-space-grotesk text-app">{stats?.timeSpent ?? "0h 0m"}</p>
+
+          {/* Time Spent */}
+          <div className="surface-subtle border border-app rounded-2xl p-4 flex flex-col justify-between shadow-sm transition-all hover:border-purple-500/30">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-bold text-app-muted uppercase tracking-wider">Time Spent</span>
+              <div className="p-2 rounded-xl bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/20 shrink-0">
+                <Clock size={16} />
+              </div>
+            </div>
+            <p className="text-2xl sm:text-3xl font-extrabold font-space-grotesk text-app mt-1">
+              {stats?.timeSpent ?? "0h 0m"}
+            </p>
           </div>
         </div>
       )}

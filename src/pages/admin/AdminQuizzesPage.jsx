@@ -120,15 +120,17 @@ const AdminQuizzesPage = () => {
   const [formError, setFormError] = useState(null);
   const [quizForm, setQuizForm] = useState(DEFAULT_FORM_STATE);
 
-  // AI Generation State
-  const [aiForm, setAiForm] = useState({
-    subject: "Java",
-    topic: "",
-    difficulty: "Medium",
-    quizMode: "Theory",
-    numQuestions: 5,
-  });
-  const [aiGenerating, setAiGenerating] = useState(false);
+  // Lock body scroll when modal or delete target is active
+  useEffect(() => {
+    if (modalMode || deleteTarget) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [modalMode, deleteTarget]);
 
   const fetchQuizzes = async () => {
     try {

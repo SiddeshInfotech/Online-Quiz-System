@@ -1,11 +1,21 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, X, Trophy } from "lucide-react";
 import Button from "../ui/Button/Button";
+import { useEffect } from "react";
 
 const ClaimModal = ({ isOpen, badge, onClose }) => {
   const badgeName = badge?.badge_name || badge?.name || "Badge";
   const iconUrl = badge?.icon_url || badge?.image_url;
   const xpAmount = badge?.xp_earned ?? badge?.xp_reward;
+
+  useEffect(() => {
+    if (isOpen && badge) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [isOpen, badge]);
 
   return (
     <AnimatePresence>

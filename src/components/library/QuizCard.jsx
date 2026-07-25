@@ -142,13 +142,13 @@ const QuizCard = ({ quiz: rawQuiz, viewMode = "grid" }) => {
           <div className="absolute top-3 right-3 z-10">
             <span
               className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-md ${
-                rawQuiz?.is_admin_quiz || quiz.isAdminQuiz
+                rawQuiz?.is_admin_quiz || quiz.is_admin_quiz || quiz.isAdminQuiz
                   ? "bg-purple-600 text-white"
                   : "bg-slate-800 text-slate-200 border border-slate-700"
               }`}
             >
               <UserCheck size={11} />
-              {rawQuiz?.created_by_label || (rawQuiz?.is_admin_quiz ? "QuizGen AI" : "Created by You")}
+              {rawQuiz?.created_by_label || quiz.created_by_label || (rawQuiz?.is_admin_quiz || quiz.is_admin_quiz ? "QuizGen AI" : (rawQuiz?.created_by_me || quiz.createdByMe ? "Created by You" : "QuizGen AI"))}
             </span>
           </div>
         </div>

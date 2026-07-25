@@ -31,6 +31,16 @@ const AdminSupportPage = () => {
   const [replyText, setReplyText] = useState("");
   const [replyLoading, setReplyLoading] = useState(false);
 
+  // Lock background scroll when modal is open
+  useEffect(() => {
+    if (selectedTicket) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [selectedTicket]);
+
   const handleSendReply = async () => {
     if (!selectedTicket || !replyText.trim()) return;
 

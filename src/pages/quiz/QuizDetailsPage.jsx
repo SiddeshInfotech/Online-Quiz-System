@@ -68,6 +68,12 @@ const StartQuizModal = ({ quiz, onConfirm, onCancel }) => {
     (Array.isArray(quiz?.questions) ? quiz.questions.length : null);
   const timeLimit = quiz?.time_limit ?? quiz?.duration;
 
+  // Lock background scroll
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
   return (
     <AnimatePresence>
       <motion.div

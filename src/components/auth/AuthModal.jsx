@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles } from "lucide-react";
 import { useAuthModal } from "../../context/AuthModalContext";
@@ -38,6 +38,17 @@ const PrivacyPolicyView = ({ onBack }) => (
 
 const AuthModal = () => {
   const { isOpen, view, closeModal, changeView } = useAuthModal();
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

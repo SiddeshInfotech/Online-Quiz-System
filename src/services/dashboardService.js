@@ -171,55 +171,71 @@ const adaptResponse = (raw = {}) => {
   );
 
   // ── Recent Attempts ───────────────────────────────────────────────────────
-  const rawAttempts = raw?.recent_attempts ?? raw?.recentAttempts ?? [];
+  const rawAttempts =
+    raw?.recent_attempts ??
+    raw?.recentAttempts ??
+    raw?.attempts ??
+    raw?.user_attempts ??
+    raw?.history ??
+    [];
+
   const recentAttempts = Array.isArray(rawAttempts)
     ? rawAttempts.map((a, i) => ({
       id: pick(a.id, a.attempt_id, a.quiz_attempt_id) ?? i,
+      attempt_id: pick(a.attempt_id, a.id, a.quiz_attempt_id),
       title: pick(a.title, a.quiz_title, a.quiz_name) ?? "Untitled Quiz",
       subject: pick(a.subject, a.topic, a.category) ?? "General",
       classLevel: pick(a.class_level, a.classLevel, a.grade, a.standard) ?? "",
       iconType: deriveIconType(pick(a.subject, a.topic, a.category) ?? ""),
-      score: Number(pick(a.score, a.percentage, a.marks, a.obtained_marks) ?? 0),
+      score: Number(pick(a.score, a.percentage, a.marks, a.obtained_marks, a.accuracy) ?? 0),
       date: formatDate(pick(a.date, a.attempted_at, a.created_at, a.submitted_at)),
       quiz_id: pick(a.quiz_id, a.quiz) ?? null,
     }))
     : [];
 
   // ── Performance Stats ─────────────────────────────────────────────────────
-  // Backend may put stats inside a nested object (e.g. overview) or at root.
   const rawStats =
     raw?.overview ?? raw?.performance ?? raw?.performance_stats ?? raw?.performanceStats ?? raw?.stats ?? {};
 
   const performanceStats = {
     quizzesAttempted: Number(
       pick(
+        raw?.quizzes_attempted,
         rawStats?.quizzes_attempted,
         rawStats?.quizzesAttempted,
         rawStats?.total_attempts,
         rawStats?.user_quizzes,
-        raw?.quizzes_attempted,
         raw?.total_attempts
       ) ?? 0
     ),
     averageScore: Number(
       pick(
+        raw?.average_score,
         rawStats?.average_score,
         rawStats?.averageScore,
-        raw?.average_score,
         raw?.avg_score
       ) ?? 0
     ),
     accuracy: Number(
-      pick(rawStats?.accuracy, raw?.accuracy, raw?.avg_accuracy) ?? 0
+      pick(raw?.accuracy, rawStats?.accuracy, raw?.avg_accuracy) ?? 0
     ),
-    timeSpent: formatTimeSpent(
-      pick(rawStats?.total_time_spent_seconds, rawStats?.time_spent, rawStats?.timeSpent, raw?.time_spent, raw?.total_time)
-    ),
+    timeSpent:
+      pick(raw?.time_spent_formatted, raw?.time_spent, rawStats?.time_spent_formatted, rawStats?.time_spent) ||
+      formatTimeSpent(
+        pick(rawStats?.total_time_spent_seconds, rawStats?.time_spent, rawStats?.timeSpent, raw?.total_time)
+      ),
   };
 
   // ── Chart Data ────────────────────────────────────────────────────────────
   const rawChart =
-    raw?.performance?.weekly_data ?? raw?.chart_data ?? raw?.chartData ?? raw?.weekly_scores ?? raw?.performance_chart ?? [];
+    raw?.weekly_activity ??
+    raw?.chart_data ??
+    raw?.weekly_data ??
+    raw?.performance?.weekly_data ??
+    raw?.chartData ??
+    raw?.weekly_scores ??
+    raw?.performance_chart ??
+    [];
   const chartData = Array.isArray(rawChart)
     ? rawChart.map((d) => ({
       day: pick(d.day, d.label, d.date, d.period) ?? "",

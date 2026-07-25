@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, X } from "lucide-react";
 
+import { useEffect } from "react";
+
 const AdminConfirmModal = ({
   isOpen,
   title = "Confirm Action",
@@ -12,6 +14,17 @@ const AdminConfirmModal = ({
   onConfirm,
   onCancel,
 }) => {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const variantStyles = {
