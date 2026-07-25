@@ -133,6 +133,11 @@ class UserSerializer(serializers.ModelSerializer):
             'current_streak', 'longest_streak', 'total_attempts',
             'is_staff', 'is_superuser'
         ]
+        extra_kwargs = {
+            'username': {'required': False},
+            'email': {'required': False},
+            'subject_interests': {'required': False},
+        }
 
     def validate_username(self, value):
         user = self.context.get('request').user if self.context and self.context.get('request') else self.instance
@@ -146,9 +151,38 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("This email is already registered.")
         return value
 
+    def validate_subject_interests(self, value):
+        if isinstance(value, str):
+            import json
+            try:
+                parsed = json.loads(value)
+                if isinstance(parsed, list):
+                    return parsed
+            except Exception:
+                pass
+            return [s.strip() for s in value.split(',') if s.strip()]
+        elif isinstance(value, list):
+            return value
+        elif value is None:
+            return []
+        return []
+
     def update(self, instance, validated_data):
         request = self.context.get('request')
         profile_pic_updated = False
+
+        if request and 'subject_interests' in request.data:
+            subj = request.data.get('subject_interests')
+            if isinstance(subj, str):
+                import json
+                try:
+                    parsed = json.loads(subj)
+                    if isinstance(parsed, list):
+                        validated_data['subject_interests'] = parsed
+                except Exception:
+                    validated_data['subject_interests'] = [s.strip() for s in subj.split(',') if s.strip()]
+            elif isinstance(subj, list):
+                validated_data['subject_interests'] = subj
         
         if request:
             profile_pic = request.FILES.get('profile_picture') or request.data.get('profile_picture')
