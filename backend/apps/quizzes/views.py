@@ -126,13 +126,12 @@ class QuizLibraryListView(generics.ListAPIView):
         # Enforce Library Visibility rules:
         # A normal user MUST see:
         # 1. Quizzes created by themselves (created_by = user)
-        # 2. Quizzes created by an Admin/Staff user (is_staff=True or role='Admin' or is_ai_generated=False)
+        # 2. Quizzes created by an Admin/Staff user (is_staff=True or role='Admin')
         if not user.is_staff and getattr(user, 'role', '') != 'Admin':
             queryset = queryset.filter(
                 Q(created_by=user) |
                 Q(created_by__is_staff=True) |
-                Q(created_by__role='Admin') |
-                Q(is_ai_generated=False)
+                Q(created_by__role='Admin')
             )
 
         from django.db.models import OuterRef, Subquery, Count
@@ -161,8 +160,7 @@ class RecommendedQuizzesListView(generics.ListAPIView):
             queryset = queryset.filter(
                 Q(created_by=user) |
                 Q(created_by__is_staff=True) |
-                Q(created_by__role='Admin') |
-                Q(is_ai_generated=False)
+                Q(created_by__role='Admin')
             )
 
         from django.db.models import OuterRef, Subquery, Count

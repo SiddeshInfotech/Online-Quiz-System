@@ -49,8 +49,8 @@ class QuizLibrarySerializer(serializers.ModelSerializer):
 
     def get_is_admin_quiz(self, obj):
         if not obj.created_by:
-            return not obj.is_ai_generated
-        return obj.created_by.is_staff or obj.created_by.role == 'Admin' or not obj.is_ai_generated
+            return False
+        return obj.created_by.is_staff or obj.created_by.role == 'Admin'
 
     def get_created_by_label(self, obj):
         request = self.context.get('request')
@@ -99,8 +99,8 @@ class QuizSerializer(serializers.ModelSerializer):
 
     def get_is_admin_quiz(self, obj):
         if not obj.created_by:
-            return not obj.is_ai_generated
-        return obj.created_by.is_staff or obj.created_by.role == 'Admin' or not obj.is_ai_generated
+            return False
+        return obj.created_by.is_staff or obj.created_by.role == 'Admin'
 
     def get_created_by_label(self, obj):
         request = self.context.get('request')

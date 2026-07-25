@@ -44,13 +44,12 @@ class AdminAnalyticsView(APIView):
         # 1. Total actual registered accounts currently in DB
         total_users = User.objects.count()
 
-        # 2. Total actual quizzes created by admins vs students
+        # Admin quizzes = quizzes created by staff or Admin-role users
         admin_quizzes = Quiz.objects.filter(
-            Q(created_by__is_staff=True) | Q(created_by__role='Admin') | Q(is_ai_generated=False)
-        ).count()
-        user_quizzes = Quiz.objects.filter(
-            is_ai_generated=True
-        ).exclude(
+            Q(created_by__is_staff=True) | Q(created_by__role='Admin')
+        ).distinct().count()
+        # User quizzes = all other quizzes (created by regular users)
+        user_quizzes = Quiz.objects.exclude(
             Q(created_by__is_staff=True) | Q(created_by__role='Admin')
         ).count()
 
@@ -251,6 +250,7 @@ class AdminUserDeleteView(APIView):
 class AdminQuizListCreateView(generics.ListCreateAPIView):
     serializer_class = AdminQuizSerializer
     permission_classes = [IsCustomAdmin]
+    pagination_class = None  # Return ALL quizzes, frontend handles paging
 
     def get_queryset(self):
         return Quiz.objects.all().select_related('category', 'created_by').annotate(
