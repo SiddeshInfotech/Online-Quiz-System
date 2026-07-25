@@ -18,18 +18,18 @@ const ProgressBar = ({ current = 0, total = 1, percentage: percentageProp, color
   return (
     <div className="w-full">
       <div className="flex justify-between items-center text-xs font-semibold mb-1.5">
-        <span className="text-slate-400 font-medium">Progress</span>
+        <span className="text-app-muted font-medium">Progress</span>
         <div className="flex items-center gap-2">
-          <span className="text-slate-300 font-mono text-[11px]">
+          <span className="text-app-2 font-mono text-[11px]">
             {current} / {total}
           </span>
-          <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded ${isCompleted ? 'text-emerald-400 bg-emerald-500/10' : 'text-violet-400 bg-violet-500/10'}`}>
+          <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded ${isCompleted ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' : 'text-violet-600 dark:text-violet-400 bg-violet-500/10'}`}>
             {isCompleted || percentage >= 100 ? "Completed" : `${percentage}%`}
           </span>
         </div>
       </div>
       <div 
-        className="h-2 w-full bg-slate-950 rounded-full border border-slate-800 overflow-hidden relative"
+        className="h-2 w-full bg-slate-200 dark:bg-slate-950 rounded-full border border-slate-300 dark:border-slate-800 overflow-hidden relative"
         role="progressbar"
         aria-valuenow={percentage}
         aria-valuemin={0}

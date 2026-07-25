@@ -16,19 +16,19 @@ const StatCard = ({ icon: Icon, label, value, subtext, colorClass, borderGlow, d
         onClick();
       }
     }}
-    className={`bg-slate-900/90 surface rounded-2xl p-5 shadow-lg border border-slate-800/90 flex items-start gap-4 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
-      onClick ? `cursor-pointer ${borderGlow || 'hover:border-violet-500/50 hover:shadow-violet-500/10'}` : "hover:border-slate-700"
+    className={`surface rounded-2xl p-5 shadow-lg border border-app flex items-start gap-4 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
+      onClick ? `cursor-pointer ${borderGlow || 'hover:border-violet-500/50 hover:shadow-violet-500/10'}` : "hover:border-slate-300 dark:hover:border-slate-700"
     }`}
   >
     <div className={`p-3 rounded-2xl shrink-0 ${colorClass}`}>
       <Icon size={22} strokeWidth={2.5} />
     </div>
     <div className="flex-1 min-w-0">
-      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{label}</p>
-      <h4 className="text-2xl font-bold text-slate-100 font-space-grotesk truncate">{value}</h4>
-      {subtext && <p className="text-xs font-medium text-slate-400 mt-1 truncate">{subtext}</p>}
+      <p className="text-xs font-semibold text-app-muted uppercase tracking-wider mb-1">{label}</p>
+      <h4 className="text-2xl font-bold text-app font-space-grotesk truncate">{value}</h4>
+      {subtext && <p className="text-xs font-medium text-app-muted mt-1 truncate">{subtext}</p>}
     </div>
-    {onClick && <ArrowUpRight size={16} className="text-slate-500 shrink-0 mt-1" />}
+    {onClick && <ArrowUpRight size={16} className="text-app-muted shrink-0 mt-1" />}
   </motion.div>
 );
 
@@ -80,7 +80,7 @@ const BadgeStats = ({ stats, onScrollToClaimable }) => {
           label="Level Badge"
           value={`Level ${level}`}
           subtext={`Next Level in ${remainingXp.toLocaleString()} XP`}
-          colorClass="bg-violet-500/15 text-violet-400 border border-violet-500/30"
+          colorClass="bg-violet-500/15 text-violet-600 dark:text-violet-400 border border-violet-500/30"
           delay={0.05}
         />
 
@@ -90,7 +90,7 @@ const BadgeStats = ({ stats, onScrollToClaimable }) => {
           label="Total XP"
           value={`${currentXp.toLocaleString()} XP`}
           subtext={`${remainingXp.toLocaleString()} XP remaining`}
-          colorClass="bg-amber-500/15 text-amber-400 border border-amber-500/30"
+          colorClass="bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
           delay={0.1}
         />
 
@@ -100,7 +100,7 @@ const BadgeStats = ({ stats, onScrollToClaimable }) => {
           label="Claimed Badges"
           value={claimedCount}
           subtext="Click to view all badges"
-          colorClass="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+          colorClass="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
           borderGlow="hover:border-emerald-500/50 hover:shadow-emerald-500/10"
           delay={0.15}
           onClick={() => navigate("/profile/badges")}
@@ -112,7 +112,7 @@ const BadgeStats = ({ stats, onScrollToClaimable }) => {
           label="Claimable"
           value={claimableCount}
           subtext={claimableCount > 0 ? "Ready to unlock!" : "No rewards ready"}
-          colorClass="bg-fuchsia-500/15 text-fuchsia-400 border border-fuchsia-500/30"
+          colorClass="bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-400 border border-fuchsia-500/30"
           borderGlow="hover:border-fuchsia-500/50 hover:shadow-fuchsia-500/10"
           delay={0.2}
           onClick={onScrollToClaimable}
@@ -124,24 +124,24 @@ const BadgeStats = ({ stats, onScrollToClaimable }) => {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.25 }}
-        className="bg-slate-900/90 surface rounded-2xl p-5 shadow-lg border border-slate-800/90 relative overflow-hidden"
+        className="surface rounded-2xl p-5 shadow-lg border border-app relative overflow-hidden"
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-3">
             <span className="text-xs font-bold px-3 py-1 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-500/20">
               Level {level}
             </span>
-            <h4 className="text-base font-bold text-slate-100 font-space-grotesk">
+            <h4 className="text-base font-bold text-app font-space-grotesk">
               Progress to Level {level + 1}
             </h4>
           </div>
 
-          <div className="flex items-center gap-3 text-xs font-medium text-slate-400">
+          <div className="flex items-center gap-3 text-xs font-medium text-app-muted">
             <div>
-              Current XP: <span className="text-slate-100 font-bold">{currentXp.toLocaleString()}</span> / Next Level: <span className="text-slate-100 font-bold">{nextLevelXp.toLocaleString()}</span>
-              <span className="ml-2 text-violet-400 font-semibold">({remainingXp.toLocaleString()} XP Remaining)</span>
+              Current XP: <span className="text-app font-bold">{currentXp.toLocaleString()}</span> / Next Level: <span className="text-app font-bold">{nextLevelXp.toLocaleString()}</span>
+              <span className="ml-2 text-violet-600 dark:text-violet-400 font-semibold">({remainingXp.toLocaleString()} XP Remaining)</span>
             </div>
-            <span className="text-xs font-extrabold text-violet-400 bg-violet-500/10 px-2.5 py-1 rounded-lg border border-violet-500/20">
+            <span className="text-xs font-extrabold text-violet-600 dark:text-violet-400 bg-violet-500/10 px-2.5 py-1 rounded-lg border border-violet-500/20">
               {xpPercentage}%
             </span>
           </div>
@@ -149,7 +149,7 @@ const BadgeStats = ({ stats, onScrollToClaimable }) => {
 
         {/* Animated Progress Bar */}
         <div
-          className="w-full h-3.5 bg-slate-950 rounded-full p-0.5 border border-slate-800 overflow-hidden relative"
+          className="w-full h-3.5 bg-slate-200 dark:bg-slate-950 rounded-full p-0.5 border border-slate-300 dark:border-slate-800 overflow-hidden relative"
           role="progressbar"
           aria-valuenow={xpPercentage}
           aria-valuemin={0}

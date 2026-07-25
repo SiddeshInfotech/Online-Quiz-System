@@ -290,23 +290,23 @@ const FeedbackPage = () => {
                             initial={{ opacity: 0, y: 6 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.3 }}
-                            className="mt-2.5 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs space-y-1"
+                            className="mt-2.5 p-3 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs space-y-1"
                           >
                             <div className="flex items-center justify-between border-b border-emerald-500/20 pb-1.5">
-                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400">
-                                <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+                                <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                                 ✔ Admin Reply
                               </span>
                               {fb.reply_date && (
-                                <span className="text-[10px] text-emerald-400/80">
+                                <span className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80 font-medium">
                                   {formatReplyDate(fb.reply_date)}
                                 </span>
                               )}
                             </div>
-                            <p className="text-[11px] text-slate-200 dark:text-slate-100 leading-snug font-normal whitespace-pre-wrap">
+                            <p className="text-[11px] text-slate-800 dark:text-slate-100 leading-snug font-normal whitespace-pre-wrap">
                               "{fb.reply_message}"
                             </p>
-                            <div className="text-[10px] text-emerald-400/90 font-semibold pt-0.5">
+                            <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold pt-0.5">
                               — {fb.replied_by_username || "admin"}
                             </div>
                           </motion.div>

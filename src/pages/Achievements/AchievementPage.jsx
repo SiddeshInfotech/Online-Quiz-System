@@ -146,10 +146,10 @@ const AchievementPage = () => {
   const claimableBadges = badges.filter(b => b.is_unlocked === true && b.is_claimed === false);
 
   return (
-    <div className="w-full max-w-7xl mx-auto pb-12 font-inter text-slate-100">
+    <div className="w-full max-w-7xl mx-auto pb-12 font-inter text-app">
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 border border-emerald-500/30 text-emerald-400 px-5 py-3 rounded-2xl font-semibold text-xs shadow-2xl flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-5">
+        <div className="fixed bottom-6 right-6 z-50 surface border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 px-5 py-3 rounded-2xl font-semibold text-xs shadow-2xl flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-5">
           <CheckCircle2 size={16} />
           {toast}
         </div>
@@ -157,10 +157,10 @@ const AchievementPage = () => {
 
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="mb-6">
-        <h1 className="text-3xl font-bold font-space-grotesk text-slate-100 mb-1.5 flex items-center gap-2.5">
+        <h1 className="text-3xl font-bold font-space-grotesk text-app mb-1.5 flex items-center gap-2.5">
           🏆 Achievements
         </h1>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-app-muted">
           Complete challenges, earn badges, collect XP, and level up your learning journey.
         </p>
       </motion.div>
@@ -168,7 +168,7 @@ const AchievementPage = () => {
       {/* Statistics Section */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-28 bg-slate-900 rounded-2xl animate-pulse" />)}
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-28 surface-subtle rounded-2xl animate-pulse" />)}
         </div>
       ) : (
         <BadgeStats stats={stats} onScrollToClaimable={handleScrollToClaimable} />
@@ -178,12 +178,12 @@ const AchievementPage = () => {
       {!loading && claimableBadges.length > 0 && (
         <div id="ready-to-claim" className="mb-8 scroll-mt-24">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold font-space-grotesk text-slate-100 flex items-center gap-3">
+            <h2 className="text-2xl font-bold font-space-grotesk text-app flex items-center gap-3">
               <span className="relative flex h-3.5 w-3.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-violet-500"></span>
               </span>
-              <Sparkles className="text-violet-400" size={24} />
+              <Sparkles className="text-violet-600 dark:text-violet-400" size={24} />
               Ready to Claim ({claimableBadges.length})
             </h2>
           </div>
@@ -196,15 +196,15 @@ const AchievementPage = () => {
       )}
 
       {/* Filter Bar & Sort Controls (Requirement 8 Spacing Polish) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 bg-slate-900/90 surface p-4 rounded-2xl border border-slate-800/90 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 surface p-4 rounded-2xl border border-app shadow-sm">
         <BadgeFilters filters={FILTERS} activeFilter={activeFilter} onFilterChange={setActiveFilter} />
 
         <div className="flex items-center gap-3 self-end sm:self-auto shrink-0 mb-6 sm:mb-0">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sort by:</span>
+          <span className="text-xs font-semibold text-app-muted uppercase tracking-wider">Sort by:</span>
           <select
             value={activeSort}
             onChange={(e) => setActiveSort(e.target.value)}
-            className="bg-slate-950 border border-slate-800 text-slate-200 text-xs font-semibold rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 px-3 py-2 outline-none cursor-pointer"
+            className="surface-subtle border border-app text-app-2 text-xs font-semibold rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 px-3 py-2 outline-none cursor-pointer"
           >
             {SORT_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
           </select>

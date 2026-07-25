@@ -11,7 +11,7 @@ const labels = {
   github: "Continue with GitHub",
 };
 
-const SocialButton = ({ provider, onSuccess }) => {
+const SocialButton = ({ provider, onSuccess, onError }) => {
   const Icon = icons[provider];
 
   if (provider === 'google') {

@@ -821,19 +821,19 @@ const AdminFeedbackPage = () => {
 
                       {/* Reply Confirmation Card */}
                       {(selectedFeedback.reply_message || selectedFeedback.admin_reply) && !isReplying && (
-                        <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl space-y-2">
+                        <div className="bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/30 p-4 rounded-xl space-y-2">
                           <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2">
-                            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
-                              <CheckCircle2 size={15} /> ✔ Reply Sent
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                              <CheckCircle2 size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" /> ✔ Reply Sent
                             </span>
-                            <span className="text-[10px] font-medium text-emerald-400/80">
+                            <span className="text-[10px] font-medium text-emerald-700/80 dark:text-emerald-400/80">
                               {formatDate(selectedFeedback.reply_date || selectedFeedback.replied_at || selectedFeedback.updated_at)}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-200 leading-relaxed font-normal italic">
+                          <p className="text-xs text-slate-800 dark:text-slate-100 leading-relaxed font-normal italic">
                             "{selectedFeedback.reply_message || selectedFeedback.admin_reply}"
                           </p>
-                          <div className="text-[10px] text-emerald-400/80 font-semibold pt-1">
+                          <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold pt-1">
                             Replied by {selectedFeedback.replied_by_username || "Admin Staff"}
                           </div>
                         </div>

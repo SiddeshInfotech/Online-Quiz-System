@@ -149,12 +149,12 @@ const BadgeDetailsPage = () => {
                   }}
                 />
               ) : (
-                <Trophy size={64} className="text-slate-300" />
+                <Trophy size={64} className="text-app-muted" />
               )}
             </div>
             
             {/* Floating Rarity Badge */}
-            <div className={`absolute bottom-0 sm:-right-4 px-4 py-1.5 rounded-full font-bold text-sm tracking-wide shadow-lg border-2 border-white ${rarityColors[rarity] || rarityColors.Common}`}>
+            <div className={`absolute bottom-0 sm:-right-4 px-4 py-1.5 rounded-full font-bold text-sm tracking-wide shadow-lg border-2 border-app ${rarityColors[rarity] || rarityColors.Common}`}>
               {rarity}
             </div>
           </div>
@@ -168,7 +168,7 @@ const BadgeDetailsPage = () => {
               <div className="mb-8">
                 <ProgressBar current={current_progress} total={required_target || 1} percentage={progress_percentage} color={is_claimed ? "emerald" : "violet"} />
                 {is_claimed && earned_at && (
-                  <p className="text-sm font-medium text-emerald-600 mt-3 flex items-center gap-2">
+                  <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400 mt-3 flex items-center gap-2">
                     <Calendar size={16} /> Earned on {new Date(earned_at).toLocaleDateString()}
                   </p>
                 )}
@@ -194,13 +194,13 @@ const BadgeDetailsPage = () => {
 
               {/* Related Quizzes Section */}
               <div className="border-t border-app pt-8 mt-8">
-                <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <BookOpen size={18} className="text-violet-600" /> Related Quizzes to Claim This
+                <h3 className="font-bold text-app mb-4 flex items-center gap-2">
+                  <BookOpen size={18} className="text-violet-600 dark:text-violet-400" /> Related Quizzes to Claim This
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[1, 2].map(i => (
                     <div key={i} className="surface-subtle rounded-xl p-4 border border-app hover:border-violet-200 transition-colors cursor-pointer group">
-                      <h4 className="font-semibold text-app-2 group-hover:text-violet-700 text-sm mb-1">General Knowledge Quiz #{i}</h4>
+                      <h4 className="font-semibold text-app-2 group-hover:text-violet-600 dark:group-hover:text-violet-400 text-sm mb-1">General Knowledge Quiz #{i}</h4>
                       <p className="text-xs text-app-muted flex items-center gap-1"><Clock size={12}/> 10 mins • 20 Qs</p>
                     </div>
                   ))}
@@ -212,27 +212,27 @@ const BadgeDetailsPage = () => {
             <div className="w-full sm:w-64 shrink-0 flex flex-col gap-4">
               {xp_reward !== undefined && xp_reward !== null && (
                 <div className="surface-subtle rounded-2xl p-5 border border-app">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">XP Reward</p>
-                  <div className="text-2xl font-bold text-violet-600 flex items-center gap-2">
+                  <p className="text-xs font-semibold text-app-muted uppercase tracking-wider mb-1">XP Reward</p>
+                  <div className="text-2xl font-bold text-violet-600 dark:text-violet-400 flex items-center gap-2">
                     <Sparkles size={20} /> +{xp_reward}
                   </div>
                 </div>
               )}
 
               <div className="surface-subtle rounded-2xl p-5 border border-app">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Category</p>
+                <p className="text-xs font-semibold text-app-muted uppercase tracking-wider mb-1">Category</p>
                 <div className="text-lg font-bold text-app-2 flex items-center gap-2">
-                  <Target size={18} className="text-slate-400" /> {category}
+                  <Target size={18} className="text-app-muted" /> {category}
                 </div>
               </div>
 
               <div className="surface-subtle rounded-2xl p-5 border border-app">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Requirement Progress</p>
+                <p className="text-xs font-semibold text-app-muted uppercase tracking-wider mb-1">Requirement Progress</p>
                 <div className="text-sm font-medium text-app-2">
                   {current_progress} / {required_target || 1} completed
                 </div>
                 {progress_percentage !== undefined && (
-                  <p className="text-xs text-violet-600 font-bold mt-1">{progress_percentage}% completed</p>
+                  <p className="text-xs text-violet-600 dark:text-violet-400 font-bold mt-1">{progress_percentage}% completed</p>
                 )}
                 {description && (
                   <p className="text-xs text-app-muted mt-2">{description}</p>

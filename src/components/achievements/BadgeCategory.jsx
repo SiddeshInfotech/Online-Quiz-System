@@ -17,14 +17,14 @@ const BadgeCategory = ({ category, badges, onClaim }) => {
         aria-expanded={isOpen}
       >
         <div className="flex items-center gap-3">
-          <h2 className="text-xl font-bold font-space-grotesk text-slate-100 group-hover:text-violet-400 transition-colors">
+          <h2 className="text-xl font-bold font-space-grotesk text-app group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
             {category}
           </h2>
-          <span className="text-xs font-bold text-slate-400 bg-slate-800/80 px-2.5 py-0.5 rounded-full border border-slate-700/80">
+          <span className="text-xs font-bold text-app-muted surface-subtle px-2.5 py-0.5 rounded-full border border-app">
             {badges.length}
           </span>
         </div>
-        <div className="p-1.5 rounded-lg text-slate-400 group-hover:bg-slate-800 group-hover:text-slate-200 transition-colors">
+        <div className="p-1.5 rounded-lg text-app-muted group-hover:bg-slate-100 dark:group-hover:bg-slate-800 group-hover:text-app transition-colors">
           {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </div>
       </button>

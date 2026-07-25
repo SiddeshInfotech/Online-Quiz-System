@@ -113,21 +113,21 @@ const FeedbackCard = ({ feedback: rawFeedback }) => {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="mt-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 shadow-sm space-y-2"
+          className="mt-4 p-4 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 shadow-sm space-y-2"
         >
           <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2">
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400">
-              <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+              <CheckCircle2 size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
               ✔ Admin Reply
             </span>
             {reply_date && (
-              <span className="text-[11px] text-emerald-400/80 font-medium">{formatReplyDate(reply_date)}</span>
+              <span className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80 font-medium">{formatReplyDate(reply_date)}</span>
             )}
           </div>
-          <p className="text-xs text-slate-200 dark:text-slate-100 leading-relaxed font-normal whitespace-pre-wrap">
+          <p className="text-xs text-slate-800 dark:text-slate-100 leading-relaxed font-normal whitespace-pre-wrap">
             "{reply_message}"
           </p>
-          <div className="text-[10px] text-emerald-400/90 font-semibold pt-1">— {replied_by_username || "admin"}</div>
+          <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold pt-1">— {replied_by_username || "admin"}</div>
         </motion.div>
       ) : (
         <div className="mt-3 text-[11px] text-app-muted flex items-center gap-1.5 font-medium">
