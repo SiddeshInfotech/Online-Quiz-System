@@ -65,6 +65,8 @@ const ProfileCompletion = ({ inModal = true }) => {
     try {
       if (isAuthenticated) {
         const payload = {
+          ...(currentUser?.username ? { username: currentUser.username } : {}),
+          ...(currentUser?.email ? { email: currentUser.email } : {}),
           full_name: form.full_name.trim(),
           school: form.school.trim(),
           grade: form.grade.trim(),

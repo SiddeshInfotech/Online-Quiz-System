@@ -231,6 +231,8 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
 
       if (profilePicture) {
         payload = new FormData();
+        if (profile?.username) payload.append("username", profile.username);
+        if (profile?.email) payload.append("email", profile.email);
         payload.append("full_name", form.full_name.trim());
         payload.append("bio", form.bio.trim());
         payload.append("school", form.school.trim());
@@ -241,6 +243,8 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
         isFormData = true;
       } else {
         payload = {
+          ...(profile?.username ? { username: profile.username } : {}),
+          ...(profile?.email ? { email: profile.email } : {}),
           full_name: form.full_name.trim(),
           bio: form.bio.trim(),
           school: form.school.trim(),
@@ -257,6 +261,8 @@ const EditProfileModal = ({ profile, onClose, onSaved }) => {
             console.warn("Multipart upload failed, attempting Base64 fallback...");
             const base64Image = await fileToBase64(profilePicture);
             const base64Payload = {
+              ...(profile?.username ? { username: profile.username } : {}),
+              ...(profile?.email ? { email: profile.email } : {}),
               full_name: form.full_name.trim(),
               bio: form.bio.trim(),
               school: form.school.trim(),

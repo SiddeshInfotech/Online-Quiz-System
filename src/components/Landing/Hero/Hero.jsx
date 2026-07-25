@@ -1,10 +1,21 @@
 import Container from "../../ui/Container";
 import HeroContent from "./HeroContent";
-import DashboardPreview from "./DashboardPreview";
+import landingVideo from "../../../assets/videos/landing.mp4";
 
 function Hero() {
   return (
     <section className="relative overflow-hidden py-24 lg:py-28">
+      {/* Video Background - muted ensures no audio/music is played */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="pointer-events-none absolute inset-0 -z-20 h-full w-full object-cover opacity-30 dark:opacity-20"
+      >
+        <source src={landingVideo} type="video/mp4" />
+      </video>
+
       {/* Ambient signature glow  violet in light, gold+blue in dark */}
       <div
         aria-hidden
@@ -29,9 +40,8 @@ function Hero() {
         }}
       />
       <Container>
-        <div className="grid items-center gap-16 lg:grid-cols-2 lg:gap-20">
+        <div className="max-w-2xl text-left">
           <HeroContent />
-          <DashboardPreview />
         </div>
       </Container>
     </section>

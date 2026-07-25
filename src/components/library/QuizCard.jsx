@@ -148,7 +148,7 @@ const QuizCard = ({ quiz: rawQuiz, viewMode = "grid" }) => {
               }`}
             >
               <UserCheck size={11} />
-              {rawQuiz?.created_by_label || quiz.created_by_label || (rawQuiz?.is_admin_quiz || quiz.is_admin_quiz ? "QuizGen AI" : (rawQuiz?.created_by_me || quiz.createdByMe ? "Created by You" : "QuizGen AI"))}
+              {rawQuiz?.created_by_label || quiz.created_by_label || (rawQuiz?.is_admin_quiz || quiz.is_admin_quiz ? "QuizGen AI" : (rawQuiz?.created_by_me || quiz.createdByMe ? "Created by You" : "User"))}
             </span>
           </div>
         </div>

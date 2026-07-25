@@ -31,7 +31,7 @@ const mapQuizData = (item) => ({
   progress: item.progress_percentage ?? item.progress ?? 0,
   createdByMe: item.created_by_me ?? false,
   is_admin_quiz: item.is_admin_quiz ?? false,
-  created_by_label: item.created_by_label || (item.is_admin_quiz ? "QuizGen AI" : item.created_by_me ? "Created by You" : "Created by Admin"),
+  created_by_label: item.created_by_label || (item.is_admin_quiz ? "QuizGen AI" : item.created_by_me ? "Created by You" : "User"),
   status: item.status || "published",
   subjectColor: "bg-violet-100 text-violet-700",
   thumbnail: item.thumbnail || "https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=400&q=80",
