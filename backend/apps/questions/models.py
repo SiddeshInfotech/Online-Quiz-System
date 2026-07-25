@@ -20,6 +20,6 @@ class Question(models.Model):
         return self.question_text[:50]
 
 class QuestionOption(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='options')
     option_text = models.TextField()
     is_correct = models.BooleanField(default=False)

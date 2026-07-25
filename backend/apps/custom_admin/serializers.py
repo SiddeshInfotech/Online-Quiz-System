@@ -70,12 +70,17 @@ class AdminQuizSerializer(serializers.ModelSerializer):
         ret['time_limit'] = instance.duration_minutes
         ret['quiz_type'] = 'Coding' if instance.question_type == 'Coding' else 'Theory'
         
-        # Include full question objects list if requested or available
+        # Include full question objects list safely
         from apps.questions.models import Question
-        qs = Question.objects.filter(quiz=instance).prefetch_related('options')
+        try:
+            qs = Question.objects.filter(quiz=instance).prefetch_related('options')
+        except Exception:
+            qs = Question.objects.filter(quiz=instance).prefetch_related('questionoption_set')
+
         questions_list = []
         for q in qs:
-            opts = [opt.option_text for opt in q.options.all()]
+            options_qs = q.options.all() if hasattr(q, 'options') else q.questionoption_set.all()
+            opts = [opt.option_text for opt in options_qs]
             questions_list.append({
                 "id": q.id,
                 "question_text": q.question_text,
