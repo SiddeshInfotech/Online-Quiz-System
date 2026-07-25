@@ -595,6 +595,21 @@ Return ONLY valid JSON.
                 if not isinstance(questions, list):
                     raise ValueError("Response is not a list")
 
+                # Bulletproof deduplication check
+                unique_questions = []
+                seen_q_texts = set()
+                for q in questions:
+                    q_text = str(q.get('question_text', '')).strip().lower()
+                    if q_text and q_text not in seen_q_texts:
+                        seen_q_texts.add(q_text)
+                        unique_questions.append(q)
+                
+                questions = unique_questions
+
+                # Force retry if the model ignored our uniqueness instructions entirely
+                if len(questions) < max(1, num_questions // 2):
+                    raise ValueError(f"Model generated too many duplicates. Only {len(questions)} unique questions found out of {num_questions} requested.")
+
                 random_patterns = ['pizza', 'burger', 'cake', 'dog', 'cat', 'apple', 'banana', 'sandwich']
                 sensible_alternatives = [
                     "True, but only under certain conditions",
