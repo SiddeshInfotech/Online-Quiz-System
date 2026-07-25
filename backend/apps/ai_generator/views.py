@@ -153,13 +153,26 @@ class GenerateAIQuizView(APIView):
             if options_to_create:
                 QuestionOption.objects.bulk_create(options_to_create)
 
+        # Construct questions list matching frontend specifications
+        formatted_questions = []
+        for q in quiz.question_set.prefetch_related('options').all():
+            formatted_questions.append({
+                "id": q.id,
+                "question_text": q.question_text,
+                "options": [opt.option_text for opt in q.options.all()],
+                "correct_answer": q.correct_answer,
+                "question_type": q.question_type
+            })
+
         return Response({
             "success": True,
             "message": f"AI Quiz generated and saved successfully! ({quiz_mode} mode)",
             "quiz_id": quiz.id,
+            "id": quiz.id,
             "title": quiz.title,
-            "total_questions": len(questions_data),
+            "total_questions": len(formatted_questions),
             "difficulty": difficulty,
             "subject": subject,
-            "quiz_mode": quiz_mode
-        }, status=status.HTTP_201_CREATED)
+            "quiz_mode": quiz_mode,
+            "questions": formatted_questions
+        }, status=status.HTTP_200_OK)

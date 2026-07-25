@@ -264,14 +264,17 @@ class AdminQuizToggleVisibilityView(APIView):
 
     def post(self, request, pk):
         quiz = get_object_or_404(Quiz, id=pk)
-        quiz.is_published = not quiz.is_published
+        if 'is_published' in request.data:
+            quiz.is_published = bool(request.data['is_published'])
+        else:
+            quiz.is_published = not quiz.is_published
         quiz.save()
         return Response({
             "id": quiz.id,
             "title": quiz.title,
             "is_published": quiz.is_published,
             "status": quiz.status,
-            "message": f"Quiz visibility toggled to {'Published' if quiz.is_published else 'Draft'}."
+            "message": f"Quiz visibility set to {'Published' if quiz.is_published else 'Draft'}."
         }, status=status.HTTP_200_OK)
 
 

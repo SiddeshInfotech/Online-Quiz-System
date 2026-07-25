@@ -29,7 +29,7 @@ class AdminQuizSerializer(serializers.ModelSerializer):
     category_name = serializers.ReadOnlyField(source='category.category_name')
     created_by_name = serializers.ReadOnlyField(source='created_by.username')
     question_count = serializers.SerializerMethodField()
-    questions = serializers.JSONField(required=False, write_only=True)
+    questions = serializers.JSONField(required=False, write_only=False)
 
     class Meta:
         model = Quiz
@@ -39,7 +39,7 @@ class AdminQuizSerializer(serializers.ModelSerializer):
             'total_marks', 'is_ai_generated', 'join_code', 'share_link',
             'category', 'category_name', 'created_by', 'created_by_name',
             'created_at', 'updated_at', 'grade_level', 'is_published',
-            'question_count', 'questions'
+            'max_attempts', 'question_count', 'questions'
         ]
         read_only_fields = ['created_by', 'created_at', 'updated_at', 'join_code', 'share_link', 'question_count']
 
@@ -48,38 +48,90 @@ class AdminQuizSerializer(serializers.ModelSerializer):
             return obj.annotated_question_count or 0
         return obj.question_set.count()
 
+    def to_internal_value(self, data):
+        data = data.copy() if hasattr(data, 'copy') else dict(data)
+        if 'time_limit' in data and 'duration_minutes' not in data:
+            data['duration_minutes'] = data['time_limit']
+        if 'quiz_type' in data and 'question_type' not in data:
+            data['question_type'] = data['quiz_type']
+        if 'duration_minutes' not in data:
+            data['duration_minutes'] = 30
+        if 'question_type' not in data:
+            data['question_type'] = 'MCQ'
+        if 'category' not in data or not data['category']:
+            from apps.quizzes.models import QuizCategory
+            cat_name = data.get('subject', 'General')
+            cat, _ = QuizCategory.objects.get_or_create(category_name=cat_name)
+            data['category'] = cat.id
+        return super().to_internal_value(data)
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        ret['time_limit'] = instance.duration_minutes
+        ret['quiz_type'] = 'Coding' if instance.question_type == 'Coding' else 'Theory'
+        
+        # Include full question objects list if requested or available
+        from apps.questions.models import Question
+        qs = Question.objects.filter(quiz=instance).prefetch_related('options')
+        questions_list = []
+        for q in qs:
+            opts = [opt.option_text for opt in q.options.all()]
+            questions_list.append({
+                "id": q.id,
+                "question_text": q.question_text,
+                "options": opts,
+                "correct_answer": q.correct_answer,
+                "question_type": q.question_type
+            })
+        ret['questions'] = questions_list
+        return ret
+
     def create(self, validated_data):
         from apps.questions.models import Question, QuestionOption
         questions_data = validated_data.pop('questions', None)
         quiz = super().create(validated_data)
 
         if questions_data and isinstance(questions_data, list):
-            for idx, q_data in enumerate(questions_data):
-                if not isinstance(q_data, dict):
-                    continue
-                q_text = q_data.get('question_text', '').strip()
-                q_type = q_data.get('question_type', 'MCQ')
-                correct = q_data.get('correct_answer', '').strip()
-                options = q_data.get('options', [])
-
-                question = Question.objects.create(
-                    quiz=quiz,
-                    question_text=q_text,
-                    question_type=q_type,
-                    correct_answer=correct,
-                    marks=1,
-                    question_order=idx + 1
-                )
-
-                if options and isinstance(options, list):
-                    for opt_idx, opt in enumerate(options):
-                        opt_text = str(opt).strip()
-                        QuestionOption.objects.create(
-                            question=question,
-                            option_text=opt_text,
-                            is_correct=(opt_text.lower() == correct.lower() or opt_idx == 0)
-                        )
+            self._save_questions(quiz, questions_data)
         return quiz
+
+    def update(self, instance, validated_data):
+        questions_data = validated_data.pop('questions', None)
+        quiz = super().update(instance, validated_data)
+
+        if questions_data is not None and isinstance(questions_data, list):
+            # Delete old questions and recreate
+            quiz.question_set.all().delete()
+            self._save_questions(quiz, questions_data)
+        return quiz
+
+    def _save_questions(self, quiz, questions_data):
+        from apps.questions.models import Question, QuestionOption
+        for idx, q_data in enumerate(questions_data):
+            if not isinstance(q_data, dict):
+                continue
+            q_text = q_data.get('question_text', q_data.get('text', '')).strip()
+            q_type = q_data.get('question_type', quiz.question_type or 'MCQ')
+            correct = q_data.get('correct_answer', '').strip()
+            options = q_data.get('options', [])
+
+            question = Question.objects.create(
+                quiz=quiz,
+                question_text=q_text,
+                question_type=q_type,
+                correct_answer=correct,
+                marks=1,
+                question_order=idx + 1
+            )
+
+            if options and isinstance(options, list):
+                for opt_idx, opt in enumerate(options):
+                    opt_text = str(opt).strip()
+                    QuestionOption.objects.create(
+                        question=question,
+                        option_text=opt_text,
+                        is_correct=(opt_text.lower() == correct.lower() or (not correct and opt_idx == 0))
+                    )
 
 class UserPenaltyLogSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source='user.username')
