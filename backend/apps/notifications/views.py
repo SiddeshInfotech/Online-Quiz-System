@@ -24,14 +24,15 @@ class NotificationMarkReadView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def patch(self, request, pk):
-        try:
-            notification = Notification.objects.get(id=pk, user=request.user)
-        except Notification.DoesNotExist:
-            return Response({"error": "Notification not found."}, status=status.HTTP_404_NOT_FOUND)
+        pk_str = str(pk).strip()
+        if pk_str.isdigit():
+            updated = Notification.objects.filter(id=int(pk_str), user=request.user).update(is_read=True)
+        else:
+            updated = Notification.objects.filter(type=pk_str, user=request.user, is_read=False).update(is_read=True)
 
-        notification.is_read = True
-        notification.save()
-        return Response({"message": "Notification marked as read."}, status=status.HTTP_200_OK)
+        if updated > 0:
+            return Response({"message": "Notification marked as read."}, status=status.HTTP_200_OK)
+        return Response({"error": "Notification not found."}, status=status.HTTP_404_NOT_FOUND)
 
 class NotificationMarkAllReadView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -50,14 +51,18 @@ class NotificationMarkAsReadView(APIView):
         if mark_all is True or str(mark_all).lower() == 'true':
             Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
             message = "All active notifications marked as read."
-        elif notification_id:
-            try:
-                notification = Notification.objects.get(id=notification_id, user=request.user)
-                notification.is_read = True
-                notification.save()
-                message = f"Notification {notification_id} marked as read."
-            except Notification.DoesNotExist:
-                return Response({"error": "Notification not found."}, status=status.HTTP_404_NOT_FOUND)
+        elif notification_id is not None:
+            target_str = str(notification_id).strip()
+            if target_str.isdigit():
+                updated = Notification.objects.filter(id=int(target_str), user=request.user).update(is_read=True)
+            else:
+                # Handle synthetic or non-numeric string IDs (e.g. 'profile_completion_reminder')
+                updated = Notification.objects.filter(type=target_str, user=request.user, is_read=False).update(is_read=True)
+                if not updated:
+                    # Fallback to mark as read successfully for synthetic client notifications
+                    updated = 1
+
+            message = f"Notification '{notification_id}' marked as read."
         else:
             return Response(
                 {"error": "Please provide either notification_id or mark_all=true."},
