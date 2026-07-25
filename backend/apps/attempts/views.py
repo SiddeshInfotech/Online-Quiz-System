@@ -825,41 +825,44 @@ class AttemptReviewView(APIView):
         }, status=status.HTTP_200_OK)
 
     def _build_rich_fallback_explanation(self, q_data, subject="programming"):
-        correct_ans = q_data.get('correct_answer', '')
-        selected_ans = q_data.get('selected_answer', '')
+        correct_ans = str(q_data.get('correct_answer', '')).strip()
+        selected_ans = str(q_data.get('selected_answer', '')).strip()
         is_correct = q_data.get('is_correct', False)
-        q_text = str(q_data.get('question_text', '') or q_data.get('question', '') or '')
+        q_text = str(q_data.get('question_text', '') or q_data.get('question', '') or '').strip()
         q_lower = q_text.lower()
-        topic_name = subject if (subject and subject != "the topic") else "this topic"
+        topic_name = subject if (subject and subject != "the topic") else "programming"
+
+        # Topic detection for rich multi-sentence explanations
+        if "&" in q_text or "reference" in q_lower:
+            concept = f"In {topic_name}, reference variables act as direct aliases for existing variables in memory."
+            execution = f"Modifying a reference updates the underlying variable directly, evaluating to '{correct_ans}'."
+            takeaway = "Remember that reference modifications directly affect the original target memory address."
+        elif "*" in q_text or "pointer" in q_lower or "address" in q_lower:
+            concept = f"In {topic_name}, pointers store memory addresses and dereferencing (`*ptr`) retrieves or modifies the stored value."
+            execution = f"Following the pointer dereference yields the updated value '{correct_ans}'."
+            takeaway = "Always ensure pointers are properly initialized before dereferencing to prevent memory faults."
+        elif "mutable" in q_lower or "list" in q_lower or "tuple" in q_lower:
+            concept = f"In {topic_name}, mutable data structures allow elements to be modified in-place, whereas immutable types create new objects."
+            execution = f"Evaluating the data structure's mutability rules confirms '{correct_ans}' as the correct choice."
+            takeaway = "Use immutable data types (like tuples or frozen sets) when read-only integrity is required."
+        elif "virtual" in q_lower or "override" in q_lower or "polymorphism" in q_lower:
+            concept = f"Virtual methods in {topic_name} enable dynamic runtime dispatch, ensuring the derived class override executes."
+            execution = f"Relying on polymorphic dispatch resolves the correct outcome as '{correct_ans}'."
+            takeaway = "Always declare base class destructors as virtual when working with inheritance hierarchies."
+        elif "```" in q_text or "output" in q_lower or "print" in q_lower or "cout" in q_lower:
+            concept = f"Tracing the step-by-step execution flow of this {topic_name} code snippet reveals how state updates during runtime."
+            execution = f"Following variable declarations, loop iterations, and operations produces the final result '{correct_ans}'."
+            takeaway = "Trace variable modifications line-by-line to verify accurate output during code evaluation."
+        else:
+            concept = f"This question evaluates a fundamental core concept in {topic_name}."
+            execution = f"Analyzing the theoretical principles confirms '{correct_ans}' as the definitive correct answer."
+            takeaway = "Reviewing core language specifications helps solidify these essential principles."
 
         if is_correct:
-            if "final" in correct_ans or "subclass" in q_lower:
-                return f"Correct! '{correct_ans}' is the modifier in {topic_name} used to prevent class inheritance and method overriding."
-            elif "32" in correct_ans or "byte" in correct_ans or "bit" in correct_ans:
-                return f"Correct! An integer (int) primitive in {topic_name} is allocated exactly {correct_ans} in standard memory specifications."
-            elif "```" in q_text or "output" in q_lower:
-                return f"Correct! Executing the given {topic_name} code step-by-step produces '{correct_ans}'."
-            return (
-                f"Correct! '{correct_ans}' is indeed the right answer. "
-                f"Great job understanding this aspect of {topic_name}!"
-            )
+            return f"Correct! {concept} {execution} {takeaway}"
         else:
-            base = f"The correct answer is '{correct_ans}'."
-            if selected_ans and selected_ans not in ["None", "Unknown", None, ""]:
-                base += f" You selected '{selected_ans}'. "
-            else:
-                base += " "
-
-            if "subclass" in q_lower or "keyword" in q_lower or "final" in correct_ans:
-                base += f"In {topic_name}, declaring a class with the '{correct_ans}' keyword prevents other classes from inheriting from it."
-            elif "size" in q_lower or "byte" in q_lower or "bit" in q_lower or "int" in q_lower:
-                base += f"In {topic_name}, primitive integer types occupy {correct_ans} of memory."
-            elif "```" in q_text or "output" in q_lower or "print" in q_lower:
-                base += f"Following the execution flow of the code snippet yields '{correct_ans}'."
-            else:
-                base += f"This is a fundamental concept in {topic_name}."
-
-            return base
+            choice_note = f"You selected '{selected_ans}'. " if selected_ans and selected_ans not in ["None", "Unknown", ""] else ""
+            return f"The correct answer is '{correct_ans}'. {choice_note}{concept} {execution}"
 
     def _generate_ai_explanations(self, attempt, questions_data):
         """Generate explanations for all questions using OpenRouter."""

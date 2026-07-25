@@ -34,68 +34,142 @@ class AIService:
         quiz_title = f"{subject}: {topic_title} Mastery"
 
         coding_pools = {
-            "typescript": [
+            "cpp": [
                 {
-                    "q": "What is the output of the following TypeScript snippet?\n\n```typescript\nlet num: number = 10;\nlet val: any = num;\nconsole.log(typeof val);\n```",
-                    "opts": ["\"number\"", "\"any\"", "\"object\"", "\"undefined\""],
-                    "ans": "\"number\""
+                    "q": "What is the output of the following C++ code?\n\n```cpp\n#include <iostream>\nusing namespace std;\nint main() {\n    int a = 10;\n    int &b = a;\n    b = 20;\n    cout << a;\n    return 0;\n}\n```",
+                    "opts": ["20", "10", "Garbage Value", "Compilation Error"],
+                    "ans": "20"
                 },
                 {
-                    "q": "What will the following TypeScript interface snippet output?\n\n```typescript\ninterface User { name: string; age?: number; }\nconst u: User = { name: \"Alice\" };\nconsole.log(u.age);\n```",
-                    "opts": ["undefined", "null", "0", "Compilation Error"],
-                    "ans": "undefined"
-                }
-            ],
-            "rust": [
-                {
-                    "q": "What will be the output of this Rust code snippet?\n\n```rust\nfn main() {\n    let mut x = 5;\n    x += 1;\n    println!(\"{}\", x);\n}\n```",
-                    "opts": ["6", "5", "Compilation Error", "Garbage Value"],
-                    "ans": "6"
+                    "q": "What will the following C++ pointer code print?\n\n```cpp\n#include <iostream>\nusing namespace std;\nint main() {\n    int val = 50;\n    int *ptr = &val;\n    *ptr = 100;\n    cout << val;\n    return 0;\n}\n```",
+                    "opts": ["100", "50", "0", "Memory Leak"],
+                    "ans": "100"
                 },
                 {
-                    "q": "What happens when compiling this Rust snippet?\n\n```rust\nfn main() {\n    let s1 = String::from(\"hello\");\n    let s2 = s1;\n    println!(\"{}\", s2.len());\n}\n```",
-                    "opts": ["5", "Compilation Error", "Undefined Behavior", "0"],
+                    "q": "What will be the output of this C++ function call?\n\n```cpp\n#include <iostream>\nusing namespace std;\nint calc(int x, int y = 5) {\n    return x * y;\n}\nint main() {\n    cout << calc(4);\n    return 0;\n}\n```",
+                    "opts": ["20", "4", "9", "Compilation Error"],
+                    "ans": "20"
+                },
+                {
+                    "q": "What is the result of the following C++ vector operation?\n\n```cpp\n#include <iostream>\n#include <vector>\nusing namespace std;\nint main() {\n    vector<int> v = {10, 20, 30};\n    v.push_back(40);\n    v.pop_back();\n    cout << v.back();\n    return 0;\n}\n```",
+                    "opts": ["30", "40", "20", "10"],
+                    "ans": "30"
+                },
+                {
+                    "q": "What will the following C++ global vs local scope snippet output?\n\n```cpp\n#include <iostream>\nusing namespace std;\nint num = 10;\nint main() {\n    int num = 5;\n    cout << ::num + num;\n    return 0;\n}\n```",
+                    "opts": ["15", "10", "5", "Compilation Error"],
+                    "ans": "15"
+                },
+                {
+                    "q": "What will the following C++ ternary operator code print?\n\n```cpp\n#include <iostream>\nusing namespace std;\nint main() {\n    int a = 5;\n    int res = (a++ > 5) ? 10 : 20;\n    cout << res;\n    return 0;\n}\n```",
+                    "opts": ["20", "10", "5", "6"],
+                    "ans": "20"
+                },
+                {
+                    "q": "What is the output of the following C++ lambda snippet?\n\n```cpp\n#include <iostream>\nusing namespace std;\nint main() {\n    auto square = [](int n) { return n * n; };\n    cout << square(6);\n    return 0;\n}\n```",
+                    "opts": ["36", "12", "6", "Compilation Error"],
+                    "ans": "36"
+                },
+                {
+                    "q": "What will the following C++ string concatenation code output?\n\n```cpp\n#include <iostream>\n#include <string>\nusing namespace std;\nint main() {\n    string s1 = \"C++\";\n    string s2 = \"20\";\n    cout << (s1 + s2).length();\n    return 0;\n}\n```",
+                    "opts": ["5", "3", "2", "6"],
                     "ans": "5"
                 }
             ],
-            "nodejs": [
+            "python": [
                 {
-                    "q": "What will the following Node.js async code snippet log?\n\n```javascript\nconsole.log(1);\nsetImmediate(() => console.log(2));\nconsole.log(3);\n```",
-                    "opts": ["1 3 2", "1 2 3", "3 1 2", "2 1 3"],
-                    "ans": "1 3 2"
+                    "q": "What will be the output of the following Python list comprehension?\n\n```python\nitems = [1, 0, True, False, 2]\nresult = [x for x in items if x]\nprint(len(result))\n```",
+                    "opts": ["3", "5", "2", "Error"],
+                    "ans": "3"
+                },
+                {
+                    "q": "What will the following Python dictionary get method output?\n\n```python\ndata = {\"a\": 1, \"b\": 2}\nprint(data.get(\"c\", 99))\n```",
+                    "opts": ["99", "None", "KeyError", "2"],
+                    "ans": "99"
+                },
+                {
+                    "q": "What will the following Python slicing operation log?\n\n```python\ntext = \"Python\"\nprint(text[::-1])\n```",
+                    "opts": ["\"nohtyP\"", "\"Python\"", "\"P\"", "\"n\""],
+                    "ans": "\"nohtyP\""
+                },
+                {
+                    "q": "What is the output of this Python generator expression?\n\n```python\ngen = (x * 2 for x in range(3))\nprint(list(gen))\n```",
+                    "opts": ["[0, 2, 4]", "[2, 4, 6]", "(0, 2, 4)", "[0, 1, 2]"],
+                    "ans": "[0, 2, 4]"
+                },
+                {
+                    "q": "What will the following Python multiple assignment output?\n\n```python\na, b = 5, 10\na, b = b, a + b\nprint(a, b)\n```",
+                    "opts": ["10 15", "5 15", "10 5", "15 10"],
+                    "ans": "10 15"
+                },
+                {
+                    "q": "What will the following Python args function output?\n\n```python\ndef total(*args):\n    return sum(args)\nprint(total(10, 20, 30))\n```",
+                    "opts": ["60", "[10, 20, 30]", "10", "TypeError"],
+                    "ans": "60"
+                },
+                {
+                    "q": "What happens when executing this Python set operation?\n\n```python\ns1 = {1, 2, 3}\ns2 = {2, 3, 4}\nprint(s1 & s2)\n```",
+                    "opts": ["{2, 3}", "{1, 2, 3, 4}", "{1, 4}", "SetError"],
+                    "ans": "{2, 3}"
+                },
+                {
+                    "q": "What is the output of this Python lambda map operation?\n\n```python\nnums = [1, 2, 3]\nres = list(map(lambda x: x + 10, nums))\nprint(res)\n```",
+                    "opts": ["[11, 12, 13]", "[10, 20, 30]", "[1, 2, 3]", "Error"],
+                    "ans": "[11, 12, 13]"
                 }
             ],
-            "flask": [
+            "java": [
                 {
-                    "q": "What will the following Flask route function return?\n\n```python\nfrom flask import Flask\napp = Flask(__name__)\n@app.route('/')\ndef home():\n    return 'Hello Flask'\n```",
-                    "opts": ["'Hello Flask'", "HTML 500", "None", "JSON"],
-                    "ans": "'Hello Flask'"
-                }
-            ],
-            "django": [
+                    "q": "What is the output of the following Java string immutability code?\n\n```java\npublic class Main {\n    public static void main(String[] args) {\n        String str = \"Java\";\n        str.concat(\" SE\");\n        System.out.println(str);\n    }\n}\n```",
+                    "opts": ["Java", "Java SE", "NullPointerException", "Compilation Error"],
+                    "ans": "Java"
+                },
                 {
-                    "q": "What SQL query logic does this Django ORM line execute?\n\n```python\nUser.objects.filter(is_active=True).count()\n```",
-                    "opts": ["SELECT COUNT(*) FROM users_user WHERE is_active = True", "DELETE FROM users_user", "UPDATE users_user SET is_active=True", "SELECT * FROM users_user"],
-                    "ans": "SELECT COUNT(*) FROM users_user WHERE is_active = True"
-                }
-            ],
-            "react": [
+                    "q": "What will the following Java StringBuilder code output?\n\n```java\npublic class Main {\n    public static void main(String[] args) {\n        StringBuilder sb = new StringBuilder(\"Code\");\n        sb.append(\"123\");\n        System.out.println(sb.length());\n    }\n}\n```",
+                    "opts": ["7", "4", "3", "Compilation Error"],
+                    "ans": "7"
+                },
                 {
-                    "q": "What will the following React JSX component render?\n\n```jsx\nfunction Component() {\n  const [count] = useState(0);\n  return <button>{count}</button>;\n}\n```",
-                    "opts": ["A button displaying 0", "A button displaying null", "Syntax Error", "A button displaying 1"],
-                    "ans": "A button displaying 0"
+                    "q": "What will be printed by this Java array iteration snippet?\n\n```java\npublic class Main {\n    public static void main(String[] args) {\n        int[] arr = {2, 4, 6};\n        int sum = 0;\n        for(int x : arr) sum += x;\n        System.out.println(sum);\n    }\n}\n```",
+                    "opts": ["12", "6", "3", "0"],
+                    "ans": "12"
+                },
+                {
+                    "q": "What is the output of this Java post-increment code?\n\n```java\npublic class Main {\n    public static void main(String[] args) {\n        int count = 5;\n        System.out.println(count++ + ++count);\n    }\n}\n```",
+                    "opts": ["12", "11", "10", "13"],
+                    "ans": "12"
+                },
+                {
+                    "q": "What happens when running this Java ternary operator code?\n\n```java\npublic class Main {\n    public static void main(String[] args) {\n        boolean flag = false;\n        int val = flag ? 100 : 200;\n        System.out.println(val);\n    }\n}\n```",
+                    "opts": ["200", "100", "0", "Compilation Error"],
+                    "ans": "200"
+                },
+                {
+                    "q": "What will the following Java Math function print?\n\n```java\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println(Math.max(15, 25));\n    }\n}\n```",
+                    "opts": ["25", "15", "40", "0"],
+                    "ans": "25"
                 }
             ],
             "csharp": [
                 {
-                    "q": "What will be the output of the following C# code?\n\n```csharp\nusing System;\nclass Program {\n    static void Main() {\n        int x = 5;\n        Console.WriteLine(x++);\n    }\n}\n```",
+                    "q": "What will be the output of the following C# post-increment snippet?\n\n```csharp\nusing System;\nclass Program {\n    static void Main() {\n        int x = 5;\n        Console.WriteLine(x++);\n    }\n}\n```",
                     "opts": ["5", "6", "4", "Compilation Error"],
                     "ans": "5"
                 },
                 {
-                    "q": "What is the output of this C# code snippet?\n\n```csharp\nusing System;\nclass Program {\n    static void Main() {\n        string text = \"C# .NET\";\n        Console.WriteLine(text.Length);\n    }\n}\n```",
+                    "q": "What is the output of this C# string property snippet?\n\n```csharp\nusing System;\nclass Program {\n    static void Main() {\n        string text = \"C# .NET\";\n        Console.WriteLine(text.Length);\n    }\n}\n```",
                     "opts": ["7", "6", "8", "0"],
                     "ans": "7"
+                },
+                {
+                    "q": "What will the following C# array code log?\n\n```csharp\nusing System;\nclass Program {\n    static void Main() {\n        int[] numbers = { 10, 20, 30 };\n        Console.WriteLine(numbers[1]);\n    }\n}\n```",
+                    "opts": ["20", "10", "30", "IndexOutOfRangeException"],
+                    "ans": "20"
+                },
+                {
+                    "q": "What is the result of this C# nullable type snippet?\n\n```csharp\nusing System;\nclass Program {\n    static void Main() {\n        int? score = null;\n        Console.WriteLine(score ?? 100);\n    }\n}\n```",
+                    "opts": ["100", "null", "0", "Compilation Error"],
+                    "ans": "100"
                 }
             ],
             "c": [
@@ -105,115 +179,264 @@ class AIService:
                     "ans": "5"
                 },
                 {
-                    "q": "What will the following C snippet print?\n\n```c\n#include <stdio.h>\nint main() {\n    int arr[3] = {10, 20, 30};\n    printf(\"%d\", *(arr + 1));\n    return 0;\n}\n```",
+                    "q": "What will the following C pointer offset snippet print?\n\n```c\n#include <stdio.h>\nint main() {\n    int arr[3] = {10, 20, 30};\n    printf(\"%d\", *(arr + 1));\n    return 0;\n}\n```",
                     "opts": ["20", "10", "30", "Garbage Value"],
                     "ans": "20"
-                }
-            ],
-            "cpp": [
+                },
                 {
-                    "q": "What is the output of the following C++ code?\n\n```cpp\n#include <iostream>\nusing namespace std;\nint main() {\n    int a = 10;\n    int &b = a;\n    b = 20;\n    cout << a;\n    return 0;\n}\n```",
-                    "opts": ["20", "10", "Garbage Value", "Compilation Error"],
-                    "ans": "20"
-                }
-            ],
-            "python": [
+                    "q": "What is the output of this C bitwise shift operation?\n\n```c\n#include <stdio.h>\nint main() {\n    int val = 4;\n    printf(\"%d\", val << 2);\n    return 0;\n}\n```",
+                    "opts": ["16", "8", "2", "4"],
+                    "ans": "16"
+                },
                 {
-                    "q": "What will be the output of the following Python code?\n\n```python\nitems = [1, 0, True, False, 2]\nresult = [x for x in items if x]\nprint(len(result))\n```",
-                    "opts": ["3", "5", "2", "Error"],
-                    "ans": "3"
+                    "q": "What will the following C struct member access print?\n\n```c\n#include <stdio.h>\nstruct Point { int x; int y; };\nint main() {\n    struct Point p = {10, 25};\n    printf(\"%d\", p.y);\n    return 0;\n}\n```",
+                    "opts": ["25", "10", "35", "0"],
+                    "ans": "25"
                 }
             ],
             "javascript": [
                 {
-                    "q": "What will the following JavaScript code output?\n\n```javascript\nconsole.log(1 + '2' + 3);\n```",
+                    "q": "What will the following JavaScript type coercion snippet output?\n\n```javascript\nconsole.log(1 + '2' + 3);\n```",
                     "opts": ["'123'", "6", "'15'", "NaN"],
                     "ans": "'123'"
+                },
+                {
+                    "q": "What is the output of this JavaScript array map operation?\n\n```javascript\nconst arr = [1, 2, 3];\nconst res = arr.map(x => x * 2);\nconsole.log(res[1]);\n```",
+                    "opts": ["4", "2", "6", "undefined"],
+                    "ans": "4"
+                },
+                {
+                    "q": "What will the following JavaScript variable hoisting snippet log?\n\n```javascript\nconsole.log(typeof a);\nvar a = 10;\n```",
+                    "opts": ["\"undefined\"", "\"number\"", "\"ReferenceError\"", "\"object\""],
+                    "ans": "\"undefined\""
+                },
+                {
+                    "q": "What is the output of this JavaScript filter snippet?\n\n```javascript\nconst items = [0, 'hello', false, 42];\nconsole.log(items.filter(Boolean).length);\n```",
+                    "opts": ["2", "4", "1", "3"],
+                    "ans": "2"
                 }
             ],
-            "java": [
+            "react": [
                 {
-                    "q": "What is the output of the following Java code?\n\n```java\npublic class Main {\n    public static void main(String[] args) {\n        String str = \"Java\";\n        str.concat(\" SE\");\n        System.out.println(str);\n    }\n}\n```",
-                    "opts": ["Java", "Java SE", "NullPointerException", "Compilation Error"],
-                    "ans": "Java"
+                    "q": "What will the following React JSX component render?\n\n```jsx\nfunction Component() {\n  const [count] = useState(0);\n  return <button>{count}</button>;\n}\n```",
+                    "opts": ["A button displaying 0", "A button displaying null", "Syntax Error", "A button displaying 1"],
+                    "ans": "A button displaying 0"
+                },
+                {
+                    "q": "What will this React props rendering component log?\n\n```jsx\nfunction Welcome({ name = \"Guest\" }) {\n  return <h1>Hello {name}</h1>;\n}\n// Rendered as: <Welcome />\n```",
+                    "opts": ["\"Hello Guest\"", "\"Hello undefined\"", "\"Hello \"", "Error"],
+                    "ans": "\"Hello Guest\""
+                },
+                {
+                    "q": "What happens when rendering this React conditional JSX?\n\n```jsx\nfunction Status({ isOnline }) {\n  return <div>{isOnline ? \"Active\" : \"Offline\"}</div>;\n}\n// Rendered as: <Status isOnline={true} />\n```",
+                    "opts": ["Renders \"Active\"", "Renders \"Offline\"", "Renders true", "Error"],
+                    "ans": "Renders \"Active\""
+                }
+            ],
+            "typescript": [
+                {
+                    "q": "What is the output of the following TypeScript snippet?\n\n```typescript\nlet num: number = 10;\nlet val: any = num;\nconsole.log(typeof val);\n```",
+                    "opts": ["\"number\"", "\"any\"", "\"object\"", "\"undefined\""],
+                    "ans": "\"number\""
+                },
+                {
+                    "q": "What will the following TypeScript optional property snippet output?\n\n```typescript\ninterface User { name: string; age?: number; }\nconst u: User = { name: \"Alice\" };\nconsole.log(u.age);\n```",
+                    "opts": ["undefined", "null", "0", "Compilation Error"],
+                    "ans": "undefined"
+                }
+            ],
+            "rust": [
+                {
+                    "q": "What will be the output of this Rust mutable variable snippet?\n\n```rust\nfn main() {\n    let mut x = 5;\n    x += 1;\n    println!(\"{}\", x);\n}\n```",
+                    "opts": ["6", "5", "Compilation Error", "Garbage Value"],
+                    "ans": "6"
+                },
+                {
+                    "q": "What happens when compiling this Rust move semantics snippet?\n\n```rust\nfn main() {\n    let s1 = String::from(\"hello\");\n    let s2 = s1;\n    println!(\"{}\", s2.len());\n}\n```",
+                    "opts": ["5", "Compilation Error", "Undefined Behavior", "0"],
+                    "ans": "5"
                 }
             ]
         }
 
         theory_pools = {
-            "typescript": [
+            "cpp": [
                 {
-                    "q": "What is the primary benefit of TypeScript over plain JavaScript?",
-                    "opts": ["Static type checking at compile time", "Faster runtime execution in V8", "Built-in database drivers", "Automatic CSS compilation"],
-                    "ans": "Static type checking at compile time"
+                    "q": "Which feature of C++ allows multiple functions in the same scope to share the same name with different parameter lists?",
+                    "opts": ["Function Overloading", "Function Overriding", "Virtual Functions", "Templates"],
+                    "ans": "Function Overloading"
+                },
+                {
+                    "q": "In C++, what keyword is used to declare a pure virtual function in an abstract base class?",
+                    "opts": ["= 0 syntax at function declaration", "pure keyword", "abstract keyword", "virtual final keyword"],
+                    "ans": "= 0 syntax at function declaration"
+                },
+                {
+                    "q": "What is the primary advantage of passing large objects by reference (`const T&`) in C++?",
+                    "opts": ["Prevents expensive deep copies while protecting data integrity", "Increases pointer conversion speed", "Allows automatic garbage collection", "Converts objects to primitive types"],
+                    "ans": "Prevents expensive deep copies while protecting data integrity"
+                },
+                {
+                    "q": "Which C++ standard container provides constant time O(1) random access by index?",
+                    "opts": ["std::vector", "std::list", "std::map", "std::set"],
+                    "ans": "std::vector"
+                },
+                {
+                    "q": "In C++, what happens when a class destructor is NOT declared as `virtual` in a base class?",
+                    "opts": ["Deleting a derived class object through a base pointer causes undefined behavior / resource leaks", "The program fails to compile", "Base class memory is corrupted", "Virtual table is disabled"],
+                    "ans": "Deleting a derived class object through a base pointer causes undefined behavior / resource leaks"
+                },
+                {
+                    "q": "What is RAII (Resource Acquisition Is Initialization) in C++?",
+                    "opts": ["A design pattern where resource lifecycle is bound to object lifetime via constructors/destructors", "A method for dynamic memory allocation", "An API for multithreading", "A compiler flag for performance"],
+                    "ans": "A design pattern where resource lifecycle is bound to object lifetime via constructors/destructors"
+                },
+                {
+                    "q": "Which smart pointer in C++11 enforces single, unshared ownership of a dynamic resource?",
+                    "opts": ["std::unique_ptr", "std::shared_ptr", "std::weak_ptr", "std::auto_ptr"],
+                    "ans": "std::unique_ptr"
+                },
+                {
+                    "q": "What is the difference between `new` operator and `malloc()` in C++?",
+                    "opts": ["`new` calls class constructors and returns typed pointers, whereas `malloc()` only allocates raw bytes", "`malloc()` calls constructors while `new` does not", "`new` is deprecated in C++17", "They perform identical low-level instructions"],
+                    "ans": "`new` calls class constructors and returns typed pointers, whereas `malloc()` only allocates raw bytes"
                 }
             ],
-            "rust": [
+            "python": [
                 {
-                    "q": "How does Rust achieve memory safety without a Garbage Collector?",
-                    "opts": ["Through Ownership, Borrowing, and Lifetimes", "Using automatic reference counting only", "By compiling to JVM bytecode", "Using manual free() calls"],
-                    "ans": "Through Ownership, Borrowing, and Lifetimes"
+                    "q": "What is the fundamental difference between a List and a Tuple in Python?",
+                    "opts": ["Lists are mutable objects while Tuples are immutable", "Tuples are mutable objects while Lists are immutable", "Lists cannot hold nested data", "Tuples do not support indexing"],
+                    "ans": "Lists are mutable objects while Tuples are immutable"
+                },
+                {
+                    "q": "What is the purpose of the `yield` keyword in a Python function?",
+                    "opts": ["Turns the function into a Generator that produces a stream of values lazily", "Terminates the program execution", "Imports external modules asynchronously", "Raises a runtime exception"],
+                    "ans": "Turns the function into a Generator that produces a stream of values lazily"
+                },
+                {
+                    "q": "In Python, what does the Global Interpreter Lock (GIL) enforce?",
+                    "opts": ["Ensures only one thread executes Python bytecode at a time per process", "Limits maximum memory allocation", "Prevents file system access", "Enforces static type checking"],
+                    "ans": "Ensures only one thread executes Python bytecode at a time per process"
+                },
+                {
+                    "q": "What is the difference between `is` and `==` in Python?",
+                    "opts": ["`is` checks memory identity, while `==` checks value equality", "`==` checks memory identity, while `is` checks value equality", "They are identical aliases", "`is` only operates on strings"],
+                    "ans": "`is` checks memory identity, while `==` checks value equality"
+                },
+                {
+                    "q": "What does a Python Decorator function do?",
+                    "opts": ["Takes another function as an argument and extends its behavior without modifying it directly", "Renders HTML templates in Flask", "Compiles Python bytecode to C", "Cleans garbage memory"],
+                    "ans": "Takes another function as an argument and extends its behavior without modifying it directly"
+                },
+                {
+                    "q": "Which built-in Python function creates a shallow copy of a dictionary `d`?",
+                    "opts": ["d.copy()", "d.clone()", "copy(d)", "d.duplicate()"],
+                    "ans": "d.copy()"
+                },
+                {
+                    "q": "What is the time complexity of looking up a key in a Python `dict` on average?",
+                    "opts": ["O(1) Constant Time", "O(N) Linear Time", "O(log N) Logarithmic Time", "O(N^2) Quadratic Time"],
+                    "ans": "O(1) Constant Time"
+                },
+                {
+                    "q": "In Python, what special method is invoked when evaluating `str(obj)`?",
+                    "opts": ["__str__()", "__repr__()", "__init__()", "__unicode__()"],
+                    "ans": "__str__()"
                 }
             ],
-            "nodejs": [
+            "java": [
                 {
-                    "q": "What architecture allows Node.js to handle thousands of concurrent requests efficiently?",
-                    "opts": ["Single-threaded Event Loop with Non-blocking I/O", "Multi-threaded process per request", "Synchronous blocking threads", "Kernel panic isolation"],
-                    "ans": "Single-threaded Event Loop with Non-blocking I/O"
+                    "q": "Which keyword prevents a Java class from being inherited or subclassed?",
+                    "opts": ["final", "static", "private", "abstract"],
+                    "ans": "final"
+                },
+                {
+                    "q": "What is the default initial memory state of an uninitialized instance object reference in Java?",
+                    "opts": ["null", "0", "undefined", "garbage value"],
+                    "ans": "null"
+                },
+                {
+                    "q": "In Java, what is the main distinction between an Interface and an Abstract Class?",
+                    "opts": ["A class can implement multiple Interfaces but extend only one Abstract Class", "Interfaces can contain stateful instance fields", "Abstract classes cannot have method implementations", "Interfaces require public constructors"],
+                    "ans": "A class can implement multiple Interfaces but extend only one Abstract Class"
+                },
+                {
+                    "q": "Which Java collection class guarantees unique elements and maintains insertion order?",
+                    "opts": ["LinkedHashSet", "HashSet", "ArrayList", "TreeSet"],
+                    "ans": "LinkedHashSet"
+                },
+                {
+                    "q": "What happens if a `finally` block is attached to a `try-catch` structure in Java?",
+                    "opts": ["The `finally` block executes regardless of whether an exception is thrown or caught", "It executes only if an uncaught exception occurs", "It executes only when no exception occurs", "It cancels exception propagation"],
+                    "ans": "The `finally` block executes regardless of whether an exception is thrown or caught"
+                }
+            ],
+            "csharp": [
+                {
+                    "q": "Which C# modifier prevents a class from being inherited by other classes?",
+                    "opts": ["sealed", "static", "final", "abstract"],
+                    "ans": "sealed"
+                },
+                {
+                    "q": "What is the primary difference between a `struct` and a `class` in C#?",
+                    "opts": ["`struct` is a value type stored on the stack/inline, while `class` is a reference type on the heap", "`class` is a value type while `struct` is a reference type", "`struct` cannot have methods", "They are identical in .NET"],
+                    "ans": "`struct` is a value type stored on the stack/inline, while `class` is a reference type on the heap"
+                },
+                {
+                    "q": "What does the LINQ `FirstOrDefault()` method return if no element satisfies the condition?",
+                    "opts": ["The default value for the type (e.g. null for reference types, 0 for ints)", "Throws an InvalidOperationException", "Returns an empty IEnumerable", "Returns false"],
+                    "ans": "The default value for the type (e.g. null for reference types, 0 for ints)"
                 }
             ],
             "react": [
                 {
                     "q": "What is Virtual DOM in React?",
-                    "opts": ["In-memory lightweight representation of the real DOM", "A physical browser window", "A server-side database", "A WebGL rendering canvas"],
-                    "ans": "In-memory lightweight representation of the real DOM"
-                }
-            ],
-            "csharp": [
+                    "opts": ["In-memory lightweight representation of the real DOM used for efficient reconciliation", "A physical browser popup window", "A server-side database cache", "A WebGL rendering library"],
+                    "ans": "In-memory lightweight representation of the real DOM used for efficient reconciliation"
+                },
                 {
-                    "q": "Which keyword is used to define a class that cannot be inherited in C#?",
-                    "opts": ["sealed", "static", "final", "abstract"],
-                    "ans": "sealed"
-                }
-            ],
-            "c": [
+                    "q": "Why should React component state NEVER be mutated directly (`this.state.count = 5`)?",
+                    "opts": ["Direct mutations do not trigger a component re-render in React", "It causes a immediate browser crash", "It deletes component props", "React throws a syntax error"],
+                    "ans": "Direct mutations do not trigger a component re-render in React"
+                },
                 {
-                    "q": "Which standard library function is used for dynamic memory allocation in C?",
-                    "opts": ["malloc()", "new()", "alloc()", "create()"],
-                    "ans": "malloc()"
-                }
-            ],
-            "cpp": [
-                {
-                    "q": "Which feature of C++ allows multiple functions to share the same name with different parameters?",
-                    "opts": ["Function Overloading", "Function Overriding", "Virtual Functions", "Templates"],
-                    "ans": "Function Overloading"
-                }
-            ],
-            "python": [
-                {
-                    "q": "What is the primary difference between a List and a Tuple in Python?",
-                    "opts": ["Lists are mutable while Tuples are immutable", "Tuples are mutable while Lists are immutable", "Lists cannot store strings", "Tuples cannot be indexed"],
-                    "ans": "Lists are mutable while Tuples are immutable"
+                    "q": "In React `useEffect`, what does an empty dependency array `[]` signify?",
+                    "opts": ["The effect callback executes exactly once after the initial component mount", "The effect executes on every re-render", "The effect is disabled", "The component unmounts immediately"],
+                    "ans": "The effect callback executes exactly once after the initial component mount"
                 }
             ],
             "javascript": [
                 {
                     "q": "What is the difference between '==' and '===' in JavaScript?",
-                    "opts": ["'===' checks both value and type, while '==' performs type coercion", "'==' checks value and type, while '===' performs coercion", "They are identical in ES6", "'===' only works on numbers"],
-                    "ans": "'===' checks both value and type, while '==' performs type coercion"
+                    "opts": ["'===' checks both value and type without coercion, while '==' performs implicit type coercion", "'==' checks value and type, while '===' performs coercion", "They are identical in ES6", "'===' only works on numbers"],
+                    "ans": "'===' checks both value and type without coercion, while '==' performs implicit type coercion"
+                },
+                {
+                    "q": "What is a Closure in JavaScript?",
+                    "opts": ["A function bundled together with references to its surrounding lexical environment", "A method for closing browser tabs", "A private class constructor", "A database disconnect function"],
+                    "ans": "A function bundled together with references to its surrounding lexical environment"
+                },
+                {
+                    "q": "What will `typeof NaN` evaluate to in JavaScript?",
+                    "opts": ["\"number\"", "\"NaN\"", "\"undefined\"", "\"object\""],
+                    "ans": "\"number\""
                 }
             ],
-            "java": [
+            "c": [
                 {
-                    "q": "Which keyword prevents a Java class from being subclassed?",
-                    "opts": ["final", "static", "private", "abstract"],
-                    "ans": "final"
+                    "q": "Which standard library function in C allocates dynamic memory and initializes all bytes to zero?",
+                    "opts": ["calloc()", "malloc()", "realloc()", "free()"],
+                    "ans": "calloc()"
+                },
+                {
+                    "q": "In C programming, what is a Dangling Pointer?",
+                    "opts": ["A pointer that continues to reference a memory address that has already been deallocated", "A NULL pointer", "An uninitialized local variable", "A pointer pointing to a static function"],
+                    "ans": "A pointer that continues to reference a memory address that has already been deallocated"
                 }
             ]
         }
 
-        # ✅ Comprehensive Subject Classifier (Handles all 11+ frontend choice subjects)
+        # ✅ Comprehensive Subject Classifier
         subj_lower = subject.lower().strip()
         if "c#" in subj_lower or "csharp" in subj_lower or "c sharp" in subj_lower or subj_lower == "cs":
             subj_key = "csharp"
@@ -249,61 +472,40 @@ class AIService:
         seen_texts = set()
         idx = 0
 
+        # Sub-topic generators for 100% unique question generation beyond static pool
+        subtopics_coding = [
+            ("Variables & Data Types", lambda v, s: (f"What is the output of the following {subject} snippet (Var #{v})?\n\n```{s}\nint val{v} = {v * 5};\nval{v} += 10;\ncout << val{v};\n```" if s in ["cpp", "c"] else f"What is the output of the following {subject} code (Var #{v})?\n\n```{s}\nval{v} = {v * 5}\nval{v} += 10\nprint(val{v})\n```", [str(v * 5 + 10), str(v * 5), str(v * 10), "Error"], str(v * 5 + 10))),
+            ("Conditionals & Logic", lambda v, s: (f"What will this {subject} condition evaluate to (Check #{v})?\n\n```{s}\nint score{v} = {v * 15};\nif (score{v} >= 30) {{\n    cout << \"Pass\";\n}} else {{\n    cout << \"Fail\";\n}}\n```" if s in ["cpp", "c"] else f"What will this {subject} code output (Check #{v})?\n\n```{s}\nscore{v} = {v * 15}\nprint(\"Pass\" if score{v} >= 30 else \"Fail\")\n```", ["Pass" if v * 15 >= 30 else "Fail", "Fail" if v * 15 >= 30 else "Pass", "Error", "None"], "Pass" if v * 15 >= 30 else "Fail")),
+            ("Loop Execution", lambda v, s: (f"What total count does this {subject} loop produce (Loop #{v})?\n\n```{s}\nint total{v} = 0;\nfor (int i = 0; i < {v}; i++) {{\n    total{v} += i;\n}}\ncout << total{v};\n```" if s in ["cpp", "c"] else f"What does this {subject} loop calculate (Loop #{v})?\n\n```{s}\ntotal{v} = sum(range({v}))\nprint(total{v})\n```", [str(sum(range(v))), str(v * v), str(v), "0"], str(sum(range(v))))),
+            ("Array / List Processing", lambda v, s: (f"What element is printed by this {subject} array code (Array #{v})?\n\n```{s}\nint arr{v}[] = {{{v * 2}, {v * 3}, {v * 4}}};\ncout << arr{v}[1];\n```" if s in ["cpp", "c"] else f"What element does this {subject} list access (List #{v})?\n\n```{s}\nitems{v} = [{v * 2}, {v * 3}, {v * 4}]\nprint(items{v}[1])\n```", [str(v * 3), str(v * 2), str(v * 4), "IndexError"], str(v * 3))),
+            ("Function Mechanics", lambda v, s: (f"What is returned by this {subject} helper function (Fn #{v})?\n\n```{s}\nint multiply{v}(int a, int b) {{\n    return a * b + {v};\n}}\n// Called as: multiply{v}(3, 4)\n```" if s in ["cpp", "c"] else f"What is the result of calling this {subject} function (Fn #{v})?\n\n```{s}\ndef compute{v}(a, b):\n    return a * b + {v}\nprint(compute{v}(3, 4))\n```", [str(12 + v), str(12), str(7 + v), "0"], str(12 + v))),
+            ("String Manipulation", lambda v, s: (f"What is printed by this {subject} string operation (Str #{v})?\n\n```{s}\nstring s{v} = \"Tech{v}\";\ncout << s{v}.length();\n```" if s in ["cpp", "c"] else f"What is the output of this {subject} string method (Str #{v})?\n\n```{s}\ns{v} = \"Code{v}\"\nprint(len(s{v}))\n```", [str(4 + len(str(v))), str(4), str(len(str(v))), "Error"], str(4 + len(str(v)))))
+        ]
+
+        subtopics_theory = [
+            ("Core Paradigm", f"What is the fundamental architectural philosophy of {subject}?", ["Structured modular design with high reusability", "Single-threaded synchronous blocking execution", "Direct binary patch assembly", "Pure procedural memory mapping"], "Structured modular design with high reusability"),
+            ("Memory Model", f"How does {subject} manage runtime memory allocation and lifecycle?", ["Allocates memory dynamically via runtime stack/heap primitives", "Uses fixed physical disk caching", "Requires manual register manipulation", "Does not allocate memory"], "Allocates memory dynamically via runtime stack/heap primitives"),
+            ("Type System", f"Which type system design feature applies directly to {subject}?", ["Enforces clear type rules for variable safety and evaluation", "Disallows function definitions", "Requires all variables to be string types", "Does not support primitive types"], "Enforces clear type rules for variable safety and evaluation"),
+            ("Scope & Visibility", f"How are identifiers and variables scoped in {subject}?", ["Scoped lexically within block, function, or namespace boundaries", "Global visibility for all local variables", "Randomized pointer scope", "Class-only scope"], "Scoped lexically within block, function, or namespace boundaries"),
+            ("Error Handling", f"What mechanism is standard for handling runtime exceptions in {subject}?", ["Try-Catch exception blocks and error status return codes", "Immediate OS kernel halt", "Ignoring invalid operations", "Syntax re-compilation"], "Try-Catch exception blocks and error status return codes"),
+            ("Performance Optimization", f"Which practice improves execution efficiency in {subject}?", ["Using appropriate data structures and minimizing redundant operations", "Inserting infinite loops", "Avoiding function calls entirely", "Storing all data on disk"], "Using appropriate data structures and minimizing redundant operations")
+        ]
+
         while len(questions) < num_questions:
             if idx < len(pool):
                 item = pool[idx]
             else:
                 var_num = idx + 1
                 if quiz_mode == "Coding":
-                    if subj_key == "typescript":
-                        item = {
-                            "q": f"What is the output of the following {subject} snippet (Example #{var_num})?\n\n```typescript\nconst count{var_num}: number = {var_num * 10};\nconsole.log(count{var_num} + 5);\n```",
-                            "opts": [str(var_num * 10 + 5), str(var_num * 10), str(var_num * 10 - 5), "Error"],
-                            "ans": str(var_num * 10 + 5)
-                        }
-                    elif subj_key == "rust":
-                        item = {
-                            "q": f"What will be the output of the following {subject} code (Example #{var_num})?\n\n```rust\nfn main() {{\n    let val{var_num}: i32 = {var_num * 5};\n    println!(\"{{}}\", val{var_num} + 2);\n}}\n```",
-                            "opts": [str(var_num * 5 + 2), str(var_num * 5), str(var_num * 5 - 2), "Compilation Error"],
-                            "ans": str(var_num * 5 + 2)
-                        }
-                    elif subj_key == "react":
-                        item = {
-                            "q": f"What will the following {subject} component render (Component #{var_num})?\n\n```jsx\nfunction Card() {{\n  const [val] = useState({var_num * 3});\n  return <span>{{val + 1}}</span>;\n}}\n```",
-                            "opts": [str(var_num * 3 + 1), str(var_num * 3), str(var_num * 3 - 1), "0"],
-                            "ans": str(var_num * 3 + 1)
-                        }
-                    elif subj_key in ["django", "flask"]:
-                        item = {
-                            "q": f"What is the output of the following {subject} code (Snippet #{var_num})?\n\n```python\n# {subject} execution logic #{var_num}\nres = {var_num * 4} + 2\nprint(res)\n```",
-                            "opts": [str(var_num * 4 + 2), str(var_num * 4), str(var_num * 4 - 2), "Error"],
-                            "ans": str(var_num * 4 + 2)
-                        }
-                    elif subj_key == "csharp":
-                        item = {
-                            "q": f"What is the output of the following {subject} code (Example #{var_num})?\n\n```csharp\nusing System;\nclass Program {{\n    static void Main() {{\n        int num{var_num} = {var_num * 5};\n        Console.WriteLine(num{var_num} + 2);\n    }}\n}}\n```",
-                            "opts": [str(var_num * 5 + 2), str(var_num * 5), str(var_num * 5 - 2), "Error"],
-                            "ans": str(var_num * 5 + 2)
-                        }
-                    elif subj_key in ["c", "cpp"]:
-                        lang_code = "cpp" if subj_key == "cpp" else "c"
-                        item = {
-                            "q": f"What will be the output of the following {subject} code (Variation #{var_num})?\n\n```{lang_code}\n#include <stdio.h>\nint main() {{\n    int val{var_num} = {var_num * 10};\n    printf(\"%d\", val{var_num} + 5);\n    return 0;\n}}\n```",
-                            "opts": [str(var_num * 10 + 5), str(var_num * 10), str(var_num * 10 - 5), "Error"],
-                            "ans": str(var_num * 10 + 5)
-                        }
-                    else:
-                        item = {
-                            "q": f"What is the output of the following {subject} snippet (Variation #{var_num})?\n\n```{subj_key}\n// {subject} execution logic #{var_num}\nint num = {var_num * 2};\nconsole.log(num);\n```",
-                            "opts": [str(var_num * 2), str(var_num), str(var_num + 1), "0"],
-                            "ans": str(var_num * 2)
-                        }
+                    topic_name, gen_fn = subtopics_coding[(idx - len(pool)) % len(subtopics_coding)]
+                    q_text, opts, ans = gen_fn(var_num, subj_key)
+                    item = {"q": q_text, "opts": opts, "ans": ans}
                 else:
-                    base_item = pool[idx % len(pool)] if pool else {"q": f"Core concept in {subject}", "opts": ["Option 1", "Option 2", "Option 3", "Option 4"], "ans": "Option 1"}
+                    topic_title_sub, q_stem, opts, ans = subtopics_theory[(idx - len(pool)) % len(subtopics_theory)]
                     item = {
-                        "q": f"Regarding {subject} {topic_title} (Concept #{var_num}): {base_item['q']}",
-                        "opts": list(base_item["opts"]),
-                        "ans": base_item["ans"]
+                        "q": f"Regarding {subject} {topic_title_sub} (Topic #{var_num}): {q_stem}",
+                        "opts": list(opts),
+                        "ans": ans
                     }
 
             idx += 1
