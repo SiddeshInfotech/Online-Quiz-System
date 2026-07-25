@@ -8,6 +8,7 @@ import {
   ChevronRight,
   AlertCircle,
   Shield,
+  Trash2,
 } from "lucide-react";
 import adminService from "../../services/adminService";
 import { useAdminAuth } from "../../context/AdminAuthContext";
@@ -26,7 +27,7 @@ const AdminUsersPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   // Action Confirmation Modal State
-  const [actionTarget, setActionTarget] = useState(null); // { user, action: 'suspend' | 'activate' }
+  const [actionTarget, setActionTarget] = useState(null); // { user, action: 'suspend' | 'activate' | 'delete' }
   const [actionLoading, setActionLoading] = useState(false);
 
   const fetchUsers = async () => {
@@ -79,21 +80,25 @@ const AdminUsersPage = () => {
       setActionLoading(true);
       if (action === "suspend") {
         await adminService.suspendUser(user.id, "Suspended by admin via panel");
-      } else {
+      } else if (action === "activate") {
         await adminService.activateUser(user.id);
+      } else if (action === "delete") {
+        await adminService.deleteUser(user.id);
       }
 
       // Update local state instantly
       setUsers((prev) =>
-        prev.map((u) =>
-          u.id === user.id
-            ? {
-                ...u,
-                is_active: action === "activate",
-                status: action === "activate" ? "active" : "suspended",
-              }
-            : u
-        )
+        action === "delete"
+          ? prev.filter((u) => u.id !== user.id)
+          : prev.map((u) =>
+              u.id === user.id
+                ? {
+                    ...u,
+                    is_active: action === "activate",
+                    status: action === "activate" ? "active" : "suspended",
+                  }
+                : u
+            )
       );
       setActionTarget(null);
     } catch (err) {
@@ -113,14 +118,28 @@ const AdminUsersPage = () => {
       {/* Confirmation Modal */}
       <AdminConfirmModal
         isOpen={Boolean(actionTarget)}
-        title={actionTarget?.action === "suspend" ? "Suspend User Account" : "Activate User Account"}
+        title={
+          actionTarget?.action === "suspend"
+            ? "Suspend User Account"
+            : actionTarget?.action === "delete"
+            ? "Soft-Delete User Account"
+            : "Activate User Account"
+        }
         message={
           actionTarget?.action === "suspend"
             ? `Are you sure you want to suspend account "${actionTarget?.user?.username || actionTarget?.user?.email}"? They will lose access to the platform.`
+            : actionTarget?.action === "delete"
+            ? `Are you sure you want to delete account "${actionTarget?.user?.username || actionTarget?.user?.email}"? The user will be soft-deleted and access disabled.`
             : `Are you sure you want to reactivate account "${actionTarget?.user?.username || actionTarget?.user?.email}"?`
         }
-        confirmText={actionTarget?.action === "suspend" ? "Suspend Account" : "Activate Account"}
-        variant={actionTarget?.action === "suspend" ? "danger" : "primary"}
+        confirmText={
+          actionTarget?.action === "suspend"
+            ? "Suspend Account"
+            : actionTarget?.action === "delete"
+            ? "Delete Account"
+            : "Activate Account"
+        }
+        variant={actionTarget?.action === "activate" ? "primary" : "danger"}
         isLoading={actionLoading}
         onConfirm={handleConfirmAction}
         onCancel={() => setActionTarget(null)}
@@ -266,23 +285,34 @@ const AdminUsersPage = () => {
 
                       {/* Actions */}
                       <td className="px-6 py-4 text-right">
-                        {isActive ? (
+                        <div className="flex items-center justify-end gap-2">
+                          {isActive ? (
+                            <button
+                              onClick={() => setActionTarget({ user, action: "suspend" })}
+                              disabled={isSelf}
+                              title={isSelf ? "You cannot suspend your own admin account" : "Suspend user account"}
+                              className="px-3 py-1.5 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl font-semibold hover:bg-red-500/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer text-[11px]"
+                            >
+                              Suspend
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => setActionTarget({ user, action: "activate" })}
+                              className="px-3 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl font-semibold hover:bg-emerald-500/20 transition-all cursor-pointer text-[11px]"
+                            >
+                              Activate
+                            </button>
+                          )}
+
                           <button
-                            onClick={() => setActionTarget({ user, action: "suspend" })}
+                            onClick={() => setActionTarget({ user, action: "delete" })}
                             disabled={isSelf}
-                            title={isSelf ? "You cannot suspend your own admin account" : "Suspend user account"}
-                            className="px-3 py-1.5 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl font-semibold hover:bg-red-500/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer text-[11px]"
+                            title={isSelf ? "You cannot delete your own admin account" : "Delete user account (Soft Delete)"}
+                            className="p-1.5 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl hover:bg-red-500/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                           >
-                            Suspend
+                            <Trash2 size={14} />
                           </button>
-                        ) : (
-                          <button
-                            onClick={() => setActionTarget({ user, action: "activate" })}
-                            className="px-3 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl font-semibold hover:bg-emerald-500/20 transition-all cursor-pointer text-[11px]"
-                          >
-                            Activate
-                          </button>
-                        )}
+                        </div>
                       </td>
                     </tr>
                   );

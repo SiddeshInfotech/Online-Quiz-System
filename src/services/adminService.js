@@ -99,6 +99,15 @@ const adminService = {
   },
 
   /**
+   * Delete User (Soft Delete)
+   * DELETE /custom_admin/users/{userId}/
+   */
+  deleteUser: async (userId) => {
+    const response = await adminApi.delete(`custom_admin/users/${userId}/`);
+    return response.data;
+  },
+
+  /**
    * Quiz Moderation
    * GET /custom_admin/quizzes/
    */
@@ -158,6 +167,18 @@ const adminService = {
    */
   updateSupportTicket: async (ticketId, status) => {
     const response = await adminApi.patch(`custom_admin/support/${ticketId}/`, { status });
+    return response.data;
+  },
+
+  /**
+   * Reply to Support Ticket (Dispatches automated resolution/reply email to user)
+   * POST /custom_admin/support/{ticketId}/reply/
+   */
+  replySupportTicket: async (ticketId, replyMessage) => {
+    const response = await adminApi.post(`custom_admin/support/${ticketId}/reply/`, {
+      reply_message: replyMessage,
+      status: "Resolved",
+    });
     return response.data;
   },
 

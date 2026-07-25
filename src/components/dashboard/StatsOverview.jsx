@@ -50,9 +50,14 @@ export const DailyStreakCard = ({ user }) => {
 };
 
 export const OverallProgressCard = ({ user }) => {
-  const progressPercent = Math.min(100, Math.max(0, Number(user?.progress || 0)));
   const completed = user?.completedQuizzes ?? 0;
   const total = user?.totalQuizzes ?? 0;
+  let rawProgress = Number(user?.progress || 0);
+  if (rawProgress === 0 && total > 0 && completed > 0) {
+    rawProgress = (completed / total) * 100;
+  }
+  const progressPercent = Math.min(100, Math.max(0, rawProgress));
+  const displayPercent = Math.round(progressPercent);
 
   return (
     <Card hover className="p-5 sm:p-6 flex flex-col justify-between items-center text-center h-full border-app">
@@ -89,9 +94,13 @@ export const OverallProgressCard = ({ user }) => {
             className="transition-all duration-1000 ease-out"
           />
         </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl sm:text-4xl font-bold font-space-grotesk text-app">{progressPercent}%</span>
-          <span className="text-xs text-app-muted font-bold uppercase tracking-wider mt-0.5">Completed</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-2 text-center">
+          <span className="text-2xl sm:text-3xl font-bold font-space-grotesk text-app tracking-tight leading-none">
+            {displayPercent}%
+          </span>
+          <span className="text-[10px] sm:text-xs text-app-muted font-bold uppercase tracking-wider mt-1">
+            Completed
+          </span>
         </div>
       </div>
 

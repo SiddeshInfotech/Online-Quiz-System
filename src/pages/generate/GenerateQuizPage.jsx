@@ -21,11 +21,17 @@ import Button from "../../components/ui/Button/Button";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const PROGRAMMING_SUBJECTS = [
-  "C", "C++", "C#", "Java", "Python", "JavaScript", "TypeScript",
-  "React", "Node.js", "Express.js", "Django", "Flask", "Spring Boot",
-  "HTML", "CSS", "SQL", "MongoDB", "PostgreSQL", "Git & GitHub",
-  "Data Structures", "Algorithms", "OOP", "DBMS", "Operating Systems",
-  "Computer Networks", "AI & Machine Learning", "Cyber Security", "Cloud Computing",
+  "C",
+  "JavaScript",
+  "Java",
+  "Python",
+  "C++",
+  "TypeScript",
+  "Rust",
+  "Node.js",
+  "Flask",
+  "Django",
+  "React",
 ];
 
 const DIFFICULTY_OPTIONS = ["Easy", "Medium", "Hard"];

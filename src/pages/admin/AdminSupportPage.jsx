@@ -28,6 +28,39 @@ const AdminSupportPage = () => {
   // Selected Ticket Drawer Modal
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  const [replyLoading, setReplyLoading] = useState(false);
+
+  const handleSendReply = async () => {
+    if (!selectedTicket || !replyText.trim()) return;
+
+    try {
+      setReplyLoading(true);
+      await adminService.replySupportTicket(selectedTicket.id, replyText.trim());
+
+      setTickets((prev) =>
+        prev.map((t) =>
+          t.id === selectedTicket.id
+            ? { ...t, status: "resolved", reply_message: replyText.trim() }
+            : t
+        )
+      );
+
+      setSelectedTicket((prev) =>
+        prev ? { ...prev, status: "resolved", reply_message: replyText.trim() } : null
+      );
+      setReplyText("");
+    } catch (err) {
+      console.error("Failed to send reply email:", err);
+      const msg =
+        err?.response?.data?.detail ??
+        err?.response?.data?.message ??
+        "Failed to send reply email to user.";
+      setError(msg);
+    } finally {
+      setReplyLoading(false);
+    }
+  };
 
   const fetchTickets = async () => {
     try {
@@ -166,33 +199,54 @@ const AdminSupportPage = () => {
                 <label className="block text-slate-400 font-semibold mb-1 uppercase tracking-wider text-[10px]">
                   Message Body
                 </label>
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-slate-200 leading-relaxed whitespace-pre-wrap max-h-60 overflow-y-auto">
+                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-slate-200 leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">
                   {selectedTicket.message || selectedTicket.body || "No message content."}
                 </div>
               </div>
 
-              <div className="pt-4 flex items-center justify-between border-t border-slate-800">
+              {/* Admin Reply & Email Dispatch Section */}
+              <div className="space-y-2 pt-2 border-t border-slate-800">
+                <label className="block text-slate-300 font-semibold text-xs flex items-center justify-between">
+                  <span>Admin Reply Note (Sent to User's Email)</span>
+                  <span className="text-[10px] text-violet-400">⚡ Dispatches Email via SendGrid</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder="Type your resolution note or reply to send to the user's email address..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-violet-500"
+                />
+              </div>
+
+              <div className="pt-4 flex items-center justify-between gap-3 border-t border-slate-800">
+                <button
+                  onClick={handleSendReply}
+                  disabled={replyLoading || !replyText.trim()}
+                  className="px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-md shadow-violet-600/20 disabled:opacity-40 cursor-pointer"
+                >
+                  {replyLoading ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Mail size={14} />
+                  )}
+                  <span>Send Reply & Resolve (Email User)</span>
+                </button>
+
                 <button
                   onClick={() => handleToggleStatus(selectedTicket)}
                   disabled={updatingId === selectedTicket.id}
-                  className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                     (selectedTicket.status || "").toLowerCase() === "resolved"
                       ? "bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20"
                       : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20"
                   }`}
                 >
                   {(selectedTicket.status || "").toLowerCase() === "resolved" ? (
-                    <>Mark as Pending</>
+                    <>Mark Pending</>
                   ) : (
-                    <>Mark as Resolved</>
+                    <>Mark Resolved</>
                   )}
-                </button>
-
-                <button
-                  onClick={() => setSelectedTicket(null)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium"
-                >
-                  Close
                 </button>
               </div>
             </div>
