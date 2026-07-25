@@ -34,6 +34,60 @@ class AIService:
         quiz_title = f"{subject}: {topic_title} Mastery"
 
         coding_pools = {
+            "c": [
+                {
+                    "q": "What will be the output of the following C code?\n\n```c\n#include <stdio.h>\nint main() {\n    int a = 5;\n    printf(\"%d\", a++);\n    return 0;\n}\n```",
+                    "opts": ["5", "6", "4", "Compilation Error"],
+                    "ans": "5"
+                },
+                {
+                    "q": "What will the following C snippet print?\n\n```c\n#include <stdio.h>\nint main() {\n    int arr[3] = {10, 20, 30};\n    printf(\"%d\", *(arr + 1));\n    return 0;\n}\n```",
+                    "opts": ["20", "10", "30", "Garbage Value"],
+                    "ans": "20"
+                },
+                {
+                    "q": "What is the result of running this C program?\n\n```c\n#include <stdio.h>\nint main() {\n    int x = 10, y = 20;\n    int *p = &x;\n    *p = y;\n    printf(\"%d %d\", x, y);\n    return 0;\n}\n```",
+                    "opts": ["20 20", "10 20", "10 10", "Compilation Error"],
+                    "ans": "20 20"
+                },
+                {
+                    "q": "What will be the output of this C function?\n\n```c\n#include <stdio.h>\nvoid func() {\n    static int count = 0;\n    count++;\n    printf(\"%d \", count);\n}\nint main() {\n    func(); func();\n    return 0;\n}\n```",
+                    "opts": ["1 2 ", "1 1 ", "2 2 ", "0 1 "],
+                    "ans": "1 2 "
+                },
+                {
+                    "q": "What does this C code output?\n\n```c\n#include <stdio.h>\nint main() {\n    printf(\"%d\", (int)sizeof(char));\n    return 0;\n}\n```",
+                    "opts": ["1", "2", "4", "8"],
+                    "ans": "1"
+                },
+                {
+                    "q": "What is the output of the following C snippet?\n\n```c\n#include <stdio.h>\nint main() {\n    int i = 0;\n    for(; i < 3; i++);\n    printf(\"%d\", i);\n    return 0;\n}\n```",
+                    "opts": ["3", "2", "0", "4"],
+                    "ans": "3"
+                },
+                {
+                    "q": "What is printed by this ternary expression in C?\n\n```c\n#include <stdio.h>\nint main() {\n    int a = 10;\n    int b = (a > 5) ? 100 : 200;\n    printf(\"%d\", b);\n    return 0;\n}\n```",
+                    "opts": ["100", "200", "10", "5"],
+                    "ans": "100"
+                }
+            ],
+            "c++": [
+                {
+                    "q": "What is the output of the following C++ code?\n\n```cpp\n#include <iostream>\nusing namespace std;\nint main() {\n    int a = 10;\n    int &b = a;\n    b = 20;\n    cout << a;\n    return 0;\n}\n```",
+                    "opts": ["20", "10", "Garbage Value", "Compilation Error"],
+                    "ans": "20"
+                },
+                {
+                    "q": "What will the following C++ program print?\n\n```cpp\n#include <iostream>\nusing namespace std;\nint main() {\n    cout << 10 / 4;\n    return 0;\n}\n```",
+                    "opts": ["2", "2.5", "2.0", "Error"],
+                    "ans": "2"
+                },
+                {
+                    "q": "What is the output of this C++ code?\n\n```cpp\n#include <iostream>\nusing namespace std;\nclass Base {\npublic:\n    void show() { cout << \"B \"; }\n};\nint main() {\n    Base b;\n    b.show();\n    return 0;\n}\n```",
+                    "opts": ["B ", "Base ", "Error", "Nothing"],
+                    "ans": "B "
+                }
+            ],
             "python": [
                 {
                     "q": "What will be the output of the following Python code?\n\n```python\nitems = [1, 0, True, False, 2]\nresult = [x for x in items if x]\nprint(len(result))\n```",
@@ -49,6 +103,11 @@ class AIService:
                     "q": "What does the following Python function return?\n\n```python\ndef calc(a, b=5):\n    return a * b\nprint(calc(3))\n```",
                     "opts": ["15", "8", "TypeError", "5"],
                     "ans": "15"
+                },
+                {
+                    "q": "What will `print(bool([]))` output in Python?\n\n```python\nprint(bool([]))\n```",
+                    "opts": ["False", "True", "None", "TypeError"],
+                    "ans": "False"
                 }
             ],
             "javascript": [
@@ -74,17 +133,54 @@ class AIService:
                     "opts": ["12", "11", "10", "Compilation Error"],
                     "ans": "12"
                 }
-            ],
-            "c++": [
-                {
-                    "q": "What is the output of the following C++ code?\n\n```cpp\n#include <iostream>\nusing namespace std;\nint main() {\n    int a = 10;\n    int &b = a;\n    b = 20;\n    cout << a;\n    return 0;\n}\n```",
-                    "opts": ["20", "10", "Garbage Value", "Compilation Error"],
-                    "ans": "20"
-                }
             ]
         }
 
         theory_pools = {
+            "c": [
+                {
+                    "q": "Which standard library function is used for dynamic memory allocation in C?",
+                    "opts": ["malloc()", "new()", "alloc()", "create()"],
+                    "ans": "malloc()"
+                },
+                {
+                    "q": "Which operator is used to obtain the address of a variable in C?",
+                    "opts": ["& (Address-of)", "* (Dereference)", "-> (Arrow)", ". (Dot)"],
+                    "ans": "& (Address-of)"
+                },
+                {
+                    "q": "What is a pointer variable in C programming?",
+                    "opts": ["A variable that stores the memory address of another variable", "A keyword to exit loops", "A function that returns multiple values", "A container for key-value pairs"],
+                    "ans": "A variable that stores the memory address of another variable"
+                },
+                {
+                    "q": "Which header file is required to use printf() and scanf() in C?",
+                    "opts": ["<stdio.h>", "<stdlib.h>", "<conio.h>", "<math.h>"],
+                    "ans": "<stdio.h>"
+                },
+                {
+                    "q": "What is the default return type of the main() function in standard C?",
+                    "opts": ["int", "void", "float", "char"],
+                    "ans": "int"
+                },
+                {
+                    "q": "Which keyword is used to declare a constant variable in C?",
+                    "opts": ["const", "volatile", "static", "register"],
+                    "ans": "const"
+                }
+            ],
+            "c++": [
+                {
+                    "q": "Which feature of C++ allows multiple functions to share the same name with different parameters?",
+                    "opts": ["Function Overloading", "Function Overriding", "Virtual Functions", "Templates"],
+                    "ans": "Function Overloading"
+                },
+                {
+                    "q": "Which keyword is used to allocate memory dynamically on the heap in C++?",
+                    "opts": ["new", "malloc", "alloc", "create"],
+                    "ans": "new"
+                }
+            ],
             "python": [
                 {
                     "q": "What is the primary difference between a List and a Tuple in Python?",
@@ -123,25 +219,62 @@ class AIService:
             ]
         }
 
-        subj_key = "python"
-        subj_lower = subject.lower()
-        target_pools = coding_pools if quiz_mode == "Coding" else theory_pools
-        for k in target_pools:
-            if k in subj_lower:
-                subj_key = k
-                break
+        # ✅ Precise Subject Identification Engine
+        subj_lower = subject.lower().strip()
+        if subj_lower in ["c", "c programming", "c language"] or (subj_lower.startswith("c ") and "++" not in subj_lower and "#" not in subj_lower):
+            subj_key = "c"
+        elif "c++" in subj_lower or "cpp" in subj_lower:
+            subj_key = "c++"
+        elif "java" in subj_lower and "script" not in subj_lower:
+            subj_key = "java"
+        elif "script" in subj_lower or "js" in subj_lower:
+            subj_key = "javascript"
+        elif "python" in subj_lower or "py" in subj_lower:
+            subj_key = "python"
+        else:
+            subj_key = "c" if "c" in subj_lower else "python"
 
-        pool = target_pools[subj_key]
+        target_pools = coding_pools if quiz_mode == "Coding" else theory_pools
+        pool = target_pools.get(subj_key, target_pools.get("c" if "c" in subj_lower else "python", []))
+
         questions = []
+        seen_texts = set()
 
         for i in range(num_questions):
-            template = pool[i % len(pool)]
-            questions.append({
-                "question_type": "Coding" if quiz_mode == "Coding" else "MCQ",
-                "question_text": template["q"],
-                "options": list(template["opts"]),
-                "correct_answer": template["ans"]
-            })
+            if i < len(pool):
+                item = pool[i]
+            else:
+                # Dynamically generate unique variation if pool is smaller than num_questions
+                base_item = pool[i % len(pool)]
+                var_num = (i // len(pool)) + 1
+                if quiz_mode == "Coding":
+                    if subj_key == "c":
+                        item = {
+                            "q": f"What will be the output of the following {subject} code (Variation {var_num})?\n\n```c\n#include <stdio.h>\nint main() {{\n    int val{var_num} = {var_num * 10};\n    printf(\"%d\", val{var_num} + 5);\n    return 0;\n}}\n```",
+                            "opts": [str(var_num * 10 + 5), str(var_num * 10), str(var_num * 10 - 5), "Error"],
+                            "ans": str(var_num * 10 + 5)
+                        }
+                    else:
+                        item = {
+                            "q": f"What is the output of the following {subject} snippet (Variation {var_num})?\n\n```{subj_key}\n// {subject} execution logic {var_num}\nint num = {var_num * 2};\nprintf(\"%d\", num);\n```",
+                            "opts": [str(var_num * 2), str(var_num), str(var_num + 1), "0"],
+                            "ans": str(var_num * 2)
+                        }
+                else:
+                    item = {
+                        "q": f"Regarding {subject} {topic_title} (Concept #{i+1}): {base_item['q']}",
+                        "opts": list(base_item["opts"]),
+                        "ans": base_item["ans"]
+                    }
+
+            if item["q"] not in seen_texts:
+                seen_texts.add(item["q"])
+                questions.append({
+                    "question_type": "Coding" if quiz_mode == "Coding" else "MCQ",
+                    "question_text": item["q"],
+                    "options": list(item["opts"]),
+                    "correct_answer": item["ans"]
+                })
 
         return {
             "quiz_title": quiz_title,
@@ -150,44 +283,32 @@ class AIService:
 
     def _generate_theory_quiz(self, subject, difficulty, num_questions, prompt_topic):
         prompt = f"""
-You are an expert quiz generator. Generate exactly {num_questions} theory questions on "{subject}".
+You are an expert quiz generator. Generate exactly {num_questions} 100% UNIQUE theory questions on "{subject}".
 
 Difficulty: {difficulty}
 Focus: {prompt_topic if prompt_topic else 'General'}
 
+CRITICAL STRICT RULES:
+1. SUBJECT MATCHING: All questions MUST be 100% focused on "{subject}". Do NOT generate questions about Python if the subject is "{subject}".
+2. ZERO DUPLICATES: Every single question in the returned array MUST be completely unique.
+
 TITLE GENERATION RULE:
 Generate a short, catchy, and highly unique title for this quiz by combining the Subject ("{subject}") and the Focus/Topic ("{prompt_topic if prompt_topic else 'General'}").
-Ensure the title is unique and creative (e.g., "Python OOP Mastery: Class Combat", "Python Basics: Loop Ninja").
 
 QUESTION TYPES (mix them evenly):
 1. MCQ (Multiple Choice) - 4 options, one correct.
-2. True/False - exactly 4 options where:
-   - Option A MUST be "True"
-   - Option B MUST be "False"
-   - Option C and D MUST be contextually relevant, logical alternatives (e.g., "True, but only under certain conditions", "False, except in specific cases", "Partially true", etc.)
-   - DO NOT use random words like "Pizza", "Burger", or unrelated fillers.
-3. Fill in the Blank - statement with a missing word, 4 options, one correct.
+2. True/False - exactly 4 options where Option A="True", Option B="False", C & D are meaningful alternatives.
+3. Fill in the Blank - statement with a missing word.
 
-IMPORTANT:
-- EVERY question must have EXACTLY 4 options.
-- For True/False: A and B are fixed; C and D must be meaningful and related to the statement.
-- For Fill in the Blank: the correct answer must be one of the 4 options.
-
-OUTPUT - Return a JSON object with two fields: "quiz_title" (the unique catchy title generated) and "questions" (the array of exactly {num_questions} questions):
+OUTPUT - Return a JSON object with two fields: "quiz_title" and "questions" (array of exactly {num_questions} unique questions):
 {{
-  "quiz_title": "Python Basics: Loop Ninja",
+  "quiz_title": "{subject}: {prompt_topic if prompt_topic else 'Core'} Combat",
   "questions": [
     {{
       "question_type": "MCQ",
       "question_text": "Question text",
-      "options": ["A", "B", "C", "D"],
-      "correct_answer": "A"
-    }},
-    {{
-      "question_type": "True/False",
-      "question_text": "C# is used for web development.",
-      "options": ["True", "False", "True, but only with ASP.NET", "False, it is mostly for desktop apps"],
-      "correct_answer": "True"
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correct_answer": "Option A"
     }}
   ]
 }}
@@ -198,29 +319,20 @@ Return ONLY valid JSON. No extra text.
 
     def _generate_coding_quiz(self, subject, difficulty, num_questions, prompt_topic):
         prompt = f"""
-You are an expert programming logic question generator. Generate {num_questions} programming questions specifically for "{subject}".
+You are an expert programming logic question generator. Generate exactly {num_questions} 100% UNIQUE programming questions specifically for "{subject}".
 
 Difficulty: {difficulty}
 Focus: {prompt_topic if prompt_topic else 'General'}
 
 CRITICAL STRICT RULES:
-1. LANGUAGE CONSISTENCY: Every code snippet MUST be written in valid {subject} syntax inside a markdown code block with tag ```{subject.lower()}. NEVER output Python code when the subject is Java, C++, or JavaScript.
-2. OPTIONS MATCH CODE: For "Predict the output" or code logic questions, the 4 options MUST be the exact outputs or values produced by running that code snippet (e.g., "3", "5", "Error", "None"). DO NOT mix theory questions or memory sizes as options for a code execution question.
+1. SUBJECT LANGUAGE MATCHING: Every code snippet MUST be written in valid {subject} syntax inside a markdown code block tagged ```{subject.lower()}. NEVER output Python code when the subject is "{subject}".
+2. ZERO DUPLICATES: Every single question MUST be unique. Do not repeat code snippets or question text.
+3. OPTIONS MATCH CODE: The 4 options MUST be the exact outputs or values produced by running that specific code snippet.
 
 TITLE GENERATION RULE:
-Generate a short, catchy, and highly unique title for this quiz by combining the Subject ("{subject}") and the Focus/Topic ("{prompt_topic if prompt_topic else 'General'}").
+Generate a short, catchy title combining Subject ("{subject}") and Topic ("{prompt_topic if prompt_topic else 'General'}").
 
-QUESTION TYPES (mix them):
-1. Predict the output - Show a code snippet in {subject}, ask what it prints.
-2. Find the error - Show {subject} code with a bug, ask what's wrong.
-3. Complete the code - Show {subject} code with a blank, ask what goes there.
-
-OUTPUT FORMAT:
-- Each question MUST have a code snippet in {subject} syntax.
-- Exactly 4 options matching the output or code concepts.
-- The correct_answer must match one of the 4 options.
-
-Return ONLY valid JSON:
+OUTPUT FORMAT (JSON object with "quiz_title" and "questions"):
 {{
   "quiz_title": "{subject} Logic Combat",
   "questions": [
@@ -232,6 +344,8 @@ Return ONLY valid JSON:
     }}
   ]
 }}
+
+Return ONLY valid JSON.
 """
         return self._call_openrouter(prompt, num_questions)
 
