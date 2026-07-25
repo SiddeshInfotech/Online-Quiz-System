@@ -80,7 +80,9 @@ class GenerateAIQuizView(APIView):
             
         quiz_description = f"AI-generated {quiz_mode} quiz on {subject} - {difficulty} difficulty"
 
+        referer = request.META.get('HTTP_REFERER', '') or request.headers.get('Referer', '')
         is_from_admin = (
+            'admin' in referer.lower() or
             validated_data.get('is_admin') or
             request.data.get('is_admin') or
             request.data.get('is_admin_quiz') or

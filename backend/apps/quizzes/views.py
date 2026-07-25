@@ -130,8 +130,10 @@ class QuizLibraryListView(generics.ListAPIView):
         if not user.is_staff and getattr(user, 'role', '') != 'Admin':
             queryset = queryset.filter(
                 Q(created_by=user) |
+                Q(created_by__username__iexact='admin') |
                 Q(created_by__is_staff=True) |
-                Q(created_by__role='Admin')
+                Q(created_by__role='Admin') |
+                Q(is_ai_generated=False)
             )
 
         from django.db.models import OuterRef, Subquery, Count
@@ -159,8 +161,10 @@ class RecommendedQuizzesListView(generics.ListAPIView):
         if not user.is_staff and getattr(user, 'role', '') != 'Admin':
             queryset = queryset.filter(
                 Q(created_by=user) |
+                Q(created_by__username__iexact='admin') |
                 Q(created_by__is_staff=True) |
-                Q(created_by__role='Admin')
+                Q(created_by__role='Admin') |
+                Q(is_ai_generated=False)
             )
 
         from django.db.models import OuterRef, Subquery, Count

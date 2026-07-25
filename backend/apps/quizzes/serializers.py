@@ -49,16 +49,21 @@ class QuizLibrarySerializer(serializers.ModelSerializer):
 
     def get_is_admin_quiz(self, obj):
         if not obj.created_by:
-            return False
-        return obj.created_by.is_staff or obj.created_by.role == 'Admin'
+            return not obj.is_ai_generated
+        return (
+            obj.created_by.username.lower() == 'admin' or
+            obj.created_by.is_staff or
+            getattr(obj.created_by, 'role', '') == 'Admin' or
+            not obj.is_ai_generated
+        )
 
     def get_created_by_label(self, obj):
+        if self.get_is_admin_quiz(obj):
+            return "QuizGen AI"
         request = self.context.get('request')
         user = request.user if request else None
         if user and user.is_authenticated and obj.created_by_id == user.id:
             return "Created by You"
-        if self.get_is_admin_quiz(obj):
-            return "QuizGen AI"
         if obj.created_by:
             return obj.created_by.username
         return "QuizGen AI"
@@ -99,16 +104,21 @@ class QuizSerializer(serializers.ModelSerializer):
 
     def get_is_admin_quiz(self, obj):
         if not obj.created_by:
-            return False
-        return obj.created_by.is_staff or obj.created_by.role == 'Admin'
+            return not obj.is_ai_generated
+        return (
+            obj.created_by.username.lower() == 'admin' or
+            obj.created_by.is_staff or
+            getattr(obj.created_by, 'role', '') == 'Admin' or
+            not obj.is_ai_generated
+        )
 
     def get_created_by_label(self, obj):
+        if self.get_is_admin_quiz(obj):
+            return "QuizGen AI"
         request = self.context.get('request')
         user = request.user if request else None
         if user and user.is_authenticated and obj.created_by_id == user.id:
             return "Created by You"
-        if self.get_is_admin_quiz(obj):
-            return "QuizGen AI"
         if obj.created_by:
             return obj.created_by.username
         return "QuizGen AI"
