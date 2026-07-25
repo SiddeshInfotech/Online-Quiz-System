@@ -15,7 +15,7 @@ from .models import User, UserBadge
 from apps.otp.models import OTPVerification
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Content
-from .serializers import AllBadgeSerializer
+from .serializers import AllBadgeSerializer, UserBadgeSerializer
 from .services.badge_progress import BadgeProgressHelper
 from .models import Badge
 from django.core.cache import cache 

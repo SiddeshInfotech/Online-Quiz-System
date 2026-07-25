@@ -291,38 +291,3 @@ class SubjectPerformanceView(APIView):
             })
 
         return Response(subject_performance, status=status.HTTP_200_OK)
-        import datetime
-
-        # Single query to fetch all submitted attempt timestamps for this user
-        sub_times = QuizAttempt.objects.filter(
-            user=user,
-            submitted_at__isnull=False
-        ).values_list('submitted_at', flat=True)
-
-        # Evaluate dates in memory using the user's timezone locale
-        dates_set = {timezone.localdate(dt) for dt in sub_times}
-
-        today = timezone.localdate()
-        streak = 0
-        check_date = today
-
-        # If they did not attempt today, check starting from yesterday
-        if today not in dates_set:
-            check_date = today - datetime.timedelta(days=1)
-
-        # Count consecutive days backwards
-        while check_date in dates_set:
-            streak += 1
-            check_date -= datetime.timedelta(days=1)
-
-        longest_streak = max(getattr(user, 'longest_streak', 0) or 0, streak)
-        if user.current_streak != streak or user.longest_streak != longest_streak:
-            user.current_streak = streak
-            user.longest_streak = longest_streak
-            user.last_active_date = today
-            try:
-                user.save(update_fields=['current_streak', 'longest_streak', 'last_active_date'])
-            except Exception as e:
-                print(f"[DashboardSummaryView] streak save exception: {e}")
-
-        return streak

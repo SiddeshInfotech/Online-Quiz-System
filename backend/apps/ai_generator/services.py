@@ -234,7 +234,6 @@ Return ONLY valid JSON:
 }}
 """
         return self._call_openrouter(prompt, num_questions)
-        return self._call_openrouter(prompt, num_questions)
 
     def _clean_json_strings(self, text):
         """Escapes raw unescaped newlines, carriage returns, and tabs inside JSON string values."""
