@@ -153,7 +153,6 @@ class GenerateAIQuizView(APIView):
             if options_to_create:
                 QuestionOption.objects.bulk_create(options_to_create)
 
-        from django.core.cache import cache
         cache.delete("admin_analytics_summary")
 
         # Construct questions list matching frontend specifications

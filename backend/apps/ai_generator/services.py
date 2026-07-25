@@ -26,7 +26,7 @@ class AIService:
             else:
                 return self._generate_theory_quiz(subject, difficulty, num_questions, prompt_topic)
         except Exception as e:
-            print(f"⚠️ AI OpenRouter models failed ({e}), generating bulletproof fallback quiz...")
+            print(f"[WARNING] AI OpenRouter models failed ({e}), generating bulletproof fallback quiz...")
             return self._generate_fallback_quiz(subject, difficulty, num_questions, prompt_topic, quiz_mode)
 
     def _generate_fallback_quiz(self, subject, difficulty, num_questions, prompt_topic, quiz_mode):

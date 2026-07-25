@@ -59,7 +59,7 @@ class DashboardSummaryView(APIView):
             if remaining <= 0:
                 in_progress_attempt.submitted_at = timezone.now()
                 in_progress_attempt.save()
-                print(f"⏰ Auto-submitted expired attempt {in_progress_attempt.id} for user {user.username}")
+                print(f"[AUTO-SUBMIT] Auto-submitted expired attempt {in_progress_attempt.id} for user {user.username}")
             else:
                 # ✅ Standardized response structure
                 continue_quiz_data = {
@@ -377,7 +377,7 @@ class DashboardSummaryView(APIView):
 
             return streak
         except Exception as e:
-            print(f"⚠️ Error calculating streak for {user.username}: {e}")
+            print(f"[WARNING] Error calculating streak for {user.username}: {e}")
             return getattr(user, 'current_streak', 0) or 0
 
 
