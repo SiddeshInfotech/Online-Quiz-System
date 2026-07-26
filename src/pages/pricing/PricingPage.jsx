@@ -168,7 +168,12 @@ const PricingPage = () => {
     setApiError("");
 
     try {
-      const res = await subscriptionService.upgradeSubscription(billingCycle);
+      // Execute Razorpay order creation -> checkout popup -> payment verification flow
+      const res = await subscriptionService.processRazorpayPayment(billingCycle, {
+        name: currentUser?.full_name || currentUser?.username || "",
+        email: currentUser?.email || "",
+      });
+
       setCurrentPlan("pro", updateUser, currentUser);
       setSubscriptionData((prev) => ({
         ...prev,
@@ -179,22 +184,17 @@ const PricingPage = () => {
       }));
       setUpgradeSuccess(true);
       setShowSuccessModal(true);
-      // Context-aware redirect: stay on pricing but show success, redirect to profile after 2.5s
       setTimeout(() => {
         navigate("/profile");
       }, 2500);
     } catch (err) {
-      console.error("Upgrade failed:", err);
-      setCurrentPlan("pro", updateUser, currentUser);
-      setSubscriptionData((prev) => ({
-        ...prev,
-        plan: "PRO",
-        is_pro: true,
-        status: "ACTIVE",
-      }));
-      setUpgradeSuccess(true);
-      setShowSuccessModal(true);
-      setTimeout(() => navigate("/profile"), 2500);
+      console.error("Upgrade / Payment failed:", err);
+      if (err.message && err.message.includes("cancelled")) {
+        // User closed the popup — don't show red error banner
+        setUpgrading(false);
+        return;
+      }
+      setApiError(err.response?.data?.detail || err.message || "Payment verification failed. Please try again.");
     } finally {
       setUpgrading(false);
     }
