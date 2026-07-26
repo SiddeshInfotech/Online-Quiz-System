@@ -16,7 +16,10 @@ from .views import (
     AdminSupportMessageReplyView,
     AdminSubscriptionStatsView,
     AdminSubscriptionsListView,
-    AdminSubscriptionActionView
+    AdminSubscriptionActionView,
+    AdminNotificationsListView,
+    AdminNotificationsUnreadCountView,
+    AdminNotificationsMarkReadView
 )
 from apps.feedback.admin_views import (
     AdminFeedbackListView,
@@ -67,4 +70,10 @@ urlpatterns = [
     path('subscriptions/stats/', AdminSubscriptionStatsView.as_view(), name='admin-subscriptions-stats'),
     path('subscriptions/', AdminSubscriptionsListView.as_view(), name='admin-subscriptions-list'),
     path('subscriptions/<int:user_id>/action/', AdminSubscriptionActionView.as_view(), name='admin-subscriptions-action'),
+
+    # H. Admin Panel Real-Time Notifications
+    path('notifications/', AdminNotificationsListView.as_view(), name='admin-notifications-list'),
+    path('notifications/unread-count/', AdminNotificationsUnreadCountView.as_view(), name='admin-notifications-unread-count'),
+    path('notifications/mark-read/', AdminNotificationsMarkReadView.as_view(), name='admin-notifications-mark-read'),
+    path('notifications/<int:pk>/read/', AdminNotificationsMarkReadView.as_view(), name='admin-notifications-mark-read-pk'),
 ]

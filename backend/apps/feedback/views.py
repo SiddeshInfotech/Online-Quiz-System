@@ -37,7 +37,19 @@ class FeedbackCreateView(APIView):
             message=serializer.validated_data['message'],
         )
 
-        # ✅ Send admin notification (new)
+        # ✅ Trigger admin notification in DB for Admin Panel
+        try:
+            from apps.notifications.utils import send_admin_notification
+            send_admin_notification(
+                title=f"New Feedback Received ({feedback.rating}★)",
+                message=f"User {request.user.username} submitted feedback: {feedback.message[:150]}",
+                notification_type="feedback",
+                reference_id=feedback.id
+            )
+        except Exception as e:
+            logger.error(f"Failed to send DB admin notification for feedback: {e}")
+
+        # ✅ Send email admin notification
         self._send_admin_notification(request.user, feedback, is_new=True)
 
         return Response({

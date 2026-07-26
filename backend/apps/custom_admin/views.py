@@ -538,3 +538,60 @@ class AdminSubscriptionActionView(APIView):
             "end_date": sub.end_date.isoformat() if sub.end_date else None
         }, status=status.HTTP_200_OK)
 
+
+# 🔔 ADMIN PANEL NOTIFICATION ENDPOINTS
+from apps.notifications.models import Notification
+from apps.notifications.serializers import NotificationSerializer
+
+class AdminNotificationsListView(APIView):
+    permission_classes = [IsCustomAdmin]
+
+    def get(self, request):
+        user = request.user
+        type_filter = request.query_params.get('type')
+        qs = Notification.objects.filter(user=user).order_by('-created_at')
+
+        if type_filter:
+            qs = qs.filter(type__iexact=type_filter)
+
+        unread_count = Notification.objects.filter(user=user, is_read=False).count()
+        serializer = NotificationSerializer(qs[:50], many=True)
+
+        return Response({
+            "unread_count": unread_count,
+            "total": qs.count(),
+            "notifications": serializer.data
+        }, status=status.HTTP_200_OK)
+
+
+class AdminNotificationsUnreadCountView(APIView):
+    permission_classes = [IsCustomAdmin]
+
+    def get(self, request):
+        unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
+        return Response({
+            "unread_count": unread_count
+        }, status=status.HTTP_200_OK)
+
+
+class AdminNotificationsMarkReadView(APIView):
+    permission_classes = [IsCustomAdmin]
+
+    def post(self, request, pk=None):
+        user = request.user
+        notification_id = pk or request.data.get('id') or request.data.get('notification_id')
+        mark_all = request.data.get('all', False) or request.data.get('mark_all', False)
+
+        if mark_all or str(notification_id).lower() == 'all':
+            count = Notification.objects.filter(user=user, is_read=False).update(is_read=True)
+            return Response({"message": f"Marked {count} notifications as read.", "unread_count": 0}, status=status.HTTP_200_OK)
+
+        if notification_id:
+            updated = Notification.objects.filter(id=notification_id, user=user).update(is_read=True)
+            unread_count = Notification.objects.filter(user=user, is_read=False).count()
+            if updated:
+                return Response({"message": "Notification marked as read.", "unread_count": unread_count}, status=status.HTTP_200_OK)
+            return Response({"error": "Notification not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"error": "Provide notification_id or all: true"}, status=status.HTTP_400_BAD_REQUEST)
+

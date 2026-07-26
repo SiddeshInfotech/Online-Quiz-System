@@ -62,6 +62,18 @@ class ContactCreateView(APIView):
         if serializer.is_valid():
             contact_instance = serializer.save()
 
+            # Trigger admin notification in DB for Admin Panel
+            try:
+                from apps.notifications.utils import send_admin_notification
+                send_admin_notification(
+                    title=f"New Support Ticket [{contact_instance.category}]",
+                    message=f"From {contact_instance.name} ({contact_instance.email}): {contact_instance.subject}",
+                    notification_type="support",
+                    reference_id=contact_instance.id
+                )
+            except Exception as e:
+                logger.error(f"Failed to send DB admin notification for support message: {e}")
+
             # Fail-safe asynchronous email dispatch
             email_thread = threading.Thread(
                 target=send_contact_notification_email,

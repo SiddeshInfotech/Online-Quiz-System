@@ -184,6 +184,18 @@ class SubscriptionUpgradeView(APIView):
         sub.cancellation_requested = False
         sub.save()
 
+        # Trigger admin notification
+        try:
+            from apps.notifications.utils import send_admin_notification
+            send_admin_notification(
+                title="New Pro Upgrade 🎉",
+                message=f"User {user.username} upgraded to QuizGen Pro ({billing_cycle})!",
+                notification_type="subscription",
+                reference_id=user.id
+            )
+        except Exception:
+            pass
+
         return Response({
             "message": "Successfully upgraded to QuizGen Pro!",
             "plan": "PRO",
