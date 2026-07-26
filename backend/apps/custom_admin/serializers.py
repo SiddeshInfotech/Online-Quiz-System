@@ -12,18 +12,25 @@ from django.utils import timezone
 class AdminUserSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     total_attempts = serializers.SerializerMethodField()
+    attempt_count = serializers.SerializerMethodField()
+    attempts_count = serializers.SerializerMethodField()
+    attempts = serializers.SerializerMethodField()
     penalty_count = serializers.SerializerMethodField()
 
-    # 💳 Subscription & Tier details
+    # 💳 Subscription & Tier details with all frontend aliases
+    plan = serializers.SerializerMethodField()
     subscription_plan = serializers.SerializerMethodField()
+    tier = serializers.SerializerMethodField()
     subscription_status = serializers.SerializerMethodField()
     is_pro = serializers.SerializerMethodField()
+    is_premium = serializers.SerializerMethodField()
     billing_cycle = serializers.SerializerMethodField()
     subscription_start = serializers.SerializerMethodField()
     subscription_end = serializers.SerializerMethodField()
     days_remaining = serializers.SerializerMethodField()
     quizzes_created_today = serializers.SerializerMethodField()
     attempts_today = serializers.SerializerMethodField()
+    subscription = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -31,10 +38,11 @@ class AdminUserSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'full_name', 'total_points', 
             'xp', 'level', 'role', 'is_active', 'status', 'suspension_reason',
             'suspended_at', 'is_deleted', 'is_staff', 'is_superuser',
-            'total_attempts', 'penalty_count', 'date_joined',
-            'subscription_plan', 'subscription_status', 'is_pro',
+            'total_attempts', 'attempt_count', 'attempts_count', 'attempts',
+            'penalty_count', 'date_joined',
+            'plan', 'subscription_plan', 'tier', 'subscription_status', 'is_pro', 'is_premium',
             'billing_cycle', 'subscription_start', 'subscription_end',
-            'days_remaining', 'quizzes_created_today', 'attempts_today'
+            'days_remaining', 'quizzes_created_today', 'attempts_today', 'subscription'
         ]
         read_only_fields = fields
 
@@ -42,9 +50,22 @@ class AdminUserSerializer(serializers.ModelSerializer):
         return obj.full_name or obj.username or ""
 
     def get_total_attempts(self, obj):
+        if hasattr(obj, 'annotated_total_attempts'):
+            return obj.annotated_total_attempts
         return QuizAttempt.objects.filter(user=obj).count()
 
+    def get_attempt_count(self, obj):
+        return self.get_total_attempts(obj)
+
+    def get_attempts_count(self, obj):
+        return self.get_total_attempts(obj)
+
+    def get_attempts(self, obj):
+        return self.get_total_attempts(obj)
+
     def get_penalty_count(self, obj):
+        if hasattr(obj, 'annotated_penalty_count'):
+            return obj.annotated_penalty_count
         return UserPenaltyLog.objects.filter(user=obj).count()
 
     def get_subscription_plan(self, obj):
@@ -52,6 +73,12 @@ class AdminUserSerializer(serializers.ModelSerializer):
         if sub:
             return "PRO" if sub.is_pro else "FREE"
         return "FREE"
+
+    def get_plan(self, obj):
+        return self.get_subscription_plan(obj)
+
+    def get_tier(self, obj):
+        return self.get_subscription_plan(obj)
 
     def get_subscription_status(self, obj):
         sub = getattr(obj, 'subscription', None)
@@ -62,6 +89,9 @@ class AdminUserSerializer(serializers.ModelSerializer):
     def get_is_pro(self, obj):
         sub = getattr(obj, 'subscription', None)
         return sub.is_pro if sub else False
+
+    def get_is_premium(self, obj):
+        return self.get_is_pro(obj)
 
     def get_billing_cycle(self, obj):
         sub = getattr(obj, 'subscription', None)
@@ -85,12 +115,29 @@ class AdminUserSerializer(serializers.ModelSerializer):
         return 365
 
     def get_quizzes_created_today(self, obj):
+        if hasattr(obj, 'annotated_quizzes_created_today'):
+            return obj.annotated_quizzes_created_today
         today = timezone.localdate()
         return Quiz.objects.filter(created_by=obj, created_at__date=today).count()
 
     def get_attempts_today(self, obj):
+        if hasattr(obj, 'annotated_attempts_today'):
+            return obj.annotated_attempts_today
         today = timezone.localdate()
         return QuizAttempt.objects.filter(user=obj, started_at__date=today).count()
+
+    def get_subscription(self, obj):
+        sub = getattr(obj, 'subscription', None)
+        is_pro = sub.is_pro if sub else False
+        return {
+            "plan": "PRO" if is_pro else "FREE",
+            "is_pro": is_pro,
+            "status": sub.status if (sub and is_pro) else "ACTIVE",
+            "billing_cycle": (sub.billing_cycle or "MONTHLY") if sub else "FOREVER",
+            "days_remaining": self.get_days_remaining(obj),
+            "start_date": sub.start_date.isoformat() if (sub and sub.start_date) else None,
+            "end_date": sub.end_date.isoformat() if (sub and sub.end_date) else None
+        }
 
 class AdminQuizSerializer(serializers.ModelSerializer):
     category_name = serializers.ReadOnlyField(source='category.category_name')

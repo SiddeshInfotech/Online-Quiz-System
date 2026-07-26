@@ -5,7 +5,7 @@ from apps.questions.models import Question, QuestionOption
 
 class QuizAttempt(models.Model):
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='attempts')
     score = models.IntegerField(default=0)
     percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
     time_taken = models.TimeField(null=True, blank=True)

@@ -125,8 +125,15 @@ class AdminUsersListView(generics.ListAPIView):
     pagination_class = None
 
     def get_queryset(self):
-        # Return ALL actual registered user accounts from DB with subscription pre-fetched
-        return User.objects.all().select_related('subscription').order_by('-date_joined')
+        from django.db.models import Count, Q
+        from django.utils import timezone
+        today = timezone.localdate()
+        return User.objects.all().select_related('subscription').annotate(
+            annotated_total_attempts=Count('attempts', distinct=True),
+            annotated_penalty_count=Count('penalties', distinct=True),
+            annotated_quizzes_created_today=Count('quiz', filter=Q(quiz__created_at__date=today), distinct=True),
+            annotated_attempts_today=Count('attempts', filter=Q(attempts__started_at__date=today), distinct=True)
+        ).order_by('-date_joined')
 
 # Alias for backwards compatibility
 AdminUserListView = AdminUsersListView
