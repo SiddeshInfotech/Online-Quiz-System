@@ -39,182 +39,216 @@ class AIService:
                 {
                     "q": "What is the output of the following C++ code?\n\n```cpp\n#include <iostream>\nusing namespace std;\nint main() {\n    int a = 10;\n    int &b = a;\n    b = 20;\n    cout << a;\n    return 0;\n}\n```",
                     "opts": ["20", "10", "Garbage Value", "Compilation Error"],
-                    "ans": "20"
+                    "ans": "20",
+                    "exp": "In C++, 'int &b = a' creates a reference (alias) to variable 'a'. Modifying 'b = 20' directly mutates the underlying memory of 'a', so printing 'a' yields 20."
                 },
                 {
                     "q": "What will the following C++ pointer code print?\n\n```cpp\n#include <iostream>\nusing namespace std;\nint main() {\n    int val = 50;\n    int *ptr = &val;\n    *ptr = 100;\n    cout << val;\n    return 0;\n}\n```",
                     "opts": ["100", "50", "0", "Memory Leak"],
-                    "ans": "100"
+                    "ans": "100",
+                    "exp": "The pointer 'ptr' stores the memory address of 'val'. Dereferencing '*ptr = 100' assigns 100 directly to that memory address, changing 'val' to 100."
                 },
                 {
                     "q": "What will be the output of this C++ function call?\n\n```cpp\n#include <iostream>\nusing namespace std;\nint calc(int x, int y = 5) {\n    return x * y;\n}\nint main() {\n    cout << calc(4);\n    return 0;\n}\n```",
                     "opts": ["20", "4", "9", "Compilation Error"],
-                    "ans": "20"
+                    "ans": "20",
+                    "exp": "The parameter 'y' has a default argument of 5. Calling calc(4) uses the default y=5, computing 4 * 5 = 20."
                 },
                 {
                     "q": "What is the result of the following C++ vector operation?\n\n```cpp\n#include <iostream>\n#include <vector>\nusing namespace std;\nint main() {\n    vector<int> v = {10, 20, 30};\n    v.push_back(40);\n    v.pop_back();\n    cout << v.back();\n    return 0;\n}\n```",
                     "opts": ["30", "40", "20", "10"],
-                    "ans": "30"
+                    "ans": "30",
+                    "exp": "push_back(40) appends 40 to the vector {10, 20, 30, 40}. pop_back() removes 40, leaving {10, 20, 30}. Calling v.back() returns the last element, 30."
                 },
                 {
                     "q": "What will the following C++ global vs local scope snippet output?\n\n```cpp\n#include <iostream>\nusing namespace std;\nint num = 10;\nint main() {\n    int num = 5;\n    cout << ::num + num;\n    return 0;\n}\n```",
                     "opts": ["15", "10", "5", "Compilation Error"],
-                    "ans": "15"
+                    "ans": "15",
+                    "exp": "The scope resolution operator '::num' accesses the global variable (10), while 'num' evaluates to the local variable (5). Summing 10 + 5 yields 15."
                 },
                 {
                     "q": "What will the following C++ ternary operator code print?\n\n```cpp\n#include <iostream>\nusing namespace std;\nint main() {\n    int a = 5;\n    int res = (a++ > 5) ? 10 : 20;\n    cout << res;\n    return 0;\n}\n```",
                     "opts": ["20", "10", "5", "6"],
-                    "ans": "20"
+                    "ans": "20",
+                    "exp": "In post-increment (a++), 'a' is evaluated first (5) before incrementing to 6. Since 5 > 5 is false, the ternary operator selects 20."
                 },
                 {
                     "q": "What is the output of the following C++ lambda snippet?\n\n```cpp\n#include <iostream>\nusing namespace std;\nint main() {\n    auto square = [](int n) { return n * n; };\n    cout << square(6);\n    return 0;\n}\n```",
                     "opts": ["36", "12", "6", "Compilation Error"],
-                    "ans": "36"
+                    "ans": "36",
+                    "exp": "The lambda function square takes n=6 and returns 6 * 6 = 36."
                 },
                 {
                     "q": "What will the following C++ string concatenation code output?\n\n```cpp\n#include <iostream>\n#include <string>\nusing namespace std;\nint main() {\n    string s1 = \"C++\";\n    string s2 = \"20\";\n    cout << (s1 + s2).length();\n    return 0;\n}\n```",
                     "opts": ["5", "3", "2", "6"],
-                    "ans": "5"
+                    "ans": "5",
+                    "exp": "Concatenating 'C++' and '20' creates 'C++20', which has a length of 5 characters."
                 }
             ],
             "python": [
                 {
                     "q": "What will be the output of the following Python list comprehension?\n\n```python\nitems = [1, 0, True, False, 2]\nresult = [x for x in items if x]\nprint(len(result))\n```",
                     "opts": ["3", "5", "2", "Error"],
-                    "ans": "3"
+                    "ans": "3",
+                    "exp": "In Python list comprehensions, 'if x' filters truthy elements. 1, True, and 2 are truthy (3 items), while 0 and False are falsy. Thus, len(result) evaluates to 3."
                 },
                 {
                     "q": "What will the following Python dictionary get method output?\n\n```python\ndata = {\"a\": 1, \"b\": 2}\nprint(data.get(\"c\", 99))\n```",
                     "opts": ["99", "None", "KeyError", "2"],
-                    "ans": "99"
+                    "ans": "99",
+                    "exp": "The dict.get(key, default) method returns the specified default value ('99') if the key 'c' is not present in the dictionary, avoiding a KeyError."
                 },
                 {
                     "q": "What will the following Python slicing operation log?\n\n```python\ntext = \"Python\"\nprint(text[::-1])\n```",
                     "opts": ["\"nohtyP\"", "\"Python\"", "\"P\"", "\"n\""],
-                    "ans": "\"nohtyP\""
+                    "ans": "\"nohtyP\"",
+                    "exp": "In Python string slicing [start:stop:step], a step of -1 reverses the string sequence from right to left, converting 'Python' to '\"nohtyP\"'."
                 },
                 {
                     "q": "What is the output of this Python generator expression?\n\n```python\ngen = (x * 2 for x in range(3))\nprint(list(gen))\n```",
                     "opts": ["[0, 2, 4]", "[2, 4, 6]", "(0, 2, 4)", "[0, 1, 2]"],
-                    "ans": "[0, 2, 4]"
+                    "ans": "[0, 2, 4]",
+                    "exp": "The generator expression yields (0*2), (1*2), (2*2) = 0, 2, 4. Converting list(gen) consumes the generator sequence to produce [0, 2, 4]."
                 },
                 {
                     "q": "What will the following Python multiple assignment output?\n\n```python\na, b = 5, 10\na, b = b, a + b\nprint(a, b)\n```",
                     "opts": ["10 15", "5 15", "10 5", "15 10"],
-                    "ans": "10 15"
+                    "ans": "10 15",
+                    "exp": "Python evaluates tuple right-hand expressions simultaneously before assignment: right-hand side is (10, 5 + 10) = (10, 15). Unpacking assigns a = 10 and b = 15, so print(a, b) outputs '10 15'."
                 },
                 {
                     "q": "What will the following Python args function output?\n\n```python\ndef total(*args):\n    return sum(args)\nprint(total(10, 20, 30))\n```",
                     "opts": ["60", "[10, 20, 30]", "10", "TypeError"],
-                    "ans": "60"
+                    "ans": "60",
+                    "exp": "The *args parameter collects positional arguments (10, 20, 30) into a tuple (10, 20, 30). Calling sum((10, 20, 30)) calculates 10 + 20 + 30 = 60."
                 },
                 {
                     "q": "What happens when executing this Python set operation?\n\n```python\ns1 = {1, 2, 3}\ns2 = {2, 3, 4}\nprint(s1 & s2)\n```",
                     "opts": ["{2, 3}", "{1, 2, 3, 4}", "{1, 4}", "SetError"],
-                    "ans": "{2, 3}"
+                    "ans": "{2, 3}",
+                    "exp": "The '&' operator performs set intersection in Python, returning a new set containing elements common to both s1 and s2, which are {2, 3}."
                 },
                 {
                     "q": "What is the output of this Python lambda map operation?\n\n```python\nnums = [1, 2, 3]\nres = list(map(lambda x: x + 10, nums))\nprint(res)\n```",
                     "opts": ["[11, 12, 13]", "[10, 20, 30]", "[1, 2, 3]", "Error"],
-                    "ans": "[11, 12, 13]"
+                    "ans": "[11, 12, 13]",
+                    "exp": "The map() function applies the lambda function to each element in [1, 2, 3], adding 10 to produce [11, 12, 13]."
                 }
             ],
             "java": [
                 {
                     "q": "What is the output of the following Java string immutability code?\n\n```java\npublic class Main {\n    public static void main(String[] args) {\n        String str = \"Java\";\n        str.concat(\" SE\");\n        System.out.println(str);\n    }\n}\n```",
                     "opts": ["Java", "Java SE", "NullPointerException", "Compilation Error"],
-                    "ans": "Java"
+                    "ans": "Java",
+                    "exp": "Strings in Java are immutable. Calling str.concat(\" SE\") returns a new string rather than modifying 'str' in-place, so 'str' remains 'Java'."
                 },
                 {
                     "q": "What will the following Java StringBuilder code output?\n\n```java\npublic class Main {\n    public static void main(String[] args) {\n        StringBuilder sb = new StringBuilder(\"Code\");\n        sb.append(\"123\");\n        System.out.println(sb.length());\n    }\n}\n```",
                     "opts": ["7", "4", "3", "Compilation Error"],
-                    "ans": "7"
+                    "ans": "7",
+                    "exp": "StringBuilder is mutable. Appending '123' to 'Code' produces 'Code123', which has a length of 7 characters."
                 },
                 {
                     "q": "What will be printed by this Java array iteration snippet?\n\n```java\npublic class Main {\n    public static void main(String[] args) {\n        int[] arr = {2, 4, 6};\n        int sum = 0;\n        for(int x : arr) sum += x;\n        System.out.println(sum);\n    }\n}\n```",
                     "opts": ["12", "6", "3", "0"],
-                    "ans": "12"
+                    "ans": "12",
+                    "exp": "The enhanced for loop iterates over {2, 4, 6}, accumulating 2 + 4 + 6 = 12 into 'sum'."
                 },
                 {
                     "q": "What is the output of this Java post-increment code?\n\n```java\npublic class Main {\n    public static void main(String[] args) {\n        int count = 5;\n        System.out.println(count++ + ++count);\n    }\n}\n```",
                     "opts": ["12", "11", "10", "13"],
-                    "ans": "12"
+                    "ans": "12",
+                    "exp": "Post-increment 'count++' evaluates to 5 and then increments count to 6. Pre-increment '++count' increments count to 7 and evaluates to 7. Summing 5 + 7 yields 12."
                 },
                 {
                     "q": "What happens when running this Java ternary operator code?\n\n```java\npublic class Main {\n    public static void main(String[] args) {\n        boolean flag = false;\n        int val = flag ? 100 : 200;\n        System.out.println(val);\n    }\n}\n```",
                     "opts": ["200", "100", "0", "Compilation Error"],
-                    "ans": "200"
+                    "ans": "200",
+                    "exp": "Since 'flag' is false, the ternary operator evaluates the false expression, assigning 200 to 'val'."
                 },
                 {
                     "q": "What will the following Java Math function print?\n\n```java\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println(Math.max(15, 25));\n    }\n}\n```",
                     "opts": ["25", "15", "40", "0"],
-                    "ans": "25"
+                    "ans": "25",
+                    "exp": "Math.max(15, 25) compares 15 and 25 and returns the greater value, 25."
                 }
             ],
             "csharp": [
                 {
                     "q": "What will be the output of the following C# post-increment snippet?\n\n```csharp\nusing System;\nclass Program {\n    static void Main() {\n        int x = 5;\n        Console.WriteLine(x++);\n    }\n}\n```",
                     "opts": ["5", "6", "4", "Compilation Error"],
-                    "ans": "5"
+                    "ans": "5",
+                    "exp": "Post-increment (x++) outputs the current value of x (5) to the console before incrementing x to 6."
                 },
                 {
                     "q": "What is the output of this C# string property snippet?\n\n```csharp\nusing System;\nclass Program {\n    static void Main() {\n        string text = \"C# .NET\";\n        Console.WriteLine(text.Length);\n    }\n}\n```",
                     "opts": ["7", "6", "8", "0"],
-                    "ans": "7"
+                    "ans": "7",
+                    "exp": "The string 'C# .NET' contains 7 characters including space and special symbols."
                 },
                 {
                     "q": "What will the following C# array code log?\n\n```csharp\nusing System;\nclass Program {\n    static void Main() {\n        int[] numbers = { 10, 20, 30 };\n        Console.WriteLine(numbers[1]);\n    }\n}\n```",
                     "opts": ["20", "10", "30", "IndexOutOfRangeException"],
-                    "ans": "20"
+                    "ans": "20",
+                    "exp": "Arrays are 0-indexed in C#. Index 1 accesses the second element, 20."
                 },
                 {
                     "q": "What is the result of this C# nullable type snippet?\n\n```csharp\nusing System;\nclass Program {\n    static void Main() {\n        int? score = null;\n        Console.WriteLine(score ?? 100);\n    }\n}\n```",
                     "opts": ["100", "null", "0", "Compilation Error"],
-                    "ans": "100"
+                    "ans": "100",
+                    "exp": "The null-coalescing operator '??' returns the left operand if not null; otherwise, it returns the right operand, 100."
                 }
             ],
             "c": [
                 {
                     "q": "What will be the output of the following C code?\n\n```c\n#include <stdio.h>\nint main() {\n    int a = 5;\n    printf(\"%d\", a++);\n    return 0;\n}\n```",
                     "opts": ["5", "6", "4", "Compilation Error"],
-                    "ans": "5"
+                    "ans": "5",
+                    "exp": "Post-increment (a++) passes the current value of a (5) to printf before incrementing a to 6."
                 },
                 {
                     "q": "What will the following C pointer offset snippet print?\n\n```c\n#include <stdio.h>\nint main() {\n    int arr[3] = {10, 20, 30};\n    printf(\"%d\", *(arr + 1));\n    return 0;\n}\n```",
                     "opts": ["20", "10", "30", "Garbage Value"],
-                    "ans": "20"
+                    "ans": "20",
+                    "exp": "Pointer arithmetic *(arr + 1) offsets the base array address by 1 element, accessing index 1 (20)."
                 },
                 {
                     "q": "What is the output of this C bitwise shift operation?\n\n```c\n#include <stdio.h>\nint main() {\n    int val = 4;\n    printf(\"%d\", val << 2);\n    return 0;\n}\n```",
                     "opts": ["16", "8", "2", "4"],
-                    "ans": "16"
+                    "ans": "16",
+                    "exp": "Bitwise left shift (val << 2) multiplies 4 by 2^2 (4 * 4), yielding 16."
                 },
                 {
                     "q": "What will the following C struct member access print?\n\n```c\n#include <stdio.h>\nstruct Point { int x; int y; };\nint main() {\n    struct Point p = {10, 25};\n    printf(\"%d\", p.y);\n    return 0;\n}\n```",
                     "opts": ["25", "10", "35", "0"],
-                    "ans": "25"
+                    "ans": "25",
+                    "exp": "Accessing struct member 'p.y' retrieves the second field of Point, initialized to 25."
                 }
             ],
             "javascript": [
                 {
                     "q": "What will the following JavaScript type coercion snippet output?\n\n```javascript\nconsole.log(1 + '2' + 3);\n```",
                     "opts": ["'123'", "6", "'15'", "NaN"],
-                    "ans": "'123'"
+                    "ans": "'123'",
+                    "exp": "In JavaScript, addition with a string triggers coercion: 1 + '2' evaluates to '12', and '12' + 3 evaluates to '123'."
                 },
                 {
                     "q": "What is the output of this JavaScript array map operation?\n\n```javascript\nconst arr = [1, 2, 3];\nconst res = arr.map(x => x * 2);\nconsole.log(res[1]);\n```",
                     "opts": ["4", "2", "6", "undefined"],
-                    "ans": "4"
+                    "ans": "4",
+                    "exp": "arr.map() doubles each element, producing [2, 4, 6]. Index 1 accesses the second element, 4."
                 },
                 {
                     "q": "What will the following JavaScript variable hoisting snippet log?\n\n```javascript\nconsole.log(typeof a);\nvar a = 10;\n```",
                     "opts": ["\"undefined\"", "\"number\"", "\"ReferenceError\"", "\"object\""],
-                    "ans": "\"undefined\""
+                    "ans": "\"undefined\"",
+                    "exp": "Variable declaration 'var a' is hoisted to the top of its scope initialized to undefined. Calling typeof a before assignment returns 'undefined'."
                 },
                 {
                     "q": "What is the output of this JavaScript filter snippet?\n\n```javascript\nconst items = [0, 'hello', false, 42];\nconsole.log(items.filter(Boolean).length);\n```",
                     "opts": ["2", "4", "1", "3"],
-                    "ans": "2"
+                    "ans": "2",
+                    "exp": "filter(Boolean) filters out falsy values (0 and false), keeping truthy values ('hello' and 42). The resulting array has a length of 2."
                 }
             ],
             "react": [
@@ -475,23 +509,64 @@ class AIService:
         seen_texts = set()
         idx = 0
 
-        # Sub-topic generators for 100% unique question generation beyond static pool
+        # Sub-topic generators for 100% unique question generation beyond static pool with deep code-trace explanations
         subtopics_coding = [
-            ("Variables & Data Types", lambda v, s: (f"What is the output of the following {subject} snippet (Var #{v})?\n\n```{s}\nint val{v} = {v * 5};\nval{v} += 10;\nprintf(\"%d\", val{v});\n```" if s == "c" else f"What is the output of the following {subject} snippet (Var #{v})?\n\n```{s}\nint val{v} = {v * 5};\nval{v} += 10;\ncout << val{v};\n```" if s == "cpp" else f"What is the output of the following {subject} code (Var #{v})?\n\n```{s}\nval{v} = {v * 5}\nval{v} += 10\nprint(val{v})\n```", [str(v * 5 + 10), str(v * 5), str(v * 10), "Error"], str(v * 5 + 10))),
-            ("Conditionals & Logic", lambda v, s: (f"What will this {subject} condition evaluate to (Check #{v})?\n\n```{s}\nint score{v} = {v * 15};\nif (score{v} >= 30) {{\n    printf(\"Pass\");\n}} else {{\n    printf(\"Fail\");\n}}\n```" if s == "c" else f"What will this {subject} condition evaluate to (Check #{v})?\n\n```{s}\nint score{v} = {v * 15};\nif (score{v} >= 30) {{\n    cout << \"Pass\";\n}} else {{\n    cout << \"Fail\";\n}}\n```" if s == "cpp" else f"What will this {subject} code output (Check #{v})?\n\n```{s}\nscore{v} = {v * 15}\nprint(\"Pass\" if score{v} >= 30 else \"Fail\")\n```", ["Pass" if v * 15 >= 30 else "Fail", "Fail" if v * 15 >= 30 else "Pass", "Error", "None"], "Pass" if v * 15 >= 30 else "Fail")),
-            ("Loop Execution", lambda v, s: (f"What total count does this {subject} loop produce (Loop #{v})?\n\n```{s}\nint total{v} = 0;\nfor (int i = 0; i < {v}; i++) {{\n    total{v} += i;\n}}\nprintf(\"%d\", total{v});\n```" if s == "c" else f"What total count does this {subject} loop produce (Loop #{v})?\n\n```{s}\nint total{v} = 0;\nfor (int i = 0; i < {v}; i++) {{\n    total{v} += i;\n}}\ncout << total{v};\n```" if s == "cpp" else f"What does this {subject} loop calculate (Loop #{v})?\n\n```{s}\ntotal{v} = sum(range({v}))\nprint(total{v})\n```", [str(sum(range(v))), str(v * v), str(v), "0"], str(sum(range(v))))),
-            ("Array / List Processing", lambda v, s: (f"What element is printed by this {subject} array code (Array #{v})?\n\n```{s}\nint arr{v}[] = {{{v * 2}, {v * 3}, {v * 4}}};\nprintf(\"%d\", arr{v}[1]);\n```" if s == "c" else f"What element is printed by this {subject} array code (Array #{v})?\n\n```{s}\nint arr{v}[] = {{{v * 2}, {v * 3}, {v * 4}}};\ncout << arr{v}[1];\n```" if s == "cpp" else f"What element does this {subject} list access (List #{v})?\n\n```{s}\nitems{v} = [{v * 2}, {v * 3}, {v * 4}]\nprint(items{v}[1])\n```", [str(v * 3), str(v * 2), str(v * 4), "IndexError"], str(v * 3))),
-            ("Function Mechanics", lambda v, s: (f"What is returned by this {subject} helper function (Fn #{v})?\n\n```{s}\nint multiply{v}(int a, int b) {{\n    return a * b + {v};\n}}\n// Called as: multiply{v}(3, 4)\n```" if s in ["cpp", "c"] else f"What is the result of calling this {subject} function (Fn #{v})?\n\n```{s}\ndef compute{v}(a, b):\n    return a * b + {v}\nprint(compute{v}(3, 4))\n```", [str(12 + v), str(12), str(7 + v), "0"], str(12 + v))),
-            ("String Manipulation", lambda v, s: (f"What is printed by this {subject} string operation (Str #{v})?\n\n```{s}\nchar s{v}[] = \"Tech{v}\";\nprintf(\"%zu\", strlen(s{v}));\n```" if s == "c" else f"What is printed by this {subject} string operation (Str #{v})?\n\n```{s}\nstring s{v} = \"Tech{v}\";\ncout << s{v}.length();\n```" if s == "cpp" else f"What is the output of this {subject} string method (Str #{v})?\n\n```{s}\ns{v} = \"Code{v}\"\nprint(len(s{v}))\n```", [str(4 + len(str(v))), str(4), str(len(str(v))), "Error"], str(4 + len(str(v)))))
+            ("Variables & Data Types", lambda v, s: (
+                f"What is the output of the following {subject} snippet (Var #{v})?\n\n```{s}\nint val{v} = {v * 5};\nval{v} += 10;\nprintf(\"%d\", val{v});\n```" if s == "c" else
+                f"What is the output of the following {subject} snippet (Var #{v})?\n\n```{s}\nint val{v} = {v * 5};\nval{v} += 10;\ncout << val{v};\n```" if s == "cpp" else
+                f"What is the output of the following {subject} code (Var #{v})?\n\n```{s}\nval{v} = {v * 5}\nval{v} += 10\nprint(val{v})\n```",
+                [str(v * 5 + 10), str(v * 5), str(v * 10), "Error"],
+                str(v * 5 + 10),
+                f"Variable val{v} starts at {v * 5}. The compound assignment val{v} += 10 adds 10 to {v * 5}, updating val{v} to {v * 5 + 10}."
+            )),
+            ("Conditionals & Logic", lambda v, s: (
+                f"What will this {subject} condition evaluate to (Check #{v})?\n\n```{s}\nint score{v} = {v * 15};\nif (score{v} >= 30) {{\n    printf(\"Pass\");\n}} else {{\n    printf(\"Fail\");\n}}\n```" if s == "c" else
+                f"What will this {subject} condition evaluate to (Check #{v})?\n\n```{s}\nint score{v} = {v * 15};\nif (score{v} >= 30) {{\n    cout << \"Pass\";\n}} else {{\n    cout << \"Fail\";\n}}\n```" if s == "cpp" else
+                f"What will this {subject} code output (Check #{v})?\n\n```{s}\nscore{v} = {v * 15}\nprint(\"Pass\" if score{v} >= 30 else \"Fail\")\n```",
+                ["Pass" if v * 15 >= 30 else "Fail", "Fail" if v * 15 >= 30 else "Pass", "Error", "None"],
+                "Pass" if v * 15 >= 30 else "Fail",
+                f"score{v} evaluates to {v * 15}. Since {v * 15} is {'greater than or equal to 30' if v * 15 >= 30 else 'less than 30'}, the conditional branch executes and produces '{'Pass' if v * 15 >= 30 else 'Fail'}'."
+            )),
+            ("Loop Execution", lambda v, s: (
+                f"What total count does this {subject} loop produce (Loop #{v})?\n\n```{s}\nint total{v} = 0;\nfor (int i = 0; i < {v}; i++) {{\n    total{v} += i;\n}}\nprintf(\"%d\", total{v});\n```" if s == "c" else
+                f"What total count does this {subject} loop produce (Loop #{v})?\n\n```{s}\nint total{v} = 0;\nfor (int i = 0; i < {v}; i++) {{\n    total{v} += i;\n}}\ncout << total{v};\n```" if s == "cpp" else
+                f"What does this {subject} loop calculate (Loop #{v})?\n\n```{s}\ntotal{v} = sum(range({v}))\nprint(total{v})\n```",
+                [str(sum(range(v))), str(v * v), str(v), "0"],
+                str(sum(range(v))),
+                f"The loop iterates {v} times from i = 0 to {v - 1}. Accumulating the loop counter yields total{v} = {sum(range(v))}."
+            )),
+            ("Array / List Processing", lambda v, s: (
+                f"What element is printed by this {subject} array code (Array #{v})?\n\n```{s}\nint arr{v}[] = {{{v * 2}, {v * 3}, {v * 4}}};\nprintf(\"%d\", arr{v}[1]);\n```" if s == "c" else
+                f"What element is printed by this {subject} array code (Array #{v})?\n\n```{s}\nint arr{v}[] = {{{v * 2}, {v * 3}, {v * 4}}};\ncout << arr{v}[1];\n```" if s == "cpp" else
+                f"What element does this {subject} list access (List #{v})?\n\n```{s}\nitems{v} = [{v * 2}, {v * 3}, {v * 4}]\nprint(items{v}[1])\n```",
+                [str(v * 3), str(v * 2), str(v * 4), "IndexError"],
+                str(v * 3),
+                f"The collection contains [{v * 2}, {v * 3}, {v * 4}]. Index 1 accesses the second element, returning {v * 3}."
+            )),
+            ("Function Mechanics", lambda v, s: (
+                f"What is returned by this {subject} helper function (Fn #{v})?\n\n```{s}\nint multiply{v}(int a, int b) {{\n    return a * b + {v};\n}}\n// Called as: multiply{v}(3, 4)\n```" if s in ["cpp", "c"] else
+                f"What is the result of calling this {subject} function (Fn #{v})?\n\n```{s}\ndef compute{v}(a, b):\n    return a * b + {v}\nprint(compute{v}(3, 4))\n```",
+                [str(12 + v), str(12), str(7 + v), "0"],
+                str(12 + v),
+                f"The function multiplies parameters 3 * 4 = 12 and adds {v}, evaluating to 12 + {v} = {12 + v}."
+            )),
+            ("String Manipulation", lambda v, s: (
+                f"What is printed by this {subject} string operation (Str #{v})?\n\n```{s}\nchar s{v}[] = \"Tech{v}\";\nprintf(\"%zu\", strlen(s{v}));\n```" if s == "c" else
+                f"What is printed by this {subject} string operation (Str #{v})?\n\n```{s}\nstring s{v} = \"Tech{v}\";\ncout << s{v}.length();\n```" if s == "cpp" else
+                f"What is the output of this {subject} string method (Str #{v})?\n\n```{s}\ns{v} = \"Code{v}\"\nprint(len(s{v}))\n```",
+                [str(4 + len(str(v))), str(4), str(len(str(v))), "Error"],
+                str(4 + len(str(v))),
+                f"The string 'Tech{v}' / 'Code{v}' contains 4 letters plus '{v}' ({len(str(v))} digits), giving a length of {4 + len(str(v))}."
+            ))
         ]
 
         subtopics_theory = [
-            ("Core Paradigm", f"What is the fundamental architectural philosophy of {subject}?", ["Structured modular design with high reusability", "Single-threaded synchronous blocking execution", "Direct binary patch assembly", "Pure procedural memory mapping"], "Structured modular design with high reusability"),
-            ("Memory Model", f"How does {subject} manage runtime memory allocation and lifecycle?", ["Allocates memory dynamically via runtime stack/heap primitives", "Uses fixed physical disk caching", "Requires manual register manipulation", "Does not allocate memory"], "Allocates memory dynamically via runtime stack/heap primitives"),
-            ("Type System", f"Which type system design feature applies directly to {subject}?", ["Enforces clear type rules for variable safety and evaluation", "Disallows function definitions", "Requires all variables to be string types", "Does not support primitive types"], "Enforces clear type rules for variable safety and evaluation"),
-            ("Scope & Visibility", f"How are identifiers and variables scoped in {subject}?", ["Scoped lexically within block, function, or namespace boundaries", "Global visibility for all local variables", "Randomized pointer scope", "Class-only scope"], "Scoped lexically within block, function, or namespace boundaries"),
-            ("Error Handling", f"What mechanism is standard for handling runtime exceptions in {subject}?", ["Try-Catch exception blocks and error status return codes", "Immediate OS kernel halt", "Ignoring invalid operations", "Syntax re-compilation"], "Try-Catch exception blocks and error status return codes"),
-            ("Performance Optimization", f"Which practice improves execution efficiency in {subject}?", ["Using appropriate data structures and minimizing redundant operations", "Inserting infinite loops", "Avoiding function calls entirely", "Storing all data on disk"], "Using appropriate data structures and minimizing redundant operations")
+            ("Core Paradigm", f"What is the fundamental architectural philosophy of {subject}?", ["Structured modular design with high reusability", "Single-threaded synchronous blocking execution", "Direct binary patch assembly", "Pure procedural memory mapping"], "Structured modular design with high reusability", f"{subject} prioritizes modular architecture, clean separation of concerns, and reusable components."),
+            ("Memory Model", f"How does {subject} manage runtime memory allocation and lifecycle?", ["Allocates memory dynamically via runtime stack/heap primitives", "Uses fixed physical disk caching", "Requires manual register manipulation", "Does not allocate memory"], "Allocates memory dynamically via runtime stack/heap primitives", f"In {subject}, runtime objects are allocated on the heap while function call frames are managed on the stack."),
+            ("Type System", f"Which type system design feature applies directly to {subject}?", ["Enforces clear type rules for variable safety and evaluation", "Disallows function definitions", "Requires all variables to be string types", "Does not support primitive types"], "Enforces clear type rules for variable safety and evaluation", f"The type system in {subject} validates variable types to prevent invalid operations at compile or run time."),
+            ("Scope & Visibility", f"How are identifiers and variables scoped in {subject}?", ["Scoped lexically within block, function, or namespace boundaries", "Global visibility for all local variables", "Randomized pointer scope", "Class-only scope"], "Scoped lexically within block, function, or namespace boundaries", f"Lexical scoping in {subject} confines variable visibility to the enclosing block, function, or namespace."),
+            ("Error Handling", f"What mechanism is standard for handling runtime exceptions in {subject}?", ["Try-Catch exception blocks and error status return codes", "Immediate OS kernel halt", "Ignoring invalid operations", "Syntax re-compilation"], "Try-Catch exception blocks and error status return codes", f"Exception handling in {subject} uses try-catch structures to intercept runtime errors and prevent crashes."),
+            ("Performance Optimization", f"Which practice improves execution efficiency in {subject}?", ["Using appropriate data structures and minimizing redundant operations", "Inserting infinite loops", "Avoiding function calls entirely", "Storing all data on disk"], "Using appropriate data structures and minimizing redundant operations", f"Selecting optimal data structures (e.g. O(1) hash maps) reduces computational complexity and memory overhead.")
         ]
 
         while len(questions) < num_questions:
@@ -501,20 +576,21 @@ class AIService:
                 var_num = random.randint(10, 999)
                 if quiz_mode == "Coding":
                     topic_name, gen_fn = subtopics_coding[(idx - len(pool)) % len(subtopics_coding)]
-                    q_text, opts, ans = gen_fn(var_num, subj_key)
-                    item = {"q": q_text, "opts": opts, "ans": ans}
+                    q_text, opts, ans, exp = gen_fn(var_num, subj_key)
+                    item = {"q": q_text, "opts": opts, "ans": ans, "exp": exp}
                 else:
-                    topic_title_sub, q_stem, opts, ans = subtopics_theory[(idx - len(pool)) % len(subtopics_theory)]
+                    topic_title_sub, q_stem, opts, ans, exp = subtopics_theory[(idx - len(pool)) % len(subtopics_theory)]
                     item = {
                         "q": q_stem,
                         "opts": list(opts),
-                        "ans": ans
+                        "ans": ans,
+                        "exp": exp
                     }
 
             idx += 1
             if item["q"] not in seen_texts:
                 seen_texts.add(item["q"])
-                exp = item.get("exp") or f"Evaluating the control flow and language syntax rules confirms that '{item['ans']}' is the correct technical answer."
+                exp = item.get("exp") or f"In {subject}, executing this code produces '{item['ans']}' based on standard language semantics."
                 questions.append({
                     "question_type": "Coding" if quiz_mode == "Coding" else "MCQ",
                     "question_text": item["q"],

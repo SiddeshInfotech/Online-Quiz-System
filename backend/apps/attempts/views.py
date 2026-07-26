@@ -847,13 +847,21 @@ class AttemptReviewView(APIView):
         question_ids = [q["question_id"] for q in questions_data if q.get("question_id")]
         db_questions = {q.id: q for q in Question.objects.filter(id__in=question_ids)}
 
-        # Identify questions missing rich explanations in DB
+        # Identify questions missing rich explanations in DB or containing legacy generic strings
+        generic_markers = [
+            "evaluates the expressions and produces",
+            "evaluating the control flow",
+            "syntax rules confirms",
+            "evaluating the control flow and language syntax rules"
+        ]
+
         missing_ai_indices = []
         for i, q_data in enumerate(questions_data):
             qid = q_data.get("question_id")
             q_obj = db_questions.get(qid)
             stored_exp = getattr(q_obj, 'explanation', '') if q_obj else ''
-            if not stored_exp or len(str(stored_exp).strip()) < 15 or "evaluates the expressions and produces" in str(stored_exp):
+            exp_str = str(stored_exp).strip().lower()
+            if not stored_exp or len(exp_str) < 15 or any(marker in exp_str for marker in generic_markers):
                 missing_ai_indices.append(i)
 
         # Generate live AI explanations for missing items if needed
@@ -864,7 +872,8 @@ class AttemptReviewView(APIView):
                 for idx_in_missing, original_idx in enumerate(missing_ai_indices):
                     if ai_exps and idx_in_missing < len(ai_exps):
                         gen_exp = ai_exps[idx_in_missing]
-                        if gen_exp and len(str(gen_exp).strip()) > 15 and "evaluates the expressions and produces" not in str(gen_exp):
+                        gen_str = str(gen_exp).strip().lower()
+                        if gen_exp and len(gen_str) > 15 and not any(marker in gen_str for marker in generic_markers):
                             clean_gen = str(gen_exp).strip()
                             ai_generated_map[original_idx] = clean_gen
                             # Save back to DB to heal question object permanently!
@@ -885,8 +894,9 @@ class AttemptReviewView(APIView):
                 # Preference 1: Live generated AI explanation or DB stored explanation
                 exp_body = ai_generated_map.get(idx) or (getattr(q_obj, 'explanation', '') if q_obj else '')
                 exp_body = str(exp_body).strip()
+                exp_lower = exp_body.lower()
 
-                if exp_body and len(exp_body) > 15 and "evaluates the expressions and produces" not in exp_body:
+                if exp_body and len(exp_body) > 15 and not any(marker in exp_lower for marker in generic_markers):
                     if q_data.get('is_correct'):
                         if exp_body.lower().startswith('correct'):
                             final_exp = exp_body
