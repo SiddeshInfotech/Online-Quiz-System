@@ -7,6 +7,7 @@ from datetime import timedelta
 
 from .models import Subscription
 from apps.quizzes.models import Quiz
+from apps.attempts.models import QuizAttempt
 
 
 class UserSubscriptionView(APIView):
@@ -31,6 +32,14 @@ class UserSubscriptionView(APIView):
         allowed_question_counts = [5, 10, 15, 20, 25] if is_pro else [5, 10]
         quiz_retries_allowed = 1 if is_pro else 0
         max_total_attempts = 2 if is_pro else 1
+
+        # Daily Attempt Limits across all quizzes (Free = 10/day, Pro = Unlimited)
+        daily_attempt_used = QuizAttempt.objects.filter(
+            user=user,
+            started_at__date=today
+        ).count()
+        daily_attempt_limit = 999999 if is_pro else 10
+        daily_attempt_remaining = max(0, daily_attempt_limit - daily_attempt_used) if not is_pro else 999999
 
         days_remaining = 0
         if sub.end_date:
@@ -58,13 +67,18 @@ class UserSubscriptionView(APIView):
             "daily_quiz_used": daily_quiz_used,
             "daily_quiz_remaining": daily_quiz_remaining,
 
+            # Overall Daily Attempts across all quizzes
+            "daily_attempt_limit": daily_attempt_limit,
+            "daily_attempt_used": daily_attempt_used,
+            "daily_attempt_remaining": daily_attempt_remaining,
+
             # Question count limits
             "allowed_question_counts": allowed_question_counts,
             "max_questions_choice": max(allowed_question_counts),
             "coding_question_limit": max(allowed_question_counts),
             "coding_question_used": daily_quiz_used * 5,
 
-            # Retry limits
+            # Retry limits per quiz
             "quiz_retry_limit": quiz_retries_allowed,
             "quiz_retries_allowed": quiz_retries_allowed,
             "quiz_retry_used": 0,
@@ -76,6 +90,7 @@ class UserSubscriptionView(APIView):
                 "badges_and_xp": True,
                 "extended_question_counts": is_pro,
                 "quiz_retries": is_pro,
+                "unlimited_daily_attempts": is_pro,
                 "advanced_analytics": is_pro,
                 "priority_support": is_pro,
                 "export_results": is_pro
@@ -99,6 +114,7 @@ class SubscriptionPlansView(APIView):
                 "price_usd": 0,
                 "billing_cycle": "FOREVER",
                 "daily_quiz_limit": 3,
+                "daily_attempt_limit": 10,
                 "allowed_question_counts": [5, 10],
                 "coding_question_options": [5, 10],
                 "quiz_retry_limit": 0,
@@ -106,8 +122,9 @@ class SubscriptionPlansView(APIView):
                 "max_total_attempts_per_quiz": 1,
                 "features": [
                     "3 AI Quiz Generations Per Day",
+                    "10 Quiz Attempts Per Day (All Quizzes)",
                     "5 or 10 Questions Per Quiz",
-                    "1 Attempt Per Quiz (No Retries)",
+                    "1 Attempt Per Quiz (0 Retries)",
                     "Full AI Explanations Engine",
                     "All Badges & XP Achievements"
                 ]
@@ -122,6 +139,7 @@ class SubscriptionPlansView(APIView):
                 "price_usd": 9.99,
                 "billing_cycle": "MONTHLY",
                 "daily_quiz_limit": 10,
+                "daily_attempt_limit": 999999,
                 "allowed_question_counts": [5, 10, 15, 20, 25],
                 "coding_question_options": [5, 10, 15, 20, 25],
                 "quiz_retry_limit": 1,
@@ -129,6 +147,7 @@ class SubscriptionPlansView(APIView):
                 "max_total_attempts_per_quiz": 2,
                 "features": [
                     "10 AI Quiz Generations Per Day",
+                    "Unlimited Quiz Attempts Per Day",
                     "5, 10, 15, 20, or 25 Questions Choice",
                     "1 Retry Allowed Per Quiz (2 Attempts)",
                     "Full AI Explanations Engine",

@@ -44,6 +44,25 @@ class StartAttemptView(APIView):
         sub, _ = Subscription.objects.get_or_create(user=request.user)
         is_pro = sub.is_pro
 
+        # Check overall daily attempt limit across all quizzes (Free = Max 10 attempts/day, Pro = Unlimited)
+        today = timezone.localdate()
+        today_attempts = QuizAttempt.objects.filter(
+            user=request.user,
+            started_at__date=today
+        ).count()
+
+        existing_attempt = QuizAttempt.objects.filter(
+            user=request.user, quiz=quiz, submitted_at__isnull=True
+        ).first()
+
+        if not is_pro and not existing_attempt and today_attempts >= 10:
+            return Response({
+                "code": "PREMIUM_REQUIRED",
+                "detail": "Daily quiz attempt limit reached (10 attempts/day on Free tier). Upgrade to QuizGen Pro for unlimited quiz attempts!",
+                "message": "Daily quiz attempt limit reached (10 attempts/day on Free tier). Upgrade to QuizGen Pro for unlimited quiz attempts!",
+                "upgrade_url": "/pricing"
+            }, status=status.HTTP_403_FORBIDDEN)
+
         completed_attempts_count = QuizAttempt.objects.filter(
             user=request.user,
             quiz=quiz,
