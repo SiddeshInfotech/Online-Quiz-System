@@ -9,11 +9,11 @@ def clean_quiz_text(text):
     prev = None
     while prev != t:
         prev = t
-        # Strip leading question numbers e.g., "1. ", "Question 1: ", "Q1: ", "#1: ", "#1 "
-        t = re.sub(r'^(?:Question\s*)?#?\d+[\.:\)\-\s]\s*', '', t, flags=re.IGNORECASE)
-        # Strip choice prefixes e.g., "(D) ", "[D] ", "Option D: ", "Option D - ", "D) ", "D. ", "D: ", "D - ", "d. ", "d) "
+        # Strip leading question numbers e.g., "1. ", "Question 1: ", "Q1: ", "#1: " (REQUIRES punctuation after number, not plain space)
+        t = re.sub(r'^(?:Question\s*)?#?\d+[\.:\)\-]\s*', '', t, flags=re.IGNORECASE)
+        # Strip choice prefixes e.g., "(D) ", "[D] ", "Option D: ", "Option D - ", "D) ", "D. ", "D: "
         t = re.sub(r'^(?:Option\s*)?[\(\[]?[A-Da-d][\)\.\:\-\s\]]\s*', '', t, flags=re.IGNORECASE)
-        # Strip embedded '#1', '#2', '#3' or 'concept #1' patterns
+        # Strip embedded '#1', '#2', '#3' patterns
         t = re.sub(r'\s*#\d+\b', '', t)
         t = t.strip()
     return t

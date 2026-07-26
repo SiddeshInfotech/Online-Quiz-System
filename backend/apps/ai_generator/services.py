@@ -466,8 +466,10 @@ class AIService:
         else:
             subj_key = subj_lower
 
+        import random
         target_pools = coding_pools if quiz_mode == "Coding" else theory_pools
-        pool = target_pools.get(subj_key, [])
+        pool = list(target_pools.get(subj_key, []))
+        random.shuffle(pool)
 
         questions = []
         seen_texts = set()
@@ -496,7 +498,7 @@ class AIService:
             if idx < len(pool):
                 item = pool[idx]
             else:
-                var_num = idx + 1
+                var_num = random.randint(10, 999)
                 if quiz_mode == "Coding":
                     topic_name, gen_fn = subtopics_coding[(idx - len(pool)) % len(subtopics_coding)]
                     q_text, opts, ans = gen_fn(var_num, subj_key)
