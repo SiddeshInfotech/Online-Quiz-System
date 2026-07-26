@@ -50,6 +50,7 @@ urlpatterns = [
     path('api/feedback/', include('apps.feedback.urls')),
     path('api/admin/feedback/', include('apps.feedback.admin_urls')),
     path('api/support/', include('apps.support.urls')),
+    path('api/subscription/', include('apps.users.subscription_urls')),
     path('api/custom_admin/', include('apps.custom_admin.urls')),
 ]
 if settings.DEBUG:

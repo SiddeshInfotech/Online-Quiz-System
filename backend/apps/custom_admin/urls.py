@@ -13,7 +13,10 @@ from .views import (
     AdminPenaltyLogListView,
     AdminSupportMessageListView,
     AdminSupportMessageToggleResolveView,
-    AdminSupportMessageReplyView
+    AdminSupportMessageReplyView,
+    AdminSubscriptionStatsView,
+    AdminSubscriptionsListView,
+    AdminSubscriptionActionView
 )
 from apps.feedback.admin_views import (
     AdminFeedbackListView,
@@ -59,4 +62,9 @@ urlpatterns = [
     path('feedback/<int:pk>/', AdminFeedbackDetailUpdateDeleteView.as_view(), name='custom-admin-feedback-detail'),
     path('feedback/<int:pk>/reply/', AdminFeedbackReplyView.as_view(), name='custom-admin-feedback-reply'),
     path('feedback/<int:pk>/hide/', AdminFeedbackHideView.as_view(), name='custom-admin-feedback-hide'),
+
+    # G. Subscription Management
+    path('subscriptions/stats/', AdminSubscriptionStatsView.as_view(), name='admin-subscriptions-stats'),
+    path('subscriptions/', AdminSubscriptionsListView.as_view(), name='admin-subscriptions-list'),
+    path('subscriptions/<int:user_id>/action/', AdminSubscriptionActionView.as_view(), name='admin-subscriptions-action'),
 ]

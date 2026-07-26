@@ -91,3 +91,42 @@ class UserBadge(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.badge.name} ({self.status})"
+
+
+from django.utils import timezone
+
+class Subscription(models.Model):
+    PLAN_CHOICES = (
+        ('FREE', 'Free Tier'),
+        ('PRO', 'Premium Pro'),
+    )
+    STATUS_CHOICES = (
+        ('ACTIVE', 'Active'),
+        ('EXPIRED', 'Expired'),
+        ('CANCELLED', 'Cancelled'),
+    )
+    BILLING_CHOICES = (
+        ('MONTHLY', 'Monthly'),
+        ('YEARLY', 'Yearly'),
+    )
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='subscription')
+    plan = models.CharField(max_length=10, choices=PLAN_CHOICES, default='FREE')
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='ACTIVE')
+    billing_cycle = models.CharField(max_length=10, choices=BILLING_CHOICES, default='MONTHLY', null=True, blank=True)
+    start_date = models.DateTimeField(default=timezone.now)
+    end_date = models.DateTimeField(null=True, blank=True)
+    cancellation_requested = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.plan} ({self.status})"
+
+    @property
+    def is_pro(self):
+        if self.plan == 'PRO' and self.status == 'ACTIVE':
+            if self.end_date and timezone.now() > self.end_date:
+                return False
+            return True
+        return False

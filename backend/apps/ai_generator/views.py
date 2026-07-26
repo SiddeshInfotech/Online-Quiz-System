@@ -35,6 +35,35 @@ class GenerateAIQuizView(APIView):
         category_id = validated_data.get('category_id')
         quiz_mode = validated_data.get('quiz_mode', 'Theory')
 
+        # Premium Feature Protection Checks
+        from apps.users.models import Subscription
+        from django.utils import timezone
+        sub, _ = Subscription.objects.get_or_create(user=user)
+        is_pro = sub.is_pro
+
+        # 1. Question count choice restriction for Free tier (Only 5 or 10)
+        if not is_pro and num_questions > 10:
+            return Response({
+                "code": "PREMIUM_REQUIRED",
+                "message": "Generating 15, 20, or 25 questions per quiz is a Pro feature. Upgrade to QuizGen Pro to unlock!",
+                "upgrade_url": "/pricing"
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        # 2. Daily Quiz Generation limit check (Free = 3/day, Pro = 10/day)
+        today = timezone.localdate()
+        today_creations = Quiz.objects.filter(
+            created_by=user,
+            created_at__date=today
+        ).count()
+
+        max_daily = 10 if is_pro else 3
+        if today_creations >= max_daily:
+            return Response({
+                "code": "PREMIUM_REQUIRED",
+                "message": f"You have reached your daily limit of {max_daily} AI quiz generations. Upgrade to QuizGen Pro for higher limits!",
+                "upgrade_url": "/pricing"
+            }, status=status.HTTP_403_FORBIDDEN)
+
         # Check cache for identical AI generation requests
         cache_hash = hashlib.md5(f"{subject}_{difficulty}_{num_questions}_{prompt_topic}_{quiz_mode}".encode('utf-8')).hexdigest()
         cache_key = f"ai_gen_quiz_{cache_hash}"

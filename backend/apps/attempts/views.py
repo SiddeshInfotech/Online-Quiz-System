@@ -39,30 +39,46 @@ class StartAttemptView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Enforce retry limit based on quiz.max_attempts
+        # Enforce retry limit based on Subscription Tier (Free = 1 attempt max, Pro = 2 attempts max)
+        from apps.users.models import Subscription
+        sub, _ = Subscription.objects.get_or_create(user=request.user)
+        is_pro = sub.is_pro
+
         completed_attempts_count = QuizAttempt.objects.filter(
             user=request.user,
             quiz=quiz,
             submitted_at__isnull=False
         ).count()
-        max_attempts = getattr(quiz, 'max_attempts', 2) or 2
+
+        max_attempts = 2 if is_pro else 1
         can_retry = completed_attempts_count < max_attempts
 
         if not can_retry:
-            retry_count = max(0, completed_attempts_count - 1)
-            max_retry = max(0, max_attempts - 1)
-            return Response(
-                {
-                    "detail": f"Maximum attempt limit ({max_attempts}) reached for this quiz.",
-                    "error": "Attempt limit reached.",
-                    "can_retry": False,
-                    "attempt_count": completed_attempts_count,
-                    "max_attempts": max_attempts,
-                    "retry_count": retry_count,
-                    "max_retry": max_retry
-                },
-                status=status.HTTP_403_FORBIDDEN
-            )
+            if not is_pro:
+                return Response(
+                    {
+                        "code": "PREMIUM_REQUIRED",
+                        "detail": "Re-attempting a quiz is a QuizGen Pro feature (1 retry allowed). Upgrade to QuizGen Pro to retry this quiz!",
+                        "message": "Upgrade to QuizGen Pro to retry this quiz.",
+                        "upgrade_url": "/pricing",
+                        "can_retry": False,
+                        "attempt_count": completed_attempts_count,
+                        "max_attempts": max_attempts,
+                    },
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            else:
+                return Response(
+                    {
+                        "code": "PREMIUM_REQUIRED",
+                        "detail": f"Maximum retry limit ({max_attempts} attempts) reached for this quiz on QuizGen Pro.",
+                        "error": "Attempt limit reached.",
+                        "can_retry": False,
+                        "attempt_count": completed_attempts_count,
+                        "max_attempts": max_attempts,
+                    },
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
         existing_attempt = QuizAttempt.objects.filter(
             user=request.user,

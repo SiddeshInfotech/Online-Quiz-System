@@ -402,3 +402,135 @@ class AdminSupportMessageReplyView(APIView):
             "data": AdminSupportMessageSerializer(message).data
         }, status=status.HTTP_200_OK)
 
+
+# 🛠️ Subscription Management Endpoints for Admin Panel
+from datetime import timedelta
+from django.utils import timezone
+from apps.users.models import Subscription
+
+class AdminSubscriptionStatsView(APIView):
+    permission_classes = [IsCustomAdmin]
+
+    def get(self, request):
+        total_users = User.objects.count()
+        pro_subscriptions = Subscription.objects.filter(plan='PRO', status='ACTIVE')
+        pro_users = pro_subscriptions.count()
+        free_users = max(0, total_users - pro_users)
+        active_subscriptions = Subscription.objects.filter(status='ACTIVE').count()
+        expired_subscriptions = Subscription.objects.filter(status='EXPIRED').count()
+        cancelled_subscriptions = Subscription.objects.filter(status='CANCELLED').count()
+        
+        monthly_revenue = pro_users * 299  # ₹299 per pro user
+
+        return Response({
+            "total_users": total_users,
+            "free_users": free_users,
+            "pro_users": pro_users,
+            "active_subscriptions": active_subscriptions,
+            "expired_subscriptions": expired_subscriptions,
+            "cancelled_subscriptions": cancelled_subscriptions,
+            "monthly_revenue": monthly_revenue,
+            "monthly_revenue_formatted": f"₹{monthly_revenue:,}"
+        }, status=status.HTTP_200_OK)
+
+
+class AdminSubscriptionsListView(APIView):
+    permission_classes = [IsCustomAdmin]
+
+    def get(self, request):
+        users = User.objects.all().select_related('subscription').order_by('-date_joined')
+        today = timezone.localdate()
+
+        result = []
+        for user in users:
+            sub = getattr(user, 'subscription', None)
+            is_pro = sub.is_pro if sub else False
+            plan = "PRO" if is_pro else "FREE"
+            status_val = sub.status if (sub and is_pro) else "ACTIVE"
+
+            days_remaining = 0
+            if sub and sub.end_date:
+                days_remaining = max(0, (sub.end_date - timezone.now()).days)
+
+            daily_quiz_used = Quiz.objects.filter(
+                created_by=user,
+                created_at__date=today
+            ).count()
+
+            result.append({
+                "user_id": user.id,
+                "user": user.username,
+                "username": user.username,
+                "full_name": user.full_name or user.username,
+                "email": user.email,
+                "current_plan": plan,
+                "plan": plan,
+                "status": status_val,
+                "billing_cycle": sub.billing_cycle if sub else "MONTHLY",
+                "subscription_start": sub.start_date.isoformat() if (sub and sub.start_date) else user.date_joined.isoformat(),
+                "subscription_end": sub.end_date.isoformat() if (sub and sub.end_date) else None,
+                "renewal_date": sub.end_date.isoformat() if (sub and sub.end_date) else None,
+                "days_remaining": days_remaining,
+                "daily_quiz_used": daily_quiz_used,
+                "daily_quiz_limit": 10 if is_pro else 3,
+                "is_pro": is_pro
+            })
+
+        return Response(result, status=status.HTTP_200_OK)
+
+
+class AdminSubscriptionActionView(APIView):
+    permission_classes = [IsCustomAdmin]
+
+    def post(self, request, user_id):
+        target_user = get_object_or_404(User, id=user_id)
+        action = request.data.get('action', '').upper()
+
+        sub, _ = Subscription.objects.get_or_create(user=target_user)
+
+        if action == 'UPGRADE':
+            sub.plan = 'PRO'
+            sub.status = 'ACTIVE'
+            sub.start_date = timezone.now()
+            sub.end_date = timezone.now() + timedelta(days=30)
+            sub.save()
+            msg = f"User {target_user.username} successfully upgraded to PRO tier."
+        elif action == 'DOWNGRADE':
+            sub.plan = 'FREE'
+            sub.status = 'ACTIVE'
+            sub.save()
+            msg = f"User {target_user.username} downgraded to FREE tier."
+        elif action == 'EXTEND_30_DAYS':
+            sub.plan = 'PRO'
+            sub.status = 'ACTIVE'
+            current_end = sub.end_date if (sub.end_date and sub.end_date > timezone.now()) else timezone.now()
+            sub.end_date = current_end + timedelta(days=30)
+            sub.save()
+            msg = f"Subscription for {target_user.username} extended by 30 days."
+        elif action == 'CANCEL':
+            sub.plan = 'FREE'
+            sub.status = 'CANCELLED'
+            sub.cancellation_requested = True
+            sub.save()
+            msg = f"Subscription for {target_user.username} cancelled."
+        elif action == 'REACTIVATE':
+            sub.plan = 'PRO'
+            sub.status = 'ACTIVE'
+            sub.start_date = timezone.now()
+            sub.end_date = timezone.now() + timedelta(days=30)
+            sub.save()
+            msg = f"Subscription for {target_user.username} reactivated."
+        else:
+            return Response({"error": "Invalid action. Supported: UPGRADE, DOWNGRADE, EXTEND_30_DAYS, CANCEL, REACTIVATE."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            "success": True,
+            "message": msg,
+            "user_id": target_user.id,
+            "username": target_user.username,
+            "plan": sub.plan,
+            "status": sub.status,
+            "is_pro": sub.is_pro,
+            "end_date": sub.end_date.isoformat() if sub.end_date else None
+        }, status=status.HTTP_200_OK)
+
