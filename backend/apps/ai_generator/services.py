@@ -729,13 +729,10 @@ Return ONLY valid JSON.
 
     def _call_openrouter(self, prompt, num_questions):
         models_to_try = [
-            "openrouter/free",
-            "google/gemma-4-31b-it:free",
-            "google/gemma-4-26b-a4b-it:free",
-            "cohere/north-mini-code:free",
             "inclusionai/ling-3.0-flash:free",
-            "meta-llama/llama-3.3-70b-instruct:free",
-            "deepseek/deepseek-r1:free"
+            "cohere/north-mini-code:free",
+            "google/gemma-4-26b-a4b-it:free",
+            "google/gemma-4-31b-it:free"
         ]
 
         last_error = None
@@ -751,37 +748,26 @@ Return ONLY valid JSON.
                         },
                         {"role": "user", "content": prompt}
                     ],
-                    "response_format": {"type": "json_object"},
-                    "temperature": 0.9,
-                    "max_tokens": 4000,
+                    "temperature": 0.7,
+                    "max_tokens": 3000,
                 }
 
                 response = requests.post(
                     self.api_url,
                     headers=self.headers,
                     json=payload,
-                    timeout=4,
+                    timeout=3.5,
                     stream=False
                 )
 
-                # Fallback if model doesn't support response_format
-                if response.status_code == 400 and 'response_format' in response.text:
-                    payload.pop('response_format', None)
-                    response = requests.post(
-                        self.api_url,
-                        headers=self.headers,
-                        json=payload,
-                        timeout=12,
-                        stream=False
-                    )
+                if response.status_code != 200:
+                    last_error = f"{model} status {response.status_code}"
+                    continue
 
-                if response.status_code == 200:
-                    data = response.json()
-                    raw_text = data['choices'][0]['message']['content'].strip()
-                else:
-                    raise ValueError(f"OpenRouter status {response.status_code}: {response.text}")
+                data = response.json()
+                raw_text = data['choices'][0]['message']['content'].strip()
 
-                # Clean and parse the raw output using robust parsing strategies
+                # Clean and parse raw output
                 parsed_data = self._parse_json_robustly(raw_text)
 
                 quiz_title = ""
@@ -792,7 +778,7 @@ Return ONLY valid JSON.
                     questions = parsed_data
 
                 if not isinstance(questions, list):
-                    raise ValueError("Response is not a list")
+                    continue
 
                 # Bulletproof deduplication check
                 unique_questions = []
@@ -804,75 +790,37 @@ Return ONLY valid JSON.
                         unique_questions.append(q)
                 
                 questions = unique_questions
-
-                # Force retry if the model ignored our uniqueness instructions entirely
-                if len(questions) < max(1, num_questions // 2):
-                    raise ValueError(f"Model generated too many duplicates. Only {len(questions)} unique questions found out of {num_questions} requested.")
-
-                random_patterns = ['pizza', 'burger', 'cake', 'dog', 'cat', 'apple', 'banana', 'sandwich']
+                # Ensure options and correct answer integrity
                 sensible_alternatives = [
                     "True, but only under certain conditions",
                     "False, except in specific cases",
                     "Partially true",
-                    "Not applicable in this context",
-                    "Both A and B"
+                    "Not applicable in this context"
                 ]
 
                 for q in questions:
-                    q_type = q.get('question_type', '')
                     options = q.get('options', [])
-                    correct = q.get('correct_answer', '')
+                    if not isinstance(options, list):
+                        options = []
 
-                    if q_type in ['MCQ', 'True/False', 'Fill in the Blank', 'Coding']:
-                        if not isinstance(options, list):
-                            options = []
+                    if len(options) < 4:
+                        while len(options) < 4:
+                            options.append(sensible_alternatives[len(options) - 2] if len(options) - 2 < len(sensible_alternatives) else f"Option {len(options) + 1}")
+                    elif len(options) > 4:
+                        options = options[:4]
 
-                        # Gracefully ensure exactly 4 options
-                        if len(options) < 4:
-                            while len(options) < 4:
-                                options.append(sensible_alternatives[len(options) - 2] if len(options) - 2 < len(sensible_alternatives) else f"Option {len(options) + 1}")
-                        elif len(options) > 4:
-                            options = options[:4]
+                    correct = str(q.get('correct_answer', '')).strip()
+                    if correct not in options:
+                        options[0] = correct
 
-                        if q_type == 'True/False':
-                            if len(options) >= 2:
-                                options[0] = "True"
-                                options[1] = "False"
-
-                            for i in range(2, len(options)):
-                                opt_lower = options[i].lower()
-                                if len(options[i]) < 3 or any(word in opt_lower for word in random_patterns):
-                                    options[i] = sensible_alternatives[i - 2] if i - 2 < len(sensible_alternatives) else "None of the above"
-
-                            if correct not in ["True", "False"]:
-                                if correct in ["A", "True"]:
-                                    q['correct_answer'] = "True"
-                                elif correct in ["B", "False"]:
-                                    q['correct_answer'] = "False"
-                                else:
-                                    q['correct_answer'] = "True"
-
-                            q['options'] = options
-
-                        correct = q.get('correct_answer', '')
-                        if correct not in options:
-                            if correct in ['A', 'B', 'C', 'D']:
-                                label_map = {'A': 0, 'B': 1, 'C': 2, 'D': 3}
-                                idx = label_map.get(correct, 0)
-                                if idx < len(options):
-                                    q['correct_answer'] = options[idx]
-                            else:
-                                q['correct_answer'] = options[0] if options else ""
+                    q['options'] = options
+                    q['correct_answer'] = correct
 
                 return {
                     "quiz_title": quiz_title,
                     "questions": questions
                 }
 
-            except requests.exceptions.RequestException as e:
-                last_error = f"{model} request error: {str(e)}"
-            except json.JSONDecodeError as e:
-                last_error = f"{model} JSON decode error: {str(e)}"
             except Exception as e:
                 last_error = f"{model} error: {str(e)}"
 
