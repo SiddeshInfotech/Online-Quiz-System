@@ -7,10 +7,23 @@ from apps.support.models import ContactMessage
 
 User = get_user_model()
 
+from django.utils import timezone
+
 class AdminUserSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
-    total_attempts = serializers.IntegerField(read_only=True, default=0)
-    penalty_count = serializers.IntegerField(read_only=True, default=0)
+    total_attempts = serializers.SerializerMethodField()
+    penalty_count = serializers.SerializerMethodField()
+
+    # 💳 Subscription & Tier details
+    subscription_plan = serializers.SerializerMethodField()
+    subscription_status = serializers.SerializerMethodField()
+    is_pro = serializers.SerializerMethodField()
+    billing_cycle = serializers.SerializerMethodField()
+    subscription_start = serializers.SerializerMethodField()
+    subscription_end = serializers.SerializerMethodField()
+    days_remaining = serializers.SerializerMethodField()
+    quizzes_created_today = serializers.SerializerMethodField()
+    attempts_today = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -18,12 +31,66 @@ class AdminUserSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'full_name', 'total_points', 
             'xp', 'level', 'role', 'is_active', 'status', 'suspension_reason',
             'suspended_at', 'is_deleted', 'is_staff', 'is_superuser',
-            'total_attempts', 'penalty_count', 'date_joined'
+            'total_attempts', 'penalty_count', 'date_joined',
+            'subscription_plan', 'subscription_status', 'is_pro',
+            'billing_cycle', 'subscription_start', 'subscription_end',
+            'days_remaining', 'quizzes_created_today', 'attempts_today'
         ]
         read_only_fields = fields
 
     def get_full_name(self, obj):
         return obj.full_name or obj.username or ""
+
+    def get_total_attempts(self, obj):
+        return QuizAttempt.objects.filter(user=obj).count()
+
+    def get_penalty_count(self, obj):
+        return UserPenaltyLog.objects.filter(user=obj).count()
+
+    def get_subscription_plan(self, obj):
+        sub = getattr(obj, 'subscription', None)
+        if sub:
+            return "PRO" if sub.is_pro else "FREE"
+        return "FREE"
+
+    def get_subscription_status(self, obj):
+        sub = getattr(obj, 'subscription', None)
+        if sub and sub.is_pro:
+            return sub.status
+        return "ACTIVE"
+
+    def get_is_pro(self, obj):
+        sub = getattr(obj, 'subscription', None)
+        return sub.is_pro if sub else False
+
+    def get_billing_cycle(self, obj):
+        sub = getattr(obj, 'subscription', None)
+        return (sub.billing_cycle or "MONTHLY") if sub else "FOREVER"
+
+    def get_subscription_start(self, obj):
+        sub = getattr(obj, 'subscription', None)
+        return sub.start_date.isoformat() if (sub and sub.start_date) else None
+
+    def get_subscription_end(self, obj):
+        sub = getattr(obj, 'subscription', None)
+        return sub.end_date.isoformat() if (sub and sub.end_date) else None
+
+    def get_days_remaining(self, obj):
+        sub = getattr(obj, 'subscription', None)
+        if sub and sub.end_date:
+            delta = (sub.end_date - timezone.now()).days
+            return max(0, delta)
+        elif sub and sub.is_pro:
+            return 30
+        return 365
+
+    def get_quizzes_created_today(self, obj):
+        today = timezone.localdate()
+        return Quiz.objects.filter(created_by=obj, created_at__date=today).count()
+
+    def get_attempts_today(self, obj):
+        today = timezone.localdate()
+        return QuizAttempt.objects.filter(user=obj, started_at__date=today).count()
 
 class AdminQuizSerializer(serializers.ModelSerializer):
     category_name = serializers.ReadOnlyField(source='category.category_name')

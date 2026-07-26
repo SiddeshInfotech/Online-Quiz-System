@@ -125,11 +125,8 @@ class AdminUsersListView(generics.ListAPIView):
     pagination_class = None
 
     def get_queryset(self):
-        # Return ALL actual registered user accounts from DB (including nilesh 45 and admin staff)
-        return User.objects.all().annotate(
-            total_attempts=Count('quizattempt', distinct=True),
-            penalty_count=Count('penalties', distinct=True)
-        ).order_by('-date_joined')
+        # Return ALL actual registered user accounts from DB with subscription pre-fetched
+        return User.objects.all().select_related('subscription').order_by('-date_joined')
 
 # Alias for backwards compatibility
 AdminUserListView = AdminUsersListView
