@@ -115,8 +115,14 @@ class AdminQuizSerializer(serializers.ModelSerializer):
 
     def get_is_admin_quiz(self, obj):
         if not obj.created_by:
-            return False
-        return obj.created_by.is_staff or obj.created_by.role == 'Admin'
+            return True
+        return (
+            obj.is_ai_generated or
+            obj.created_by.username.lower() == 'admin' or
+            obj.created_by.is_superuser or
+            obj.created_by.is_staff or
+            getattr(obj.created_by, 'role', '') == 'Admin'
+        )
 
     def get_created_by_label(self, obj):
         if self.get_is_admin_quiz(obj):

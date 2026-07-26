@@ -260,7 +260,7 @@ class AdminQuizListCreateView(generics.ListCreateAPIView):
         from apps.users.models import User as UserModel
         from django.db.models import Q
         admin_user = UserModel.objects.filter(
-            Q(username__iexact='admin') | Q(email__iexact='admin@test.com') | Q(is_staff=True)
+            Q(username__iexact='admin') | Q(is_superuser=True)
         ).first() or self.request.user
 
         serializer.save(

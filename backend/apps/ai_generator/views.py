@@ -127,12 +127,13 @@ class GenerateAIQuizView(APIView):
 
         from apps.users.models import User as UserModel
         from django.db.models import Q
+        admin_user = UserModel.objects.filter(
+            Q(username__iexact='admin') | Q(is_superuser=True)
+        ).first()
+
         if is_from_admin:
-            admin_user = UserModel.objects.filter(
-                Q(username__iexact='admin') | Q(email__iexact='admin@test.com') | Q(is_staff=True)
-            ).first() or user
-            quiz_creator = admin_user
-            is_ai_flag = False
+            quiz_creator = admin_user or user
+            is_ai_flag = True
         else:
             quiz_creator = user
             is_ai_flag = True
