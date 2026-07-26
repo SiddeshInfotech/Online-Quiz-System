@@ -843,20 +843,34 @@ class AttemptReviewView(APIView):
                 "ai_explanation": None
             })
 
-        # Generate AI explanations
+        # Fetch question objects from DB to check stored explanations
+        question_ids = [q["question_id"] for q in questions_data if q.get("question_id")]
+        db_questions = {q.id: q for q in Question.objects.filter(id__in=question_ids)}
+
         if questions_data:
             subject_name = attempt.quiz.subject or "the topic"
-            try:
-                explanations = self._generate_ai_explanations(attempt, questions_data)
-                for i, q_data in enumerate(questions_data):
-                    ai_exp = explanations[i] if (explanations and i < len(explanations)) else ""
-                    if not ai_exp or len(ai_exp.strip()) < 15 or ai_exp.startswith("No explanation available.") or ai_exp.startswith("The correct answer is"):
-                        ai_exp = self._build_rich_fallback_explanation(q_data, subject_name)
-                    q_data["explanation"] = ai_exp
-                    q_data["ai_explanation"] = ai_exp
-            except Exception as e:
-                print(f"AI explanation generation failed: {e}")
-                for q_data in questions_data:
+            for q_data in questions_data:
+                qid = q_data.get("question_id")
+                q_obj = db_questions.get(qid)
+
+                # Preference 1: DB stored explanation from AI generator
+                stored_exp = getattr(q_obj, 'explanation', '') if q_obj else ''
+                if stored_exp and len(str(stored_exp).strip()) > 10:
+                    exp_body = str(stored_exp).strip()
+                    if q_data.get('is_correct'):
+                        if exp_body.lower().startswith('correct'):
+                            final_exp = exp_body
+                        else:
+                            final_exp = f"Correct! {exp_body}"
+                    else:
+                        sel = q_data.get('selected_answer', '')
+                        corr = q_data.get('correct_answer', '')
+                        sel_note = f"You selected '{sel}'. " if sel and sel not in ["None", "Unknown", ""] else ""
+                        final_exp = f"The correct answer is '{corr}'. {sel_note}{exp_body}"
+                    q_data["explanation"] = final_exp
+                    q_data["ai_explanation"] = final_exp
+                else:
+                    # Preference 2: Dynamic rich fallback explanation
                     fallback = self._build_rich_fallback_explanation(q_data, subject_name)
                     q_data["explanation"] = fallback
                     q_data["ai_explanation"] = fallback
@@ -867,7 +881,9 @@ class AttemptReviewView(APIView):
             "submitted_at": attempt.submitted_at,
             "score": attempt.score,
             "total_questions": len(questions_data),
-            "questions": questions_data
+            "results": questions_data,
+            "questions": questions_data,
+            "question_feedback": questions_data
         }, status=status.HTTP_200_OK)
 
     def _build_rich_fallback_explanation(self, q_data, subject="programming"):
@@ -909,17 +925,17 @@ class AttemptReviewView(APIView):
             detail = f"In {topic_name}, dynamic memory allocation on the heap is managed via standard functions like `{correct_ans}` which return raw memory pointers."
         elif "sealed" in q_lower or "final" in q_lower or "subclass" in q_lower:
             detail = f"In {topic_name}, applying the `{correct_ans}` keyword to a class definition explicitly prevents other classes from inheriting from it."
-        elif "&" in q_text or "reference" in q_lower:
+        elif ("&" in q_text or "reference" in q_lower) and topic_name.lower() in ["c", "c++"]:
             detail = f"In {topic_name}, reference variables act as direct memory aliases for existing variables, so modifying a reference directly updates the target variable."
-        elif "*" in q_text or "pointer" in q_lower:
+        elif ("pointer" in q_lower or "dereferencing" in q_lower or "*ptr" in q_lower) and topic_name.lower() in ["c", "c++", "assembly"]:
             detail = f"In {topic_name}, pointers store raw memory addresses, and dereferencing (`*ptr`) accesses the underlying value."
         elif "event loop" in q_lower or "async" in q_lower or "promise" in q_lower:
             detail = f"In {topic_name}, non-blocking asynchronous execution is managed by the Event Loop processing task queues."
         elif "```" in q_text or "output" in q_lower or "print" in q_lower or "cout" in q_lower:
-            detail = f"Tracing variable assignments, arithmetic operations, and control structures in this {topic_name} snippet produces `{correct_ans}`."
+            detail = f"Executing this {topic_name} code step-by-step evaluates the expressions and produces `{correct_ans}`."
         else:
             clean_stem = q_text.split("\n")[0].strip()
-            detail = f"For the question '{clean_stem}', the correct technical principle is `{correct_ans}`."
+            detail = f"For the question '{clean_stem}', the correct answer is `{correct_ans}`."
 
         if is_correct:
             return f"Correct! {detail}"

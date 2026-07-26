@@ -531,18 +531,12 @@ Difficulty: {difficulty}
 Focus: {prompt_topic if prompt_topic else 'General'}
 
 CRITICAL STRICT RULES:
-1. SUBJECT MATCHING: All questions MUST be 100% focused on "{subject}". Do NOT generate questions about Python if the subject is "{subject}".
-2. ZERO DUPLICATES (MANDATORY): Every single question in the returned array MUST be completely unique. Ensure each question tests a DISTINCT and DIFFERENT sub-topic or concept. If generating {num_questions} questions, they must cover {num_questions} completely DIFFERENT concepts. Do NOT repeat the same question or options.
+1. SUBJECT MATCHING: All questions MUST be 100% focused on "{subject}".
+2. ZERO DUPLICATES: Every question MUST cover a completely distinct topic or concept.
+3. OPTIONS & CORRECT ANSWER MATCHING: The `correct_answer` field MUST EXACTLY match one of the items in the `options` array.
+4. RICH ACCURATE EXPLANATIONS: Include a detailed, step-by-step technical explanation ("explanation") explaining why the correct answer is right and why other choices are wrong. Never use generic or placeholder text.
 
-TITLE GENERATION RULE:
-Generate a short, catchy, and highly unique title for this quiz by combining the Subject ("{subject}") and the Focus/Topic ("{prompt_topic if prompt_topic else 'General'}").
-
-QUESTION TYPES (mix them evenly):
-1. MCQ (Multiple Choice) - 4 options, one correct.
-2. True/False - exactly 4 options where Option A="True", Option B="False", C & D are meaningful alternatives.
-3. Fill in the Blank - statement with a missing word.
-
-OUTPUT - Return a JSON object with two fields: "quiz_title" and "questions" (array of exactly {num_questions} unique questions):
+OUTPUT FORMAT (JSON object with "quiz_title" and "questions"):
 {{
   "quiz_title": "{subject}: {prompt_topic if prompt_topic else 'Core'} Combat",
   "questions": [
@@ -550,12 +544,13 @@ OUTPUT - Return a JSON object with two fields: "quiz_title" and "questions" (arr
       "question_type": "MCQ",
       "question_text": "Question text",
       "options": ["Option A", "Option B", "Option C", "Option D"],
-      "correct_answer": "Option A"
+      "correct_answer": "Option A",
+      "explanation": "Detailed step-by-step explanation of the core concept and why Option A is correct."
     }}
   ]
 }}
 
-Return ONLY valid JSON. No extra text.
+Return ONLY valid JSON.
 """
         return self._call_openrouter(prompt, num_questions)
 
@@ -567,12 +562,10 @@ Difficulty: {difficulty}
 Focus: {prompt_topic if prompt_topic else 'General'}
 
 CRITICAL STRICT RULES:
-1. SUBJECT LANGUAGE MATCHING: Every code snippet MUST be written in valid {subject} syntax inside a markdown code block tagged ```{subject.lower()}. NEVER output Python code when the subject is "{subject}".
-2. ZERO DUPLICATES (MANDATORY): Every single question MUST be unique. Do not repeat code snippets or question text. Each snippet must test a completely DIFFERENT concept, function, or logic flaw.
-3. OPTIONS MATCH CODE: The 4 options MUST be the exact outputs or values produced by running that specific code snippet.
-
-TITLE GENERATION RULE:
-Generate a short, catchy title combining Subject ("{subject}") and Topic ("{prompt_topic if prompt_topic else 'General'}").
+1. SUBJECT LANGUAGE MATCHING: Every code snippet MUST be written in valid {subject} syntax inside a markdown code block tagged ```{subject.lower()}.
+2. PRECISE EXECUTION: Mentally execute the code snippet step-by-step. The `correct_answer` MUST be the exact, literal stdout or return value produced by running the code.
+3. OPTIONS MATCH CODE: One of the 4 options MUST EXACTLY match `correct_answer`. Do NOT provide options that omit space separators or tuple brackets.
+4. STEP-BY-STEP EXPLANATION: Include a detailed, step-by-step code execution trace in the "explanation" field showing variable assignments, loop iterations, and operator evaluation. Never use generic or placeholder text. Never mention C/C++ pointers for Python/JS code.
 
 OUTPUT FORMAT (JSON object with "quiz_title" and "questions"):
 {{
@@ -582,7 +575,8 @@ OUTPUT FORMAT (JSON object with "quiz_title" and "questions"):
       "question_type": "Coding",
       "question_text": "What is the output of the following {subject} code?\\n\\n```{subject.lower()}\\n// code snippet in {subject}\\n```",
       "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
-      "correct_answer": "Option 1"
+      "correct_answer": "Option 1",
+      "explanation": "Step-by-step execution trace: Variable 'a' is initialized to 5, 'b' to 10. The tuple assignment (b, a+b) evaluates to (10, 15). Printing (a, b) outputs '10 15'."
     }}
   ]
 }}

@@ -162,19 +162,13 @@ class GenerateAIQuizView(APIView):
                 question_text = q_data.get('question_text', '').strip()
                 options = q_data.get('options', [])
                 correct_answer = q_data.get('correct_answer', '').strip()
+                explanation_text = q_data.get('explanation', '').strip()
 
-                question = Question.objects.create(
-                    quiz=quiz,
-                    question_text=question_text,
-                    question_type=q_type,
-                    correct_answer=correct_answer,
-                    marks=1,
-                    question_order=idx + 1
-                )
+                from apps.questions.serializers import clean_quiz_text
+                trimmed_correct = clean_quiz_text(str(correct_answer)).strip()
 
+                trimmed_options = []
                 if options:
-                    from apps.questions.serializers import clean_quiz_text
-                    trimmed_options = []
                     seen_opts = set()
                     for opt in options:
                         clean_opt = clean_quiz_text(str(opt))
@@ -182,29 +176,46 @@ class GenerateAIQuizView(APIView):
                             seen_opts.add(clean_opt.lower())
                             trimmed_options.append(clean_opt)
 
-                    # Strictly cap to maximum 4 options per question
                     if len(trimmed_options) > 4:
                         trimmed_options = trimmed_options[:4]
 
-                    trimmed_correct = clean_quiz_text(str(correct_answer)).strip()
+                    # 🛡️ GUARANTEE: Ensure correct_answer is ALWAYS in trimmed_options!
+                    has_correct = any(opt.lower() == trimmed_correct.lower() for opt in trimmed_options)
+                    if not has_correct and trimmed_correct:
+                        if len(trimmed_options) >= 4:
+                            trimmed_options[0] = trimmed_correct
+                        else:
+                            trimmed_options.append(trimmed_correct)
 
                     try:
-                        correct_index = trimmed_options.index(trimmed_correct)
+                        correct_index = [opt.lower() for opt in trimmed_options].index(trimmed_correct.lower())
                     except ValueError:
-                        lower_options = [opt.lower() for opt in trimmed_options]
-                        try:
-                            correct_index = lower_options.index(trimmed_correct.lower())
-                        except ValueError:
-                            correct_index = 0
+                        correct_index = 0
+                        trimmed_options[0] = trimmed_correct
 
-                    for opt_idx, opt_text in enumerate(trimmed_options):
-                        options_to_create.append(
-                            QuestionOption(
-                                question=question,
-                                option_text=opt_text,
-                                is_correct=(opt_idx == correct_index)
-                            )
+                    final_correct_text = trimmed_options[correct_index]
+                else:
+                    final_correct_text = trimmed_correct
+                    correct_index = 0
+
+                question = Question.objects.create(
+                    quiz=quiz,
+                    question_text=question_text,
+                    question_type=q_type,
+                    correct_answer=final_correct_text,
+                    explanation=explanation_text,
+                    marks=1,
+                    question_order=idx + 1
+                )
+
+                for opt_idx, opt_text in enumerate(trimmed_options):
+                    options_to_create.append(
+                        QuestionOption(
+                            question=question,
+                            option_text=opt_text,
+                            is_correct=(opt_idx == correct_index)
                         )
+                    )
 
             if options_to_create:
                 QuestionOption.objects.bulk_create(options_to_create)

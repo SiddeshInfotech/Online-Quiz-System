@@ -13,6 +13,7 @@ class Question(models.Model):
     question_text = models.TextField()
     question_type = models.CharField(max_length=50, choices=TYPE_CHOICES)
     correct_answer = models.TextField()
+    explanation = models.TextField(blank=True, null=True)
     marks = models.IntegerField(default=1)
     question_order = models.IntegerField()
 
