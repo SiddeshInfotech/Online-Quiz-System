@@ -72,12 +72,12 @@ class UserSubscriptionView(APIView):
 
             "features": {
                 "ai_quiz_generation": True,
+                "ai_explanations": True,
+                "badges_and_xp": True,
                 "extended_question_counts": is_pro,
                 "quiz_retries": is_pro,
-                "detailed_ai_explanations": is_pro,
                 "advanced_analytics": is_pro,
                 "priority_support": is_pro,
-                "premium_badges": is_pro,
                 "export_results": is_pro
             }
         }
@@ -108,7 +108,8 @@ class SubscriptionPlansView(APIView):
                     "3 AI Quiz Generations Per Day",
                     "5 or 10 Questions Per Quiz",
                     "1 Attempt Per Quiz (No Retries)",
-                    "Basic Analytics & Badges"
+                    "Full AI Explanations Engine",
+                    "All Badges & XP Achievements"
                 ]
             },
             {
@@ -130,8 +131,9 @@ class SubscriptionPlansView(APIView):
                     "10 AI Quiz Generations Per Day",
                     "5, 10, 15, 20, or 25 Questions Choice",
                     "1 Retry Allowed Per Quiz (2 Attempts)",
-                    "Detailed AI Explanations Engine",
-                    "Advanced Analytics & Priority Badges",
+                    "Full AI Explanations Engine",
+                    "All Badges & XP Achievements",
+                    "Advanced Analytics",
                     "Priority Support",
                     "Export Results"
                 ]
