@@ -164,7 +164,6 @@ class AdminQuizSerializer(serializers.ModelSerializer):
         if not obj.created_by:
             return True
         return (
-            obj.is_ai_generated or
             obj.created_by.username.lower() == 'admin' or
             obj.created_by.is_superuser or
             obj.created_by.is_staff or
