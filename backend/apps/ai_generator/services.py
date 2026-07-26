@@ -475,12 +475,12 @@ class AIService:
 
         # Sub-topic generators for 100% unique question generation beyond static pool
         subtopics_coding = [
-            ("Variables & Data Types", lambda v, s: (f"What is the output of the following {subject} snippet (Var #{v})?\n\n```{s}\nint val{v} = {v * 5};\nval{v} += 10;\ncout << val{v};\n```" if s in ["cpp", "c"] else f"What is the output of the following {subject} code (Var #{v})?\n\n```{s}\nval{v} = {v * 5}\nval{v} += 10\nprint(val{v})\n```", [str(v * 5 + 10), str(v * 5), str(v * 10), "Error"], str(v * 5 + 10))),
-            ("Conditionals & Logic", lambda v, s: (f"What will this {subject} condition evaluate to (Check #{v})?\n\n```{s}\nint score{v} = {v * 15};\nif (score{v} >= 30) {{\n    cout << \"Pass\";\n}} else {{\n    cout << \"Fail\";\n}}\n```" if s in ["cpp", "c"] else f"What will this {subject} code output (Check #{v})?\n\n```{s}\nscore{v} = {v * 15}\nprint(\"Pass\" if score{v} >= 30 else \"Fail\")\n```", ["Pass" if v * 15 >= 30 else "Fail", "Fail" if v * 15 >= 30 else "Pass", "Error", "None"], "Pass" if v * 15 >= 30 else "Fail")),
-            ("Loop Execution", lambda v, s: (f"What total count does this {subject} loop produce (Loop #{v})?\n\n```{s}\nint total{v} = 0;\nfor (int i = 0; i < {v}; i++) {{\n    total{v} += i;\n}}\ncout << total{v};\n```" if s in ["cpp", "c"] else f"What does this {subject} loop calculate (Loop #{v})?\n\n```{s}\ntotal{v} = sum(range({v}))\nprint(total{v})\n```", [str(sum(range(v))), str(v * v), str(v), "0"], str(sum(range(v))))),
-            ("Array / List Processing", lambda v, s: (f"What element is printed by this {subject} array code (Array #{v})?\n\n```{s}\nint arr{v}[] = {{{v * 2}, {v * 3}, {v * 4}}};\ncout << arr{v}[1];\n```" if s in ["cpp", "c"] else f"What element does this {subject} list access (List #{v})?\n\n```{s}\nitems{v} = [{v * 2}, {v * 3}, {v * 4}]\nprint(items{v}[1])\n```", [str(v * 3), str(v * 2), str(v * 4), "IndexError"], str(v * 3))),
+            ("Variables & Data Types", lambda v, s: (f"What is the output of the following {subject} snippet (Var #{v})?\n\n```{s}\nint val{v} = {v * 5};\nval{v} += 10;\nprintf(\"%d\", val{v});\n```" if s == "c" else f"What is the output of the following {subject} snippet (Var #{v})?\n\n```{s}\nint val{v} = {v * 5};\nval{v} += 10;\ncout << val{v};\n```" if s == "cpp" else f"What is the output of the following {subject} code (Var #{v})?\n\n```{s}\nval{v} = {v * 5}\nval{v} += 10\nprint(val{v})\n```", [str(v * 5 + 10), str(v * 5), str(v * 10), "Error"], str(v * 5 + 10))),
+            ("Conditionals & Logic", lambda v, s: (f"What will this {subject} condition evaluate to (Check #{v})?\n\n```{s}\nint score{v} = {v * 15};\nif (score{v} >= 30) {{\n    printf(\"Pass\");\n}} else {{\n    printf(\"Fail\");\n}}\n```" if s == "c" else f"What will this {subject} condition evaluate to (Check #{v})?\n\n```{s}\nint score{v} = {v * 15};\nif (score{v} >= 30) {{\n    cout << \"Pass\";\n}} else {{\n    cout << \"Fail\";\n}}\n```" if s == "cpp" else f"What will this {subject} code output (Check #{v})?\n\n```{s}\nscore{v} = {v * 15}\nprint(\"Pass\" if score{v} >= 30 else \"Fail\")\n```", ["Pass" if v * 15 >= 30 else "Fail", "Fail" if v * 15 >= 30 else "Pass", "Error", "None"], "Pass" if v * 15 >= 30 else "Fail")),
+            ("Loop Execution", lambda v, s: (f"What total count does this {subject} loop produce (Loop #{v})?\n\n```{s}\nint total{v} = 0;\nfor (int i = 0; i < {v}; i++) {{\n    total{v} += i;\n}}\nprintf(\"%d\", total{v});\n```" if s == "c" else f"What total count does this {subject} loop produce (Loop #{v})?\n\n```{s}\nint total{v} = 0;\nfor (int i = 0; i < {v}; i++) {{\n    total{v} += i;\n}}\ncout << total{v};\n```" if s == "cpp" else f"What does this {subject} loop calculate (Loop #{v})?\n\n```{s}\ntotal{v} = sum(range({v}))\nprint(total{v})\n```", [str(sum(range(v))), str(v * v), str(v), "0"], str(sum(range(v))))),
+            ("Array / List Processing", lambda v, s: (f"What element is printed by this {subject} array code (Array #{v})?\n\n```{s}\nint arr{v}[] = {{{v * 2}, {v * 3}, {v * 4}}};\nprintf(\"%d\", arr{v}[1]);\n```" if s == "c" else f"What element is printed by this {subject} array code (Array #{v})?\n\n```{s}\nint arr{v}[] = {{{v * 2}, {v * 3}, {v * 4}}};\ncout << arr{v}[1];\n```" if s == "cpp" else f"What element does this {subject} list access (List #{v})?\n\n```{s}\nitems{v} = [{v * 2}, {v * 3}, {v * 4}]\nprint(items{v}[1])\n```", [str(v * 3), str(v * 2), str(v * 4), "IndexError"], str(v * 3))),
             ("Function Mechanics", lambda v, s: (f"What is returned by this {subject} helper function (Fn #{v})?\n\n```{s}\nint multiply{v}(int a, int b) {{\n    return a * b + {v};\n}}\n// Called as: multiply{v}(3, 4)\n```" if s in ["cpp", "c"] else f"What is the result of calling this {subject} function (Fn #{v})?\n\n```{s}\ndef compute{v}(a, b):\n    return a * b + {v}\nprint(compute{v}(3, 4))\n```", [str(12 + v), str(12), str(7 + v), "0"], str(12 + v))),
-            ("String Manipulation", lambda v, s: (f"What is printed by this {subject} string operation (Str #{v})?\n\n```{s}\nstring s{v} = \"Tech{v}\";\ncout << s{v}.length();\n```" if s in ["cpp", "c"] else f"What is the output of this {subject} string method (Str #{v})?\n\n```{s}\ns{v} = \"Code{v}\"\nprint(len(s{v}))\n```", [str(4 + len(str(v))), str(4), str(len(str(v))), "Error"], str(4 + len(str(v)))))
+            ("String Manipulation", lambda v, s: (f"What is printed by this {subject} string operation (Str #{v})?\n\n```{s}\nchar s{v}[] = \"Tech{v}\";\nprintf(\"%zu\", strlen(s{v}));\n```" if s == "c" else f"What is printed by this {subject} string operation (Str #{v})?\n\n```{s}\nstring s{v} = \"Tech{v}\";\ncout << s{v}.length();\n```" if s == "cpp" else f"What is the output of this {subject} string method (Str #{v})?\n\n```{s}\ns{v} = \"Code{v}\"\nprint(len(s{v}))\n```", [str(4 + len(str(v))), str(4), str(len(str(v))), "Error"], str(4 + len(str(v)))))
         ]
 
         subtopics_theory = [
@@ -732,10 +732,8 @@ Return ONLY valid JSON.
 
     def _call_openrouter(self, prompt, num_questions):
         models_to_try = [
-            "inclusionai/ling-3.0-flash:free",
-            "cohere/north-mini-code:free",
             "google/gemma-4-26b-a4b-it:free",
-            "google/gemma-4-31b-it:free"
+            "inclusionai/ling-3.0-flash:free"
         ]
 
         last_error = None
@@ -759,7 +757,7 @@ Return ONLY valid JSON.
                     self.api_url,
                     headers=self.headers,
                     json=payload,
-                    timeout=3.5,
+                    timeout=0.8,
                     stream=False
                 )
 
@@ -780,48 +778,60 @@ Return ONLY valid JSON.
                 else:
                     questions = parsed_data
 
-                if not isinstance(questions, list):
+                if not isinstance(questions, list) or len(questions) < num_questions:
+                    last_error = f"{model} returned only {len(questions) if isinstance(questions, list) else 0} questions out of {num_questions} requested"
                     continue
 
-                # Bulletproof deduplication check
-                unique_questions = []
+                # Bulletproof deduplication & quality check
+                valid_questions = []
                 seen_q_texts = set()
-                for q in questions:
-                    q_text = str(q.get('question_text', '')).strip().lower()
-                    if q_text and q_text not in seen_q_texts:
-                        seen_q_texts.add(q_text)
-                        unique_questions.append(q)
-                
-                questions = unique_questions
-                # Ensure options and correct answer integrity
-                sensible_alternatives = [
-                    "True, but only under certain conditions",
-                    "False, except in specific cases",
-                    "Partially true",
-                    "Not applicable in this context"
-                ]
+                generic_placeholders = ["true, but only under certain conditions", "false, except in specific cases", "partially true", "not applicable in this context"]
 
                 for q in questions:
+                    q_text = str(q.get('question_text', '') or q.get('question', '') or '').strip()
                     options = q.get('options', [])
-                    if not isinstance(options, list):
-                        options = []
-
-                    if len(options) < 4:
-                        while len(options) < 4:
-                            options.append(sensible_alternatives[len(options) - 2] if len(options) - 2 < len(sensible_alternatives) else f"Option {len(options) + 1}")
-                    elif len(options) > 4:
-                        options = options[:4]
-
                     correct = str(q.get('correct_answer', '')).strip()
-                    if correct not in options:
-                        options[0] = correct
 
-                    q['options'] = options
-                    q['correct_answer'] = correct
+                    # Require question text to be at least 20 chars long
+                    if len(q_text) < 20:
+                        continue
+
+                    q_lower = q_text.lower()
+                    if q_lower in seen_q_texts:
+                        continue
+
+                    # Validate options list has 4 distinct non-empty strings
+                    if not isinstance(options, list) or len(options) < 4:
+                        continue
+
+                    clean_opts = [str(opt).strip() for opt in options[:4] if str(opt).strip()]
+                    if len(clean_opts) < 4:
+                        continue
+
+                    # Reject if generic placeholder options are detected
+                    if any(opt.lower() in generic_placeholders for opt in clean_opts):
+                        continue
+
+                    # Guarantee correct answer is in options
+                    if correct not in clean_opts:
+                        clean_opts[0] = correct
+
+                    seen_q_texts.add(q_lower)
+                    valid_questions.append({
+                        "question_type": q.get("question_type", "Coding"),
+                        "question_text": q_text,
+                        "options": clean_opts,
+                        "correct_answer": correct,
+                        "explanation": str(q.get("explanation", "")).strip()
+                    })
+
+                if len(valid_questions) < num_questions:
+                    last_error = f"{model} returned only {len(valid_questions)} valid questions out of {num_questions} requested"
+                    continue
 
                 return {
-                    "quiz_title": quiz_title,
-                    "questions": questions
+                    "quiz_title": quiz_title or f"Quiz on {prompt[:20]}",
+                    "questions": valid_questions[:num_questions]
                 }
 
             except Exception as e:
