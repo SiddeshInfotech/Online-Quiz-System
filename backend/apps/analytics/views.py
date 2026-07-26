@@ -328,6 +328,53 @@ class DashboardSummaryView(APIView):
             },
             "quick_actions": quick_actions
         }
+
+        # Subscription & Daily Quiz Limits
+        from apps.users.models import Subscription
+        sub, _ = Subscription.objects.get_or_create(user=user)
+        is_pro = sub.is_pro
+
+        daily_quiz_used = Quiz.objects.filter(
+            created_by=user,
+            created_at__date=today_date
+        ).count()
+        daily_quiz_limit = 10 if is_pro else 3
+        daily_quiz_remaining = max(0, daily_quiz_limit - daily_quiz_used)
+
+        daily_attempt_used = QuizAttempt.objects.filter(
+            user=user,
+            started_at__date=today_date
+        ).count()
+        daily_attempt_limit = 999999 if is_pro else 10
+        daily_attempt_remaining = max(0, 10 - daily_attempt_used) if not is_pro else 999999
+
+        subscription_info = {
+            "plan": "PRO" if is_pro else "FREE",
+            "subscription_plan": "PRO" if is_pro else "FREE",
+            "is_pro": is_pro,
+            "status": sub.status if is_pro else "ACTIVE",
+            "daily_quiz_limit": daily_quiz_limit, # 3 for Free, 10 for Pro
+            "daily_quiz_used": daily_quiz_used,
+            "daily_quiz_remaining": daily_quiz_remaining,
+
+            "daily_quizzes_limit": daily_quiz_limit,
+            "daily_quizzes_used": daily_quiz_used,
+            "daily_quizzes_remaining": daily_quiz_remaining,
+
+            "max_daily_quizzes": daily_quiz_limit,
+            "daily_attempt_limit": daily_attempt_limit,
+            "daily_attempt_used": daily_attempt_used,
+            "daily_attempt_remaining": daily_attempt_remaining,
+        }
+
+        res_data["subscription"] = subscription_info
+        res_data["daily_quiz_limit"] = daily_quiz_limit
+        res_data["daily_quiz_used"] = daily_quiz_used
+        res_data["daily_quiz_remaining"] = daily_quiz_remaining
+        res_data["daily_quizzes_limit"] = daily_quiz_limit
+        res_data["daily_quizzes_used"] = daily_quiz_used
+        res_data["daily_quizzes_remaining"] = daily_quiz_remaining
+
         cache.set(cache_key, res_data, 15)
         return Response(res_data)
 

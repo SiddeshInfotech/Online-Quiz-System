@@ -129,12 +129,12 @@ class LoginSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(required=False, validators=[])
     profile_picture = serializers.SerializerMethodField()
     profile_completion = serializers.SerializerMethodField()
     missing_fields = serializers.SerializerMethodField()
     badge_count = serializers.SerializerMethodField()
     total_attempts = serializers.SerializerMethodField()
+    subscription = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -144,13 +144,13 @@ class UserSerializer(serializers.ModelSerializer):
             'subject_interests', 'profile_completion', 'missing_fields', 'badge_count',
             'quizzes_completed', 'total_points', 'xp', 'level',
             'current_streak', 'longest_streak', 'total_attempts',
-            'is_staff', 'is_superuser'
+            'is_staff', 'is_superuser', 'subscription'
         ]
         read_only_fields = [
             'id', 'role', 'date_joined',
             'quizzes_completed', 'total_points', 'xp', 'level',
             'current_streak', 'longest_streak', 'total_attempts',
-            'is_staff', 'is_superuser'
+            'is_staff', 'is_superuser', 'subscription'
         ]
         extra_kwargs = {
             'username': {'required': False},
@@ -283,6 +283,49 @@ class UserSerializer(serializers.ModelSerializer):
     def get_total_attempts(self, obj):
         from apps.attempts.models import QuizAttempt
         return QuizAttempt.objects.filter(user=obj, submitted_at__isnull=False).count()
+
+    def get_subscription(self, obj):
+        from apps.users.models import Subscription
+        from apps.quizzes.models import Quiz
+        from apps.attempts.models import QuizAttempt
+        from django.utils import timezone
+
+        sub, _ = Subscription.objects.get_or_create(user=obj)
+        is_pro = sub.is_pro
+        today = timezone.localdate()
+
+        daily_quiz_used = Quiz.objects.filter(
+            created_by=obj,
+            created_at__date=today
+        ).count()
+        daily_quiz_limit = 10 if is_pro else 3
+        daily_quiz_remaining = max(0, daily_quiz_limit - daily_quiz_used)
+
+        daily_attempt_used = QuizAttempt.objects.filter(
+            user=obj,
+            started_at__date=today
+        ).count()
+        daily_attempt_limit = 999999 if is_pro else 10
+        daily_attempt_remaining = max(0, 10 - daily_attempt_used) if not is_pro else 999999
+
+        return {
+            "plan": "PRO" if is_pro else "FREE",
+            "subscription_plan": "PRO" if is_pro else "FREE",
+            "is_pro": is_pro,
+            "status": sub.status if is_pro else "ACTIVE",
+            "daily_quiz_limit": daily_quiz_limit,
+            "daily_quiz_used": daily_quiz_used,
+            "daily_quiz_remaining": daily_quiz_remaining,
+
+            "daily_quizzes_limit": daily_quiz_limit,
+            "daily_quizzes_used": daily_quiz_used,
+            "daily_quizzes_remaining": daily_quiz_remaining,
+
+            "max_daily_quizzes": daily_quiz_limit,
+            "daily_attempt_limit": daily_attempt_limit,
+            "daily_attempt_used": daily_attempt_used,
+            "daily_attempt_remaining": daily_attempt_remaining,
+        }
 
 
 class GoogleAuthSerializer(serializers.Serializer):
