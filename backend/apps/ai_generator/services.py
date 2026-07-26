@@ -10,14 +10,15 @@ import ast
 class AIService:
     def __init__(self):
         self.api_key = os.environ.get('OPENROUTER_API_KEY')
-        if not self.api_key:
-            raise ValueError("OPENROUTER_API_KEY is not configured")
+        self.gemini_key = os.environ.get('GEMINI_API_KEY') or os.environ.get('GOOGLE_API_KEY')
+        if not self.api_key and not self.gemini_key:
+            raise ValueError("Neither OPENROUTER_API_KEY nor GEMINI_API_KEY is configured")
 
         self.api_url = "https://openrouter.ai/api/v1/chat/completions"
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
-        }
+        } if self.api_key else {}
 
     def generate_quiz(self, subject, difficulty, num_questions, prompt_topic="", quiz_mode="Theory"):
         try:
@@ -511,11 +512,13 @@ class AIService:
             idx += 1
             if item["q"] not in seen_texts:
                 seen_texts.add(item["q"])
+                exp = item.get("exp") or f"Evaluating the control flow and language syntax rules confirms that '{item['ans']}' is the correct technical answer."
                 questions.append({
                     "question_type": "Coding" if quiz_mode == "Coding" else "MCQ",
                     "question_text": item["q"],
                     "options": list(item["opts"]),
-                    "correct_answer": item["ans"]
+                    "correct_answer": item["ans"],
+                    "explanation": exp
                 })
 
         return {
