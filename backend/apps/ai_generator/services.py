@@ -729,10 +729,13 @@ Return ONLY valid JSON.
 
     def _call_openrouter(self, prompt, num_questions):
         models_to_try = [
-            "google/gemini-2.0-flash-001",
+            "openrouter/free",
+            "google/gemma-4-31b-it:free",
+            "google/gemma-4-26b-a4b-it:free",
+            "cohere/north-mini-code:free",
+            "inclusionai/ling-3.0-flash:free",
             "meta-llama/llama-3.3-70b-instruct:free",
-            "google/gemini-2.0-flash-lite-001",
-            "openai/gpt-4o-mini"
+            "deepseek/deepseek-r1:free"
         ]
 
         last_error = None
@@ -757,7 +760,7 @@ Return ONLY valid JSON.
                     self.api_url,
                     headers=self.headers,
                     json=payload,
-                    timeout=12,
+                    timeout=4,
                     stream=False
                 )
 
@@ -884,11 +887,13 @@ Return ONLY valid JSON.
         Generate AI explanations (list of strings) using OpenRouter.
         """
         models_to_try = [
-            "google/gemini-2.0-flash-001",
-            "google/gemini-2.0-flash-lite-001",
+            "openrouter/free",
+            "google/gemma-4-31b-it:free",
+            "google/gemma-4-26b-a4b-it:free",
+            "cohere/north-mini-code:free",
+            "inclusionai/ling-3.0-flash:free",
             "meta-llama/llama-3.3-70b-instruct:free",
-            "qwen/qwen-2.5-coder-32b-instruct:free",
-            "openai/gpt-4o-mini"
+            "deepseek/deepseek-r1:free"
         ]
 
         last_error = None
@@ -920,7 +925,7 @@ Return ONLY valid JSON.
                     self.api_url,
                     headers=self.headers,
                     json=payload,
-                    timeout=15,
+                    timeout=4,
                     stream=False
                 )
 

@@ -929,27 +929,37 @@ class AttemptReviewView(APIView):
         topic_name = subject if (subject and subject != "the topic") else "programming"
 
         # Topic/Concept specific technical explanations:
-        if "concat" in q_lower and "string" in q_lower:
-            detail = f"In {topic_name}, `String` objects are immutable. Calling `concat()` returns a new string rather than modifying the original variable in-place, so printing the variable displays `{correct_ans}`."
+        if "&" in q_text and ("reference" in q_lower or "int &" in q_text or "auto &" in q_text):
+            detail = f"In C++, declaring a reference variable (`&b = a`) creates a direct memory alias for the original variable `a`. Modifying `b` directly updates `a`, so printing `a` yields `{correct_ans}`."
+        elif "::" in q_text or "scope resolution" in q_lower or "global vs local" in q_lower:
+            detail = f"In C++, the scope resolution operator `::` explicitly accesses the global variable, bypassing local shadowing. Combining global and local values computes `{correct_ans}`."
+        elif ("pointer" in q_lower or "dereferenc" in q_lower or "*ptr" in q_lower or "int *ptr" in q_text) and topic_name.lower() in ["c", "c++", "assembly"]:
+            detail = f"In C++, pointers store memory addresses. Dereferencing and assigning via `*ptr` directly modifies the memory location of the original variable, updating its value to `{correct_ans}`."
+        elif "vector" in q_lower or "push_back" in q_lower or "pop_back" in q_lower or "back()" in q_lower:
+            detail = f"In C++, `push_back()` appends an element to the end of the vector, while `pop_back()` removes the last element. Calling `back()` inspects the current tail element, which is `{correct_ans}`."
+        elif "default argument" in q_lower or "default parameter" in q_lower or ("int y = " in q_text or "= 5" in q_text) and "(" in q_text:
+            detail = f"In {topic_name}, default parameter values are automatically supplied when trailing arguments are omitted during a function call, evaluating the expression to `{correct_ans}`."
+        elif "concat" in q_lower and "string" in q_lower:
+            detail = f"In Java, `String` objects are immutable. Calling `concat()` returns a new string rather than modifying the original variable in-place, so printing the variable displays `{correct_ans}`."
         elif "stringbuilder" in q_lower and ("append" in q_lower or "length" in q_lower):
-            detail = f"Unlike immutable Strings, `StringBuilder` in {topic_name} is mutable and modifies the internal sequence in-place, resulting in a length of `{correct_ans}`."
+            detail = f"Unlike immutable Strings, Java's `StringBuilder` is mutable and modifies the internal sequence in-place, resulting in a final value/length of `{correct_ans}`."
         elif "count++" in q_lower or "++count" in q_lower or "post-increment" in q_lower or "pre-increment" in q_lower:
-            detail = f"In {topic_name}, post-increment (`count++`) evaluates the current value before incrementing, while pre-increment (`++count`) increments first. Adding both evaluated terms yields `{correct_ans}`."
-        elif "ternary" in q_lower or ("?" in q_text and ":" in q_text):
+            detail = f"In {topic_name}, post-increment (`count++`) evaluates the current value before incrementing, while pre-increment (`++count`) increments first. Evaluating both terms yields `{correct_ans}`."
+        elif "?" in q_text and ":" in q_text and "::" not in q_text and ("ternary" in q_lower or "boolean" in q_lower or "flag" in q_lower):
             detail = f"The ternary operator `condition ? expr1 : expr2` evaluates `expr2` when condition is `false`, resolving to `{correct_ans}`."
-        elif "for" in q_lower and "sum" in q_lower:
+        elif ("for" in q_lower or "while" in q_lower) and ("sum" in q_lower or "+=" in q_text):
             detail = f"Iterating through the array elements sequentially and accumulating their values with `sum += x` produces the total `{correct_ans}`."
-        elif "error handling" in q_lower or "exception" in q_lower or "try-catch" in q_lower:
-            detail = f"In {topic_name}, runtime exception management relies on `{correct_ans}` to handle failures gracefully and maintain application stability."
-        elif "type system" in q_lower or "type checking" in q_lower:
-            detail = f"The type system in {topic_name} enforces `{correct_ans}` to guarantee data integrity during variable assignment."
+        elif "error handling" in q_lower or "exception" in q_lower or "try-catch" in q_lower or "catch" in q_lower:
+            detail = f"In {topic_name}, runtime exception management relies on `{correct_ans}` to handle unexpected failures gracefully and maintain application stability."
+        elif "type system" in q_lower or "type checking" in q_lower or "typeof" in q_lower:
+            detail = f"In {topic_name}, type checking enforces `{correct_ans}` to guarantee data integrity during evaluation."
         elif "scope" in q_lower or "visibility" in q_lower:
             detail = f"In {topic_name}, identifier scope and variable visibility follow `{correct_ans}`."
         elif "===" in q_text or "==" in q_text:
             detail = f"In {topic_name}, `===` checks both value and data type without implicit coercion, whereas `==` converts operands before comparison."
         elif "typeof nan" in q_lower or ("nan" in q_lower and "typeof" in q_lower):
             detail = f"In JavaScript, `NaN` is defined under IEEE 754 as a numeric float value, so `typeof NaN` evaluates to `\"number\"`."
-        elif "closure" in q_lower:
+        elif "closure" in q_lower or "lexical" in q_lower:
             detail = f"A closure in {topic_name} occurs when an inner function retains access to its outer lexical scope variables after execution."
         elif "virtual dom" in q_lower or ("dom" in q_lower and "react" in q_lower):
             detail = f"In React, the Virtual DOM is an in-memory tree representation of real DOM nodes used to calculate minimal re-renders during state updates."
@@ -957,8 +967,8 @@ class AttemptReviewView(APIView):
             detail = f"In Python, lists are mutable sequences modified in-place, while tuples are immutable and fixed in length."
         elif ("pointer" in q_lower or "*ptr" in q_lower) and topic_name.lower() in ["c", "c++", "assembly"]:
             detail = f"In {topic_name}, pointers store memory addresses, and dereferencing (`*ptr`) accesses the underlying value."
-        elif "```" in q_text or "output" in q_lower or "print" in q_lower:
-            detail = f"Step-by-step evaluation of the {topic_name} control flow and variable assignments resolves to `{correct_ans}`."
+        elif "```" in q_text or "output" in q_lower or "print" in q_lower or "cout" in q_lower:
+            detail = f"Tracing variable assignments, operator precedence, and control flow in this {topic_name} snippet produces `{correct_ans}`."
         else:
             clean_stem = q_text.split("\n")[0].strip()
             detail = f"For the question '{clean_stem}', the correct technical answer is `{correct_ans}`."
