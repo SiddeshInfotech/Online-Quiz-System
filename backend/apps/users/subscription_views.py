@@ -197,7 +197,11 @@ class SubscriptionCancelView(APIView):
 
 
 # 💳 REAL RAZORPAY PAYMENT GATEWAY ENDPOINTS
-import razorpay
+try:
+    import razorpay
+except ImportError:
+    razorpay = None
+
 from django.conf import settings
 from .models import PaymentTransaction
 
@@ -205,6 +209,11 @@ class CreateRazorpayOrderView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        if razorpay is None:
+            return Response({
+                "error": "Razorpay package is not installed on server."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         user = request.user
         plan = request.data.get('plan', 'PRO').upper()
         billing_cycle = request.data.get('billing_cycle', 'MONTHLY').upper()
@@ -267,6 +276,11 @@ class VerifyRazorpayPaymentView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        if razorpay is None:
+            return Response({
+                "error": "Razorpay package is not installed on server."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         user = request.user
         razorpay_order_id = request.data.get('razorpay_order_id') or request.data.get('order_id')
         razorpay_payment_id = request.data.get('razorpay_payment_id') or request.data.get('payment_id')
