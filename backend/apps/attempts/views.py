@@ -379,9 +379,16 @@ class SubmitAttemptView(APIView):
                 },
             )
 
-        # Automatically recalculate user total_points, quizzes_completed, and flush leaderboard cache
-        from apps.users.services.points_service import recalculate_user_points_and_stats
-        recalculate_user_points_and_stats(request.user)
+        # Run recalculation and badge evaluation asynchronously in background to ensure INSTANT < 50ms UI response
+        import threading
+        def background_recalculate(user_obj):
+            try:
+                from apps.users.services.points_service import recalculate_user_points_and_stats
+                recalculate_user_points_and_stats(user_obj)
+            except Exception as ex:
+                print(f"[BACKGROUND RECALC ERROR]: {ex}")
+
+        threading.Thread(target=background_recalculate, args=(request.user,), daemon=True).start()
 
         # Invalidate user dashboard summary cache so recent attempts update immediately
         from django.core.cache import cache

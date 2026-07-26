@@ -256,12 +256,18 @@ class QuizStartView(APIView):
         quiz = get_object_or_404(Quiz, id=pk, status='published')
         user = request.user
 
+        from apps.users.models import Subscription
+        sub, _ = Subscription.objects.get_or_create(user=user)
+        is_pro = sub.is_pro
+
         completed_attempts_count = QuizAttempt.objects.filter(
             user=user,
             quiz=quiz,
             submitted_at__isnull=False
         ).count()
-        max_attempts = getattr(quiz, 'max_attempts', 2) or 2
+
+        # Free = 1 attempt max (0 retries), Pro = 2 attempts max (1 retry)
+        max_attempts = 2 if is_pro else 1
         can_retry = completed_attempts_count < max_attempts
 
         existing_attempt = QuizAttempt.objects.filter(
@@ -271,11 +277,14 @@ class QuizStartView(APIView):
         if not existing_attempt and not can_retry:
             return Response(
                 {
-                    "detail": f"Maximum attempt limit ({max_attempts}) reached for this quiz.",
+                    "code": "PREMIUM_REQUIRED",
+                    "detail": f"Re-attempting a quiz is a QuizGen Pro feature (1 retry allowed). Upgrade to QuizGen Pro to retry this quiz!",
+                    "message": "Re-attempting a quiz is a QuizGen Pro feature (1 retry allowed). Upgrade to QuizGen Pro to retry this quiz!",
                     "error": "Attempt limit reached.",
                     "can_retry": False,
                     "attempt_count": completed_attempts_count,
                     "max_attempts": max_attempts,
+                    "upgrade_url": "/pricing"
                 },
                 status=status.HTTP_403_FORBIDDEN
             )
