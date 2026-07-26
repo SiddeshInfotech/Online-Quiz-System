@@ -17,16 +17,16 @@ from apps.ai_generator.services import AIService
 class StartAttemptView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request):
-        serializer = StartAttemptSerializer(data=request.data)
-
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        quiz_id = serializer.validated_data['quiz_id']
+    def post(self, request, quiz_id=None, pk=None):
+        target_quiz_id = quiz_id or pk or request.data.get('quiz_id')
+        if not target_quiz_id:
+            serializer = StartAttemptSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            target_quiz_id = serializer.validated_data['quiz_id']
 
         try:
-            quiz = Quiz.objects.get(id=quiz_id)
+            quiz = Quiz.objects.get(id=target_quiz_id)
         except Quiz.DoesNotExist:
             return Response(
                 {"error": "Quiz not found."},

@@ -45,6 +45,7 @@ class GenerateAIQuizView(APIView):
         if not is_pro and num_questions > 10:
             return Response({
                 "code": "PREMIUM_REQUIRED",
+                "detail": "Generating 15, 20, or 25 questions per quiz is a Pro feature. Upgrade to QuizGen Pro to unlock!",
                 "message": "Generating 15, 20, or 25 questions per quiz is a Pro feature. Upgrade to QuizGen Pro to unlock!",
                 "upgrade_url": "/pricing"
             }, status=status.HTTP_403_FORBIDDEN)
@@ -60,7 +61,8 @@ class GenerateAIQuizView(APIView):
         if today_creations >= max_daily:
             return Response({
                 "code": "PREMIUM_REQUIRED",
-                "message": f"You have reached your daily limit of {max_daily} AI quiz generations. Upgrade to QuizGen Pro for higher limits!",
+                "detail": f"Daily quiz limit reached ({max_daily}/day). Upgrade to QuizGen Pro for 10 quizzes/day.",
+                "message": f"Daily quiz limit reached ({max_daily}/day). Upgrade to QuizGen Pro for 10 quizzes/day.",
                 "upgrade_url": "/pricing"
             }, status=status.HTTP_403_FORBIDDEN)
 
