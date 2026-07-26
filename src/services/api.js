@@ -61,8 +61,10 @@ api.interceptors.response.use(
           detail: {
             message:
               error.response.data.message ||
+              error.response.data.detail ||
               "Upgrade to QuizGen Pro to unlock this feature!",
             upgradeUrl: error.response.data.upgrade_url || "/pricing",
+            featureKey: error.response.data.code || error.config?.url || "premium",
           },
         })
       );
