@@ -60,8 +60,8 @@ api.interceptors.response.use(
         new CustomEvent("subscription:premium-required", {
           detail: {
             message:
-              error.response.data.message ||
               error.response.data.detail ||
+              error.response.data.message ||
               "Upgrade to QuizGen Pro to unlock this feature!",
             upgradeUrl: error.response.data.upgrade_url || "/pricing",
             featureKey: error.response.data.code || error.config?.url || "premium",

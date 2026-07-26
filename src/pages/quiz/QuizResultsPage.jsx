@@ -56,6 +56,10 @@ const QuizResultsPage = () => {
     } catch (err) {
       console.error("Failed to retry quiz", err);
       if (err.response?.status === 403) {
+        if (err.response?.data?.code === "PREMIUM_REQUIRED") {
+          // Interceptor handles triggering the Pro Upgrade Modal automatically
+          return;
+        }
         setActionError(
           err.response?.data?.detail ||
           err.response?.data?.message ||

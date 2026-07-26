@@ -243,6 +243,10 @@ const QuizDetailsPage = () => {
       navigate(`/attempts/${res.attempt_id || res.id}`, { state: { from_ai: fromAi } });
     } catch (err) {
       console.error("Error starting quiz:", err);
+      if (err?.response?.status === 403 && err?.response?.data?.code === "PREMIUM_REQUIRED") {
+        // Interceptor handles triggering the Pro Upgrade Modal automatically
+        return;
+      }
       setError(
         err?.response?.data?.detail ||
         err?.response?.data?.message ||

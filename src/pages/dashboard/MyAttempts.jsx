@@ -150,6 +150,10 @@ const AttemptCard = ({ attempt }) => {
     } catch (err) {
       console.error(err);
       if (err?.response?.status === 403) {
+        if (err?.response?.data?.code === "PREMIUM_REQUIRED") {
+          // Interceptor handles triggering the Pro Upgrade Modal automatically
+          return;
+        }
         const errorMsg =
           err?.response?.data?.detail ??
           err?.response?.data?.message ??

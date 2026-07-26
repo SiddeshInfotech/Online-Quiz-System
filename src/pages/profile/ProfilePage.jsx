@@ -1238,9 +1238,9 @@ const ProfilePage = () => {
                 {/* Usage Progress Cards */}
                 {(() => {
                   const sk = "animate-pulse bg-slate-200 dark:bg-slate-700 rounded";
-                  const qUsed = subData?.daily_quiz_used;
-                  const qLimit = subData?.daily_quiz_limit;
-                  const qRem = subData?.daily_quiz_remaining ?? (qUsed != null && qLimit != null ? Math.max(0, qLimit - qUsed) : null);
+                  const qUsed = subData?.daily_attempt_used ?? subData?.daily_quiz_used;
+                  const qLimit = subData?.daily_attempt_limit ?? subData?.daily_quiz_limit;
+                  const qRem = subData?.daily_attempt_remaining ?? subData?.daily_quiz_remaining ?? (qUsed != null && qLimit != null ? Math.max(0, qLimit - qUsed) : null);
                   const qPct = qUsed != null && qLimit ? Math.min(100, Math.round((qUsed / qLimit) * 100)) : 0;
                   const cUsed = subData?.coding_question_used;
                   const cLimit = subData?.coding_question_limit;

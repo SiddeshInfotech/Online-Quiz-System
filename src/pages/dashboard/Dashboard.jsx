@@ -56,9 +56,9 @@ const SubscriptionWidget = () => {
   const isPro = subData ? Boolean(subData.is_pro || subData.plan === "PRO") : currentPlan === "pro";
 
   // Only use real API values — no hardcoded fallbacks
-  const quizUsed = subData?.daily_quiz_used;
-  const quizTotal = subData?.daily_quiz_limit;
-  const quizRemaining = subData?.daily_quiz_remaining ?? (quizTotal != null && quizUsed != null ? Math.max(0, quizTotal - quizUsed) : null);
+  const quizUsed = subData?.daily_attempt_used ?? subData?.daily_quiz_used;
+  const quizTotal = subData?.daily_attempt_limit ?? subData?.daily_quiz_limit;
+  const quizRemaining = subData?.daily_attempt_remaining ?? subData?.daily_quiz_remaining ?? (quizTotal != null && quizUsed != null ? Math.max(0, quizTotal - quizUsed) : null);
   const quizPct = quizUsed != null && quizTotal ? Math.min(100, Math.round((quizUsed / quizTotal) * 100)) : 0;
 
   const codeUsed = subData?.coding_question_used;
