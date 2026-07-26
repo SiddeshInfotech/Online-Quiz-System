@@ -194,3 +194,146 @@ class SubscriptionCancelView(APIView):
             "status": "CANCELLED",
             "is_pro": False
         }, status=status.HTTP_200_OK)
+
+
+# 💳 REAL RAZORPAY PAYMENT GATEWAY ENDPOINTS
+import razorpay
+from django.conf import settings
+from .models import PaymentTransaction
+
+class CreateRazorpayOrderView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        plan = request.data.get('plan', 'PRO').upper()
+        billing_cycle = request.data.get('billing_cycle', 'MONTHLY').upper()
+
+        amount_inr = 2999 if billing_cycle == 'YEARLY' else 299
+        amount_paise = amount_inr * 100
+
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+
+        order_data = {
+            "amount": amount_paise,
+            "currency": settings.RAZORPAY_CURRENCY,
+            "receipt": f"order_rcptid_{user.id}_{int(timezone.now().timestamp())}",
+            "notes": {
+                "user_id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "plan": plan,
+                "billing_cycle": billing_cycle
+            }
+        }
+
+        try:
+            razorpay_order = client.order.create(data=order_data)
+            order_id = razorpay_order['id']
+
+            PaymentTransaction.objects.create(
+                user=user,
+                order_id=order_id,
+                amount=amount_inr,
+                currency=settings.RAZORPAY_CURRENCY,
+                status='CREATED',
+                plan=plan,
+                billing_cycle=billing_cycle
+            )
+
+            return Response({
+                "order_id": order_id,
+                "amount": amount_paise,
+                "amount_inr": amount_inr,
+                "currency": settings.RAZORPAY_CURRENCY,
+                "key_id": settings.RAZORPAY_KEY_ID,
+                "name": "QuizGen Pro",
+                "description": f"QuizGen Pro Subscription ({billing_cycle})",
+                "user": {
+                    "name": user.full_name or user.username,
+                    "email": user.email,
+                    "contact": ""
+                }
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({
+                "error": "Failed to create Razorpay payment order.",
+                "details": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class VerifyRazorpayPaymentView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        razorpay_order_id = request.data.get('razorpay_order_id') or request.data.get('order_id')
+        razorpay_payment_id = request.data.get('razorpay_payment_id') or request.data.get('payment_id')
+        razorpay_signature = request.data.get('razorpay_signature') or request.data.get('signature')
+
+        if not (razorpay_order_id and razorpay_payment_id and razorpay_signature):
+            return Response({
+                "error": "Missing required fields: razorpay_order_id, razorpay_payment_id, and razorpay_signature."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+
+        params_dict = {
+            'razorpay_order_id': razorpay_order_id,
+            'razorpay_payment_id': razorpay_payment_id,
+            'razorpay_signature': razorpay_signature
+        }
+
+        try:
+            client.utility.verify_payment_signature(params_dict)
+
+            # Update PaymentTransaction record
+            tx = PaymentTransaction.objects.filter(order_id=razorpay_order_id).first()
+            if tx:
+                tx.payment_id = razorpay_payment_id
+                tx.signature = razorpay_signature
+                tx.status = 'SUCCESS'
+                tx.save()
+
+            # Upgrade User Subscription to PRO
+            sub, _ = Subscription.objects.get_or_create(user=user)
+            sub.plan = 'PRO'
+            sub.status = 'ACTIVE'
+            sub.start_date = timezone.now()
+            
+            billing_cycle = tx.billing_cycle if tx else 'MONTHLY'
+            sub.billing_cycle = billing_cycle
+            if billing_cycle == 'YEARLY':
+                sub.end_date = timezone.now() + timedelta(days=365)
+            else:
+                sub.end_date = timezone.now() + timedelta(days=30)
+
+            sub.cancellation_requested = False
+            sub.save()
+
+            return Response({
+                "success": True,
+                "is_pro": True,
+                "plan": "PRO",
+                "status": "ACTIVE",
+                "message": "Payment verified successfully! Welcome to QuizGen Pro!",
+                "payment_id": razorpay_payment_id,
+                "subscription_end": sub.end_date.isoformat()
+            }, status=status.HTTP_200_OK)
+
+        except razorpay.errors.SignatureVerificationError:
+            tx = PaymentTransaction.objects.filter(order_id=razorpay_order_id).first()
+            if tx:
+                tx.status = 'FAILED'
+                tx.save()
+
+            return Response({
+                "success": False,
+                "error": "Payment signature verification failed. Invalid transaction."
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "error": "Payment verification error.",
+                "details": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

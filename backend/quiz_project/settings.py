@@ -241,3 +241,9 @@ CACHES = {
         'LOCATION': 'quiz_cache_table',
     }
 }
+
+# 💳 Razorpay Payment Gateway Configuration
+RAZORPAY_KEY_ID = env('RAZORPAY_KEY_ID', default='rzp_test_TI2fVt8KBz2An2')
+RAZORPAY_KEY_SECRET = env('RAZORPAY_KEY_SECRET', default='6WfXPbN572f2Q4tWMptqF7xL')
+RAZORPAY_WEBHOOK_SECRET = env('RAZORPAY_WEBHOOK_SECRET', default='quizgen_secret_webhook_2026')
+RAZORPAY_CURRENCY = env('RAZORPAY_CURRENCY', default='INR')
