@@ -847,16 +847,46 @@ class AttemptReviewView(APIView):
         question_ids = [q["question_id"] for q in questions_data if q.get("question_id")]
         db_questions = {q.id: q for q in Question.objects.filter(id__in=question_ids)}
 
+        # Identify questions missing rich explanations in DB
+        missing_ai_indices = []
+        for i, q_data in enumerate(questions_data):
+            qid = q_data.get("question_id")
+            q_obj = db_questions.get(qid)
+            stored_exp = getattr(q_obj, 'explanation', '') if q_obj else ''
+            if not stored_exp or len(str(stored_exp).strip()) < 15 or "evaluates the expressions and produces" in str(stored_exp):
+                missing_ai_indices.append(i)
+
+        # Generate live AI explanations for missing items if needed
+        ai_generated_map = {}
+        if missing_ai_indices:
+            try:
+                ai_exps = self._generate_ai_explanations(attempt, [questions_data[idx] for idx in missing_ai_indices])
+                for idx_in_missing, original_idx in enumerate(missing_ai_indices):
+                    if ai_exps and idx_in_missing < len(ai_exps):
+                        gen_exp = ai_exps[idx_in_missing]
+                        if gen_exp and len(str(gen_exp).strip()) > 15 and "evaluates the expressions and produces" not in str(gen_exp):
+                            clean_gen = str(gen_exp).strip()
+                            ai_generated_map[original_idx] = clean_gen
+                            # Save back to DB to heal question object permanently!
+                            qid = questions_data[original_idx].get("question_id")
+                            if qid in db_questions:
+                                q_obj = db_questions[qid]
+                                q_obj.explanation = clean_gen
+                                q_obj.save(update_fields=['explanation'])
+            except Exception as e:
+                print(f"Live AI explanation generation attempt error: {e}")
+
         if questions_data:
             subject_name = attempt.quiz.subject or "the topic"
-            for q_data in questions_data:
+            for idx, q_data in enumerate(questions_data):
                 qid = q_data.get("question_id")
                 q_obj = db_questions.get(qid)
 
-                # Preference 1: DB stored explanation from AI generator
-                stored_exp = getattr(q_obj, 'explanation', '') if q_obj else ''
-                if stored_exp and len(str(stored_exp).strip()) > 10:
-                    exp_body = str(stored_exp).strip()
+                # Preference 1: Live generated AI explanation or DB stored explanation
+                exp_body = ai_generated_map.get(idx) or (getattr(q_obj, 'explanation', '') if q_obj else '')
+                exp_body = str(exp_body).strip()
+
+                if exp_body and len(exp_body) > 15 and "evaluates the expressions and produces" not in exp_body:
                     if q_data.get('is_correct'):
                         if exp_body.lower().startswith('correct'):
                             final_exp = exp_body
@@ -870,7 +900,7 @@ class AttemptReviewView(APIView):
                     q_data["explanation"] = final_exp
                     q_data["ai_explanation"] = final_exp
                 else:
-                    # Preference 2: Dynamic rich fallback explanation
+                    # Preference 2: Rich context-specific fallback explanation
                     fallback = self._build_rich_fallback_explanation(q_data, subject_name)
                     q_data["explanation"] = fallback
                     q_data["ai_explanation"] = fallback
@@ -898,44 +928,40 @@ class AttemptReviewView(APIView):
         q_lower = q_text.lower()
         topic_name = subject if (subject and subject != "the topic") else "programming"
 
-        # Topic detection for 100% natural, human-written sounding explanations:
-        if "error handling" in q_lower or "exception" in q_lower or "try-catch" in q_lower or "handling runtime" in q_lower:
-            detail = f"In {topic_name}, standard runtime exception management relies on `{correct_ans}` to handle unexpected failures gracefully and maintain application stability."
-        elif "type system" in q_lower or "type rules" in q_lower or "type checking" in q_lower:
-            detail = f"The type system design in {topic_name} `{correct_ans}` to guarantee data integrity and prevent invalid variable assignments."
-        elif "architectural philosophy" in q_lower or "paradigm" in q_lower or "philosophy" in q_lower:
-            detail = f"{topic_name} software design is built around `{correct_ans}` to promote clean separation of concerns and maintainable code structure."
-        elif "memory" in q_lower and ("allocation" in q_lower or "lifecycle" in q_lower or "model" in q_lower):
-            detail = f"{topic_name} manages runtime memory allocation by `{correct_ans}` during object initialization and execution."
-        elif "scope" in q_lower or "visibility" in q_lower or "scoped" in q_lower:
-            detail = f"In {topic_name}, variable scope and identifier visibility are `{correct_ans}`."
-        elif "performance" in q_lower or "efficiency" in q_lower:
-            detail = f"Optimizing runtime execution efficiency in {topic_name} is achieved by `{correct_ans}`."
-        elif "===" in q_text or "==" in q_text or "coercion" in q_lower:
-            detail = f"In {topic_name}, the `===` operator checks both value and data type without implicit coercion, whereas `==` converts operands before comparison."
+        # Topic/Concept specific technical explanations:
+        if "concat" in q_lower and "string" in q_lower:
+            detail = f"In {topic_name}, `String` objects are immutable. Calling `concat()` returns a new string rather than modifying the original variable in-place, so printing the variable displays `{correct_ans}`."
+        elif "stringbuilder" in q_lower and ("append" in q_lower or "length" in q_lower):
+            detail = f"Unlike immutable Strings, `StringBuilder` in {topic_name} is mutable and modifies the internal sequence in-place, resulting in a length of `{correct_ans}`."
+        elif "count++" in q_lower or "++count" in q_lower or "post-increment" in q_lower or "pre-increment" in q_lower:
+            detail = f"In {topic_name}, post-increment (`count++`) evaluates the current value before incrementing, while pre-increment (`++count`) increments first. Adding both evaluated terms yields `{correct_ans}`."
+        elif "ternary" in q_lower or ("?" in q_text and ":" in q_text):
+            detail = f"The ternary operator `condition ? expr1 : expr2` evaluates `expr2` when condition is `false`, resolving to `{correct_ans}`."
+        elif "for" in q_lower and "sum" in q_lower:
+            detail = f"Iterating through the array elements sequentially and accumulating their values with `sum += x` produces the total `{correct_ans}`."
+        elif "error handling" in q_lower or "exception" in q_lower or "try-catch" in q_lower:
+            detail = f"In {topic_name}, runtime exception management relies on `{correct_ans}` to handle failures gracefully and maintain application stability."
+        elif "type system" in q_lower or "type checking" in q_lower:
+            detail = f"The type system in {topic_name} enforces `{correct_ans}` to guarantee data integrity during variable assignment."
+        elif "scope" in q_lower or "visibility" in q_lower:
+            detail = f"In {topic_name}, identifier scope and variable visibility follow `{correct_ans}`."
+        elif "===" in q_text or "==" in q_text:
+            detail = f"In {topic_name}, `===` checks both value and data type without implicit coercion, whereas `==` converts operands before comparison."
         elif "typeof nan" in q_lower or ("nan" in q_lower and "typeof" in q_lower):
-            detail = f"In JavaScript, `NaN` (Not-a-Number) is defined under the IEEE 754 floating-point standard as a numeric value, so `typeof NaN` evaluates to `\"number\"`."
+            detail = f"In JavaScript, `NaN` is defined under IEEE 754 as a numeric float value, so `typeof NaN` evaluates to `\"number\"`."
         elif "closure" in q_lower:
-            detail = f"A closure in {topic_name} occurs when an inner function retains access to variables declared in its outer lexical scope even after the outer function finishes executing."
+            detail = f"A closure in {topic_name} occurs when an inner function retains access to its outer lexical scope variables after execution."
         elif "virtual dom" in q_lower or ("dom" in q_lower and "react" in q_lower):
             detail = f"In React, the Virtual DOM is an in-memory tree representation of real DOM nodes used to calculate minimal re-renders during state updates."
         elif "list" in q_lower and "tuple" in q_lower:
-            detail = f"In Python, lists are mutable sequences whose elements can be modified in-place after creation, while tuples are immutable and fixed in length."
-        elif "malloc" in q_lower or "calloc" in q_lower or "dynamic memory" in q_lower:
-            detail = f"In {topic_name}, dynamic memory allocation on the heap is managed via standard functions like `{correct_ans}` which return raw memory pointers."
-        elif "sealed" in q_lower or "final" in q_lower or "subclass" in q_lower:
-            detail = f"In {topic_name}, applying the `{correct_ans}` keyword to a class definition explicitly prevents other classes from inheriting from it."
-        elif ("&" in q_text or "reference" in q_lower) and topic_name.lower() in ["c", "c++"]:
-            detail = f"In {topic_name}, reference variables act as direct memory aliases for existing variables, so modifying a reference directly updates the target variable."
-        elif ("pointer" in q_lower or "dereferencing" in q_lower or "*ptr" in q_lower) and topic_name.lower() in ["c", "c++", "assembly"]:
-            detail = f"In {topic_name}, pointers store raw memory addresses, and dereferencing (`*ptr`) accesses the underlying value."
-        elif "event loop" in q_lower or "async" in q_lower or "promise" in q_lower:
-            detail = f"In {topic_name}, non-blocking asynchronous execution is managed by the Event Loop processing task queues."
-        elif "```" in q_text or "output" in q_lower or "print" in q_lower or "cout" in q_lower:
-            detail = f"Executing this {topic_name} code step-by-step evaluates the expressions and produces `{correct_ans}`."
+            detail = f"In Python, lists are mutable sequences modified in-place, while tuples are immutable and fixed in length."
+        elif ("pointer" in q_lower or "*ptr" in q_lower) and topic_name.lower() in ["c", "c++", "assembly"]:
+            detail = f"In {topic_name}, pointers store memory addresses, and dereferencing (`*ptr`) accesses the underlying value."
+        elif "```" in q_text or "output" in q_lower or "print" in q_lower:
+            detail = f"Step-by-step evaluation of the {topic_name} control flow and variable assignments resolves to `{correct_ans}`."
         else:
             clean_stem = q_text.split("\n")[0].strip()
-            detail = f"For the question '{clean_stem}', the correct answer is `{correct_ans}`."
+            detail = f"For the question '{clean_stem}', the correct technical answer is `{correct_ans}`."
 
         if is_correct:
             return f"Correct! {detail}"
