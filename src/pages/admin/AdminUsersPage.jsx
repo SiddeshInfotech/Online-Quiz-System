@@ -199,6 +199,7 @@ const AdminUsersPage = () => {
                 <th className="px-6 py-4">Level</th>
                 <th className="px-6 py-4">XP</th>
                 <th className="px-6 py-4">Attempts</th>
+                <th className="px-6 py-4">Plan</th>
                 <th className="px-6 py-4">Penalties</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4 text-right">Actions</th>
@@ -212,6 +213,7 @@ const AdminUsersPage = () => {
                     <td className="px-6 py-4"><div className="h-4 w-12 bg-slate-800 rounded" /></td>
                     <td className="px-6 py-4"><div className="h-4 w-16 bg-slate-800 rounded" /></td>
                     <td className="px-6 py-4"><div className="h-4 w-12 bg-slate-800 rounded" /></td>
+                    <td className="px-6 py-4"><div className="h-4 w-14 bg-slate-800 rounded" /></td>
                     <td className="px-6 py-4"><div className="h-4 w-12 bg-slate-800 rounded" /></td>
                     <td className="px-6 py-4"><div className="h-4 w-16 bg-slate-800 rounded" /></td>
                     <td className="px-6 py-4 text-right"><div className="h-7 w-20 bg-slate-800 rounded ml-auto" /></td>
@@ -260,7 +262,24 @@ const AdminUsersPage = () => {
 
                       {/* Quiz Attempts */}
                       <td className="px-6 py-4 text-slate-300">
-                        {user.quizzes_completed ?? user.attempts_count ?? 0}
+                        {user.total_attempts ?? user.attempt_count ?? user.attempts_count ?? user.attempts ?? user.quizzes_completed ?? 0}
+                      </td>
+
+                      {/* Plan / Tier */}
+                      <td className="px-6 py-4">
+                        {(() => {
+                          const plan = (user.subscription_plan ?? user.plan ?? user.tier ?? "").toUpperCase();
+                          const isPro = plan === "PRO" || user.is_pro || user.is_premium || user.subscription?.is_pro;
+                          return isPro ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-amber-400/10 text-amber-400 border border-amber-500/30">
+                              👑 PRO
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+                              FREE
+                            </span>
+                          );
+                        })()}
                       </td>
 
                       {/* Penalty Count */}
@@ -319,7 +338,7 @@ const AdminUsersPage = () => {
                 })
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-500">
+                  <td colSpan={8} className="py-12 text-center text-slate-500">
                     <Users size={32} className="mx-auto mb-2 opacity-50" />
                     <p className="text-sm font-semibold text-slate-400">No users found</p>
                   </td>

@@ -1248,7 +1248,7 @@ const ProfilePage = () => {
                   const cPct = cUsed != null && cLimit ? Math.min(100, Math.round((cUsed / cLimit) * 100)) : 0;
 
                   return (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <div className="grid grid-cols-1 gap-4 mb-6">
                       {/* Daily Quizzes */}
                       <div className="p-4 rounded-xl surface-subtle border border-app flex flex-col gap-2">
                         <div className="flex items-center justify-between">
@@ -1276,39 +1276,6 @@ const ProfilePage = () => {
                           ) : (
                             <>
                               <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{qRem != null ? `${qRem} Remaining` : "—"}</span>
-                              <span>Resets in {subData?.reset_hours ?? 24}h</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Coding Questions */}
-                      <div className="p-4 rounded-xl surface-subtle border border-app flex flex-col gap-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-app flex items-center gap-1.5">
-                            <Code2 size={15} className="text-violet-600" /> Coding Questions
-                          </span>
-                          {subLoading ? (
-                            <div className={`h-3.5 w-20 ${sk}`} />
-                          ) : (
-                            <span className="text-xs font-extrabold text-violet-600 dark:text-violet-400">
-                              {cUsed ?? "—"} / {cLimit ?? "—"} Used Today
-                            </span>
-                          )}
-                        </div>
-                        <div className="h-2 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden">
-                          {subLoading ? (
-                            <div className={`h-full w-3/4 ${sk} rounded-full`} />
-                          ) : (
-                            <div className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-full transition-all duration-500" style={{ width: `${cPct}%` }} />
-                          )}
-                        </div>
-                        <div className="flex items-center justify-between text-[11px] text-app-muted font-medium pt-0.5">
-                          {subLoading ? (
-                            <div className={`h-3 w-16 ${sk}`} />
-                          ) : (
-                            <>
-                              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{cRem != null ? `${cRem} Remaining` : "—"}</span>
                               <span>Resets in {subData?.reset_hours ?? 24}h</span>
                             </>
                           )}

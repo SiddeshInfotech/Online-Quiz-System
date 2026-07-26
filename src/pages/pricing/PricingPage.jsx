@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Check,
@@ -7,6 +7,7 @@ import {
   Crown,
   Sparkles,
   ArrowRight,
+  ArrowLeft,
   ShieldCheck,
   RotateCcw,
   Code2,
@@ -20,6 +21,7 @@ import {
 } from "lucide-react";
 import Card from "../../components/ui/Card/Card";
 import Button from "../../components/ui/Button/Button";
+import Navbar from "../../components/layout/Navbar";
 import { AuthContext } from "../../context/AuthContext";
 import subscriptionService from "../../services/subscriptionService";
 import CancelSubscriptionModal from "../../components/common/CancelSubscriptionModal";
@@ -232,8 +234,22 @@ const PricingPage = () => {
   const questionOptions = subscriptionData?.allowed_question_counts || [5, 10, 15, 20, 25];
 
   return (
-    <div className="w-full max-w-6xl mx-auto pb-16 pt-4 px-4 sm:px-6">
-      {/* Header */}
+    <>
+      <Navbar />
+
+      <div className="w-full max-w-6xl mx-auto pb-16 pt-6 px-4 sm:px-6">
+        {/* Back to Home / Landing Page button */}
+        <div className="mb-6">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl surface border border-app text-sm font-semibold text-app-muted hover:text-app hover:border-violet-500/50 shadow-sm transition-all duration-200"
+          >
+            <ArrowLeft size={16} />
+            Back to Home
+          </Link>
+        </div>
+
+        {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -602,6 +618,7 @@ const PricingPage = () => {
         )}
       </AnimatePresence>
     </div>
+    </>
   );
 };
 

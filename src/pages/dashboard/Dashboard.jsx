@@ -150,37 +150,6 @@ const SubscriptionWidget = () => {
               )}
             </div>
           </div>
-
-          <div className="hidden sm:block h-8 w-px bg-app" />
-
-          {/* Coding Questions */}
-          <div className="flex-1 w-full flex flex-col gap-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-app-muted text-[10px] uppercase tracking-wider flex items-center gap-1.5">
-                <Code2 size={14} className="text-violet-600 dark:text-violet-400" /> Coding Questions
-              </span>
-              {loading ? (
-                <div className={`h-3 w-20 ${sk}`} />
-              ) : (
-                <span className="font-extrabold text-app font-space-grotesk text-xs">
-                  {codeUsed ?? "—"} / {codeTotal ?? "—"}
-                  {codeRemaining != null && (
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold ml-1">({codeRemaining} left)</span>
-                  )}
-                </span>
-              )}
-            </div>
-            <div className="h-2 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden p-0.5 border border-app/50">
-              {loading ? (
-                <div className={`h-full w-4/5 ${sk} rounded-full`} />
-              ) : (
-                <div
-                  className="h-full bg-gradient-to-r from-violet-600 to-amber-500 rounded-full transition-all duration-700"
-                  style={{ width: `${codePct}%` }}
-                />
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Right Action */}

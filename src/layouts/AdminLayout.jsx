@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -12,13 +12,85 @@ import {
   Menu,
   X,
   Bell,
+  CheckCheck,
 } from "lucide-react";
 import { useAdminAuth } from "../context/AdminAuthContext";
+import adminService from "../services/adminService";
 
 const AdminLayout = () => {
   const { adminUser, logout } = useAdminAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Notifications State
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifDrawer, setShowNotifDrawer] = useState(false);
+  const [loadingNotifs, setLoadingNotifs] = useState(false);
+
+  // Poll unread count every 30 seconds
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchUnread = async () => {
+      try {
+        const data = await adminService.getUnreadNotificationCount();
+        if (isMounted) {
+          setUnreadCount(data?.unread_count ?? data?.count ?? 0);
+        }
+      } catch (err) {
+        // Silent catch for background polling
+      }
+    };
+
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Fetch full notification list when opening drawer
+  const handleToggleDrawer = async () => {
+    const nextState = !showNotifDrawer;
+    setShowNotifDrawer(nextState);
+
+    if (nextState) {
+      try {
+        setLoadingNotifs(true);
+        const data = await adminService.getNotifications();
+        const list = Array.isArray(data) ? data : data?.results ?? data?.notifications ?? [];
+        setNotifications(list);
+      } catch (err) {
+        console.error("Failed to load admin notifications:", err);
+      } finally {
+        setLoadingNotifs(false);
+      }
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await adminService.markNotificationsRead({ all: true });
+      setUnreadCount(0);
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    } catch (err) {
+      console.error("Failed to mark notifications read:", err);
+    }
+  };
+
+  const handleMarkItemRead = async (id) => {
+    try {
+      await adminService.markNotificationsRead({ id });
+      setUnreadCount((c) => Math.max(0, c - 1));
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+      );
+    } catch (err) {
+      console.error("Failed to mark notification read:", err);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -118,10 +190,83 @@ const AdminLayout = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <button className="relative p-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors">
-              <Bell size={18} />
-            </button>
+          <div className="flex items-center gap-4 relative">
+            {/* Bell Icon with Unread Badge */}
+            <div className="relative">
+              <button
+                onClick={handleToggleDrawer}
+                className="relative p-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Admin Notifications"
+              >
+                <Bell size={18} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-violet-600 text-white font-extrabold text-[10px] rounded-full flex items-center justify-center border-2 border-slate-900 animate-pulse">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Notification Drawer Dropdown */}
+              {showNotifDrawer && (
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden font-inter">
+                  <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+                    <div className="flex items-center gap-2">
+                      <Bell size={16} className="text-violet-400" />
+                      <h3 className="font-bold text-sm text-slate-100 font-space-grotesk">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">
+                          {unreadCount} new
+                        </span>
+                      )}
+                    </div>
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={handleMarkAllRead}
+                        className="text-[11px] font-semibold text-violet-400 hover:text-violet-300 flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <CheckCheck size={14} /> Mark all read
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="max-h-80 overflow-y-auto divide-y divide-slate-800/60">
+                    {loadingNotifs ? (
+                      <div className="p-6 text-center text-xs text-slate-400">Loading alerts...</div>
+                    ) : notifications.length > 0 ? (
+                      notifications.map((n) => {
+                        const isUnread = n.is_read === false || n.unread === true;
+                        return (
+                          <div
+                            key={n.id || Math.random()}
+                            onClick={() => isUnread && handleMarkItemRead(n.id)}
+                            className={`p-3.5 transition-colors cursor-pointer flex items-start gap-3 ${
+                              isUnread ? "bg-violet-950/20 hover:bg-violet-900/20" : "hover:bg-slate-800/40"
+                            }`}
+                          >
+                            <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${isUnread ? "bg-violet-500" : "bg-transparent"}`} />
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-xs ${isUnread ? "font-semibold text-slate-100" : "text-slate-300"}`}>
+                                {n.title || n.message || n.detail || "System Alert"}
+                              </p>
+                              {n.description && (
+                                <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">{n.description}</p>
+                              )}
+                              <span className="text-[10px] text-slate-500 mt-1 block">
+                                {n.created_at ? new Date(n.created_at).toLocaleString() : "Just now"}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="p-8 text-center text-xs text-slate-500">
+                        No notifications yet
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Admin User Chip */}
             <div className="flex items-center gap-3 pl-3 border-l border-slate-800">

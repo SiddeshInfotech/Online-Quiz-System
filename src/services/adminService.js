@@ -183,6 +183,27 @@ const adminService = {
   },
 
   /**
+   * Real-Time Admin Notifications
+   * GET /custom_admin/notifications/unread-count/
+   * GET /custom_admin/notifications/
+   * POST /custom_admin/notifications/mark-read/
+   */
+  getUnreadNotificationCount: async () => {
+    const response = await adminApi.get("custom_admin/notifications/unread-count/");
+    return response.data;
+  },
+
+  getNotifications: async (params = {}) => {
+    const response = await adminApi.get("custom_admin/notifications/", { params });
+    return response.data;
+  },
+
+  markNotificationsRead: async (payload = { all: true }) => {
+    const response = await adminApi.post("custom_admin/notifications/mark-read/", payload);
+    return response.data;
+  },
+
+  /**
    * Feedback Management Delegates
    */
   getAdminFeedbacks: (params) => adminFeedbackService.getFeedbacks(params),
