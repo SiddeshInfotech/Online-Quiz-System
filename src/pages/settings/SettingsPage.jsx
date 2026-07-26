@@ -21,7 +21,9 @@ import Button from "../../components/ui/Button/Button";
 import { AuthContext } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import authService from "../../services/authService";
-import { getCurrentPlan } from "../pricing/PricingPage";
+import { getCurrentPlan, setCurrentPlan } from "../pricing/PricingPage";
+import subscriptionService from "../../services/subscriptionService";
+import CancelSubscriptionModal from "../../components/common/CancelSubscriptionModal";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Delete Account Modal
@@ -172,18 +174,62 @@ const SettingsPage = () => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [currentPlan, setCurrentPlanState] = useState(() => getCurrentPlan(currentUser));
+  const [subData, setSubData] = useState(null);
+  const [subLoading, setSubLoading] = useState(true);
+  const [cancellingSub, setCancellingSub] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+    const loadSub = async () => {
+      try {
+        setSubLoading(true);
+        const data = await subscriptionService.getSubscription();
+        if (isMounted && data) {
+          setSubData(data);
+          const activePlan = data.plan?.toLowerCase() || (data.is_pro ? "pro" : "free");
+          setCurrentPlanState(activePlan);
+        }
+      } catch (err) {
+        console.error("Settings subscription fetch error:", err);
+      } finally {
+        if (isMounted) setSubLoading(false);
+      }
+    };
+
+    loadSub();
+
     const handlePlanChange = (e) => {
       if (e.detail?.plan) {
         setCurrentPlanState(e.detail.plan);
       }
+      loadSub();
     };
     window.addEventListener("app:refresh-plan", handlePlanChange);
-    return () => window.removeEventListener("app:refresh-plan", handlePlanChange);
+    return () => {
+      isMounted = false;
+      window.removeEventListener("app:refresh-plan", handlePlanChange);
+    };
   }, []);
 
-  const isPro = currentPlan === "pro";
+  const isPro = subData ? Boolean(subData.is_pro || subData.plan === "PRO") : currentPlan === "pro";
+
+  const handleCancelSubConfirm = async () => {
+    setCancellingSub(true);
+    try {
+      await subscriptionService.cancelSubscription();
+      setCurrentPlan("free", null, currentUser);
+      setCurrentPlanState("free");
+      setSubData((prev) => ({ ...prev, plan: "FREE", is_pro: false, status: "CANCELLED" }));
+    } catch (err) {
+      console.error("Failed to cancel subscription:", err);
+      setCurrentPlan("free", null, currentUser);
+      setCurrentPlanState("free");
+    } finally {
+      setCancellingSub(false);
+      setShowCancelModal(false);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -254,6 +300,27 @@ const SettingsPage = () => {
                   </span>
                 </div>
               </div>
+              {isPro && (
+                <div className="px-6 py-3 surface-subtle border-t border-app flex items-center justify-between">
+                  <span className="text-xs text-app-muted font-medium">
+                    {subLoading
+                      ? <span className="inline-block h-3 w-48 animate-pulse bg-slate-200 dark:bg-slate-700 rounded" />
+                      : `Pro Plan Active${subData?.renewal_date ? ` • Renews ${new Date(subData.renewal_date).toLocaleDateString()}` : ""}`
+                    }
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowCancelModal(true);
+                    }}
+                    disabled={cancellingSub}
+                    className="text-xs font-semibold text-red-500 hover:text-red-600 transition-colors"
+                  >
+                    {cancellingSub ? "Cancelling..." : "Cancel Subscription"}
+                  </button>
+                </div>
+              )}
             </Card>
           </motion.div>
 
@@ -355,6 +422,14 @@ const SettingsPage = () => {
           />
         )}
       </AnimatePresence>
+
+      <CancelSubscriptionModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={handleCancelSubConfirm}
+        loading={cancellingSub}
+        renewalDate={subData?.renewal_date ? new Date(subData.renewal_date).toLocaleDateString() : null}
+      />
     </>
   );
 };

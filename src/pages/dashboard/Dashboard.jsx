@@ -11,30 +11,67 @@ import QuizActivityCards from "../../components/dashboard/QuizActivityCards";
 import RecentAttempts from "../../components/dashboard/RecentAttempts";
 import PerformanceChart from "../../components/dashboard/PerformanceChart";
 import Card from "../../components/ui/Card/Card";
+import subscriptionService from "../../services/subscriptionService";
+import RenewalBanner from "../../components/common/RenewalBanner";
 import { getCurrentPlan } from "../pricing/PricingPage";
 
 const SubscriptionWidget = () => {
   const { currentUser } = useContext(AuthContext);
   const [currentPlan, setCurrentPlanState] = useState(() => getCurrentPlan(currentUser));
+  const [subData, setSubData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+    const loadSub = async () => {
+      try {
+        setLoading(true);
+        const data = await subscriptionService.getSubscription();
+        if (isMounted && data) {
+          setSubData(data);
+          const activePlan = data.plan?.toLowerCase() || (data.is_pro ? "pro" : "free");
+          setCurrentPlanState(activePlan);
+        }
+      } catch (err) {
+        console.error("Dashboard subscription fetch error:", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    loadSub();
+
     const handlePlanChange = (e) => {
       if (e.detail?.plan) {
         setCurrentPlanState(e.detail.plan);
       }
+      loadSub();
     };
     window.addEventListener("app:refresh-plan", handlePlanChange);
-    return () => window.removeEventListener("app:refresh-plan", handlePlanChange);
+    return () => {
+      isMounted = false;
+      window.removeEventListener("app:refresh-plan", handlePlanChange);
+    };
   }, []);
 
-  const isPro = currentPlan === "pro";
-  const quizUsed = isPro ? 7 : 2;
-  const quizTotal = isPro ? 10 : 3;
-  const quizPct = Math.round((quizUsed / quizTotal) * 100);
+  const isPro = subData ? Boolean(subData.is_pro || subData.plan === "PRO") : currentPlan === "pro";
 
-  const codeUsed = isPro ? 18 : 6;
-  const codeTotal = isPro ? 25 : 10;
-  const codePct = Math.round((codeUsed / codeTotal) * 100);
+  // Only use real API values — no hardcoded fallbacks
+  const quizUsed = subData?.daily_quiz_used;
+  const quizTotal = subData?.daily_quiz_limit;
+  const quizRemaining = subData?.daily_quiz_remaining ?? (quizTotal != null && quizUsed != null ? Math.max(0, quizTotal - quizUsed) : null);
+  const quizPct = quizUsed != null && quizTotal ? Math.min(100, Math.round((quizUsed / quizTotal) * 100)) : 0;
+
+  const codeUsed = subData?.coding_question_used;
+  const codeTotal = subData?.coding_question_limit;
+  const codeRemaining = codeTotal != null && codeUsed != null ? Math.max(0, codeTotal - codeUsed) : null;
+  const codePct = codeUsed != null && codeTotal ? Math.min(100, Math.round((codeUsed / codeTotal) * 100)) : 0;
+
+  const renewalDateStr = subData?.renewal_date
+    ? new Date(subData.renewal_date).toLocaleDateString()
+    : null;
+
+  // Skeleton pulse class
+  const sk = "animate-pulse bg-slate-200 dark:bg-slate-700 rounded";
 
   return (
     <Card className={`p-5 sm:p-6 relative overflow-hidden transition-all duration-300 border-2 shadow-sm hover:shadow-md ${
@@ -49,66 +86,99 @@ const SubscriptionWidget = () => {
         {/* Left Info */}
         <div className="flex items-center gap-3.5 shrink-0">
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-md ${
+            loading ? "bg-slate-200 dark:bg-slate-700" :
             isPro
               ? "bg-gradient-to-br from-violet-600 via-fuchsia-600 to-amber-500 shadow-violet-600/30"
               : "bg-slate-700 dark:bg-slate-800"
           }`}>
-            <Crown size={22} className={isPro ? "animate-pulse" : ""} />
+            {!loading && <Crown size={22} className={isPro ? "animate-pulse" : ""} />}
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold font-space-grotesk text-app">Subscription</h3>
-              <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${
-                isPro
-                  ? "bg-gradient-to-r from-amber-400 to-amber-600 text-white border-amber-300 shadow-sm"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700"
-              }`}>
-                {isPro ? "👑 PRO MEMBER" : "Free Tier"}
-              </span>
+              {loading ? (
+                <div className={`h-4 w-24 ${sk}`} />
+              ) : (
+                <>
+                  <h3 className="text-base font-bold font-space-grotesk text-app">Subscription</h3>
+                  <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${
+                    isPro
+                      ? "bg-gradient-to-r from-amber-400 to-amber-600 text-white border-amber-300 shadow-sm"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700"
+                  }`}>
+                    {isPro ? "👑 PRO MEMBER" : "Free Tier"}
+                  </span>
+                </>
+              )}
             </div>
-            <p className="text-xs text-app-muted mt-0.5 font-medium">
-              Next Renewal: <strong className="text-app font-bold">{isPro ? "Aug 18, 2026" : "N/A"}</strong>
-            </p>
+            {loading ? (
+              <div className={`h-3 w-36 mt-1.5 ${sk}`} />
+            ) : (
+              <p className="text-xs text-app-muted mt-0.5 font-medium">
+                Next Renewal: <strong className="text-app font-bold">{renewalDateStr ?? "—"}</strong>
+              </p>
+            )}
           </div>
         </div>
 
         {/* Middle Usage Progress Bar Section */}
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 py-2.5 px-5 rounded-2xl surface-subtle border border-app flex-1 max-w-xl">
-          {/* Daily Quizzes Item */}
+          {/* Daily Quizzes */}
           <div className="flex-1 w-full flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-app-muted text-[10px] uppercase tracking-wider flex items-center gap-1.5">
                 <Book size={14} className="text-violet-600 dark:text-violet-400" /> Daily Quizzes
               </span>
-              <span className="font-extrabold text-app font-space-grotesk text-xs">
-                {quizUsed} / {quizTotal} <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold ml-1">({quizTotal - quizUsed} left)</span>
-              </span>
+              {loading ? (
+                <div className={`h-3 w-20 ${sk}`} />
+              ) : (
+                <span className="font-extrabold text-app font-space-grotesk text-xs">
+                  {quizUsed ?? "—"} / {quizTotal ?? "—"}
+                  {quizRemaining != null && (
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold ml-1">({quizRemaining} left)</span>
+                  )}
+                </span>
+              )}
             </div>
             <div className="h-2 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden p-0.5 border border-app/50">
-              <div
-                className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-500 rounded-full transition-all duration-700"
-                style={{ width: `${quizPct}%` }}
-              />
+              {loading ? (
+                <div className={`h-full w-3/5 ${sk} rounded-full`} />
+              ) : (
+                <div
+                  className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-500 rounded-full transition-all duration-700"
+                  style={{ width: `${quizPct}%` }}
+                />
+              )}
             </div>
           </div>
 
           <div className="hidden sm:block h-8 w-px bg-app" />
 
-          {/* Coding Questions Item */}
+          {/* Coding Questions */}
           <div className="flex-1 w-full flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-app-muted text-[10px] uppercase tracking-wider flex items-center gap-1.5">
                 <Code2 size={14} className="text-violet-600 dark:text-violet-400" /> Coding Questions
               </span>
-              <span className="font-extrabold text-app font-space-grotesk text-xs">
-                {codeUsed} / {codeTotal} <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold ml-1">({codeTotal - codeUsed} left)</span>
-              </span>
+              {loading ? (
+                <div className={`h-3 w-20 ${sk}`} />
+              ) : (
+                <span className="font-extrabold text-app font-space-grotesk text-xs">
+                  {codeUsed ?? "—"} / {codeTotal ?? "—"}
+                  {codeRemaining != null && (
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold ml-1">({codeRemaining} left)</span>
+                  )}
+                </span>
+              )}
             </div>
             <div className="h-2 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden p-0.5 border border-app/50">
-              <div
-                className="h-full bg-gradient-to-r from-violet-600 to-amber-500 rounded-full transition-all duration-700"
-                style={{ width: `${codePct}%` }}
-              />
+              {loading ? (
+                <div className={`h-full w-4/5 ${sk} rounded-full`} />
+              ) : (
+                <div
+                  className="h-full bg-gradient-to-r from-violet-600 to-amber-500 rounded-full transition-all duration-700"
+                  style={{ width: `${codePct}%` }}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -124,6 +194,23 @@ const SubscriptionWidget = () => {
       </div>
     </Card>
   );
+};
+
+/** Tiny component: fetches subscription data and renders the renewal banner */
+const DashboardRenewalBanner = () => {
+  const [daysRemaining, setDaysRemaining] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    subscriptionService.getSubscription().then((data) => {
+      if (isMounted && data?.is_pro) {
+        setDaysRemaining(data.days_remaining ?? null);
+      }
+    }).catch(() => {});
+    return () => { isMounted = false; };
+  }, []);
+
+  return <RenewalBanner daysRemaining={daysRemaining} />;
 };
 
 /**
@@ -178,6 +265,9 @@ const Dashboard = () => {
           <TopNotificationsPanel notifications={notifications} />
         </div>
       </div>
+
+      {/* Renewal Banner (visible only for Pro users nearing expiry) */}
+      <DashboardRenewalBanner />
 
       {/* Subscription & Today's Usage Widget */}
       <SubscriptionWidget />

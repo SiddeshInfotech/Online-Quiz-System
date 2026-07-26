@@ -39,6 +39,9 @@ import PasswordStrengthIndicator, { isPasswordStrong } from "../../components/au
 import { AuthContext } from "../../context/AuthContext";
 import authService from "../../services/authService";
 import { getCurrentPlan } from "../pricing/PricingPage";
+import subscriptionService from "../../services/subscriptionService";
+import CancelSubscriptionModal from "../../components/common/CancelSubscriptionModal";
+import RenewalBanner from "../../components/common/RenewalBanner";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -765,18 +768,44 @@ const ProfilePage = () => {
   const [recentBadges, setRecentBadges] = useState([]);
   const [totalClaimedBadges, setTotalClaimedBadges] = useState(0);
   const [currentPlan, setCurrentPlanState] = useState(() => getCurrentPlan(currentUser));
+  const [subData, setSubData] = useState(null);
+  const [subLoading, setSubLoading] = useState(true);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+    const loadSub = async () => {
+      try {
+        setSubLoading(true);
+        const data = await subscriptionService.getSubscription();
+        if (!cancelled && data) {
+          setSubData(data);
+          const activePlan = data.plan?.toLowerCase() || (data.is_pro ? "pro" : "free");
+          setCurrentPlanState(activePlan);
+        }
+      } catch (err) {
+        console.error("Profile subscription fetch error:", err);
+      } finally {
+        if (!cancelled) setSubLoading(false);
+      }
+    };
+    loadSub();
+
     const handlePlanChange = (e) => {
       if (e.detail?.plan) {
         setCurrentPlanState(e.detail.plan);
       }
+      loadSub();
     };
     window.addEventListener("app:refresh-plan", handlePlanChange);
-    return () => window.removeEventListener("app:refresh-plan", handlePlanChange);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("app:refresh-plan", handlePlanChange);
+    };
   }, []);
 
-  const isPro = currentPlan === "pro";
+  const isPro = subData ? Boolean(subData.is_pro || subData.plan === "PRO") : currentPlan === "pro";
 
   const showToast = (message, type = "success") =>
     setToast({ message, type });
@@ -1123,25 +1152,39 @@ const ProfilePage = () => {
                   </div>
                 )}
 
+                {/* Renewal Banner */}
+                {!subLoading && subData?.is_pro && (
+                  <div className="mb-4">
+                    <RenewalBanner daysRemaining={subData?.days_remaining} />
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between mb-6 pb-4 border-b border-app">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                      subLoading ? "animate-pulse bg-slate-200 dark:bg-slate-700" :
                       isPro
                         ? "bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-md shadow-violet-600/30"
                         : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
                     }`}>
-                      <Crown size={20} />
+                      {!subLoading && <Crown size={20} />}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-bold font-space-grotesk text-app">Subscription & Quota</h3>
-                        <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${
-                          isPro
-                            ? "bg-gradient-to-r from-amber-400 to-amber-600 text-white border-amber-300 shadow-sm"
-                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700"
-                        }`}>
-                          {isPro ? "👑 PRO MEMBER" : "Free Tier"}
-                        </span>
+                        {subLoading ? (
+                          <div className="h-5 w-44 animate-pulse bg-slate-200 dark:bg-slate-700 rounded" />
+                        ) : (
+                          <>
+                            <h3 className="text-lg font-bold font-space-grotesk text-app">Subscription & Quota</h3>
+                            <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${
+                              isPro
+                                ? "bg-gradient-to-r from-amber-400 to-amber-600 text-white border-amber-300 shadow-sm"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700"
+                            }`}>
+                              {isPro ? "👑 PRO MEMBER" : "Free Tier"}
+                            </span>
+                          </>
+                        )}
                       </div>
                       <p className="text-xs text-app-muted">Manage your daily limits and active plan</p>
                     </div>
@@ -1157,78 +1200,165 @@ const ProfilePage = () => {
 
                 {/* 4 Metadata Fields */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 p-4 rounded-2xl surface-subtle border border-app">
-                  <div>
-                    <span className="text-[10px] font-bold text-app-muted uppercase tracking-wider block mb-0.5">Plan</span>
-                    <span className="text-sm font-extrabold text-app flex items-center gap-1">
-                      {isPro ? <span className="text-amber-500">👑 Premium</span> : "Free Tier"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-app-muted uppercase tracking-wider block mb-0.5">Billing</span>
-                    <span className="text-sm font-extrabold text-app">{isPro ? "Monthly ($9.99)" : "Free"}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-app-muted uppercase tracking-wider block mb-0.5">Started</span>
-                    <span className="text-sm font-semibold text-app">{isPro ? "Jul 18, 2026" : "Account Creation"}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-app-muted uppercase tracking-wider block mb-0.5">Renews</span>
-                    <span className="text-sm font-semibold text-violet-600 dark:text-violet-400">{isPro ? "Aug 18, 2026" : "N/A"}</span>
-                  </div>
+                  {subLoading ? (
+                    Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="flex flex-col gap-1.5">
+                        <div className="h-2.5 w-14 animate-pulse bg-slate-200 dark:bg-slate-700 rounded" />
+                        <div className="h-4 w-20 animate-pulse bg-slate-200 dark:bg-slate-700 rounded" />
+                      </div>
+                    ))
+                  ) : (
+                    <>
+                      <div>
+                        <span className="text-[10px] font-bold text-app-muted uppercase tracking-wider block mb-0.5">Plan</span>
+                        <span className="text-sm font-extrabold text-app flex items-center gap-1">
+                          {isPro ? <span className="text-amber-500">👑 Premium (PRO)</span> : "Free Tier"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold text-app-muted uppercase tracking-wider block mb-0.5">Billing</span>
+                        <span className="text-sm font-extrabold text-app">{subData?.billing_cycle ?? (isPro ? "MONTHLY" : "Free")}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold text-app-muted uppercase tracking-wider block mb-0.5">Started</span>
+                        <span className="text-sm font-semibold text-app">
+                          {subData?.subscription_start ? new Date(subData.subscription_start).toLocaleDateString() : "—"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold text-app-muted uppercase tracking-wider block mb-0.5">Renews</span>
+                        <span className="text-sm font-semibold text-violet-600 dark:text-violet-400">
+                          {subData?.renewal_date ? new Date(subData.renewal_date).toLocaleDateString() : "—"}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Usage Progress Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                  {/* Daily Quizzes */}
-                  <div className="p-4 rounded-xl surface-subtle border border-app flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-app flex items-center gap-1.5">
-                        <Book size={15} className="text-violet-600" /> Daily Quizzes
-                      </span>
-                      <span className="text-xs font-extrabold text-violet-600 dark:text-violet-400">
-                        {isPro ? "7 / 10 Used Today" : "2 / 3 Used Today"}
-                      </span>
-                    </div>
-                    {/* Progress Bar */}
-                    <div className="h-2 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-full transition-all duration-500"
-                        style={{ width: isPro ? "70%" : "66%" }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between text-[11px] text-app-muted font-medium pt-0.5">
-                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                        {isPro ? "3 Remaining" : "1 Remaining"}
-                      </span>
-                      <span>Resets in 12h</span>
-                    </div>
-                  </div>
+                {(() => {
+                  const sk = "animate-pulse bg-slate-200 dark:bg-slate-700 rounded";
+                  const qUsed = subData?.daily_quiz_used;
+                  const qLimit = subData?.daily_quiz_limit;
+                  const qRem = subData?.daily_quiz_remaining ?? (qUsed != null && qLimit != null ? Math.max(0, qLimit - qUsed) : null);
+                  const qPct = qUsed != null && qLimit ? Math.min(100, Math.round((qUsed / qLimit) * 100)) : 0;
+                  const cUsed = subData?.coding_question_used;
+                  const cLimit = subData?.coding_question_limit;
+                  const cRem = cUsed != null && cLimit != null ? Math.max(0, cLimit - cUsed) : null;
+                  const cPct = cUsed != null && cLimit ? Math.min(100, Math.round((cUsed / cLimit) * 100)) : 0;
 
-                  {/* Coding Questions */}
-                  <div className="p-4 rounded-xl surface-subtle border border-app flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-app flex items-center gap-1.5">
-                        <Code2 size={15} className="text-violet-600" /> Coding Questions
-                      </span>
-                      <span className="text-xs font-extrabold text-violet-600 dark:text-violet-400">
-                        {isPro ? "18 / 25 Used Today" : "6 / 10 Used Today"}
-                      </span>
+                  return (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                      {/* Daily Quizzes */}
+                      <div className="p-4 rounded-xl surface-subtle border border-app flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-app flex items-center gap-1.5">
+                            <Book size={15} className="text-violet-600" /> Daily Quizzes
+                          </span>
+                          {subLoading ? (
+                            <div className={`h-3.5 w-20 ${sk}`} />
+                          ) : (
+                            <span className="text-xs font-extrabold text-violet-600 dark:text-violet-400">
+                              {qUsed ?? "—"} / {qLimit ?? "—"} Used Today
+                            </span>
+                          )}
+                        </div>
+                        <div className="h-2 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden">
+                          {subLoading ? (
+                            <div className={`h-full w-1/2 ${sk} rounded-full`} />
+                          ) : (
+                            <div className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-full transition-all duration-500" style={{ width: `${qPct}%` }} />
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-app-muted font-medium pt-0.5">
+                          {subLoading ? (
+                            <div className={`h-3 w-16 ${sk}`} />
+                          ) : (
+                            <>
+                              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{qRem != null ? `${qRem} Remaining` : "—"}</span>
+                              <span>Resets in {subData?.reset_hours ?? 24}h</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Coding Questions */}
+                      <div className="p-4 rounded-xl surface-subtle border border-app flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-app flex items-center gap-1.5">
+                            <Code2 size={15} className="text-violet-600" /> Coding Questions
+                          </span>
+                          {subLoading ? (
+                            <div className={`h-3.5 w-20 ${sk}`} />
+                          ) : (
+                            <span className="text-xs font-extrabold text-violet-600 dark:text-violet-400">
+                              {cUsed ?? "—"} / {cLimit ?? "—"} Used Today
+                            </span>
+                          )}
+                        </div>
+                        <div className="h-2 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden">
+                          {subLoading ? (
+                            <div className={`h-full w-3/4 ${sk} rounded-full`} />
+                          ) : (
+                            <div className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-full transition-all duration-500" style={{ width: `${cPct}%` }} />
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-app-muted font-medium pt-0.5">
+                          {subLoading ? (
+                            <div className={`h-3 w-16 ${sk}`} />
+                          ) : (
+                            <>
+                              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{cRem != null ? `${cRem} Remaining` : "—"}</span>
+                              <span>Resets in {subData?.reset_hours ?? 24}h</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    {/* Progress Bar */}
-                    <div className="h-2 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-full transition-all duration-500"
-                        style={{ width: isPro ? "72%" : "60%" }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between text-[11px] text-app-muted font-medium pt-0.5">
-                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                        {isPro ? "7 Remaining" : "4 Remaining"}
-                      </span>
-                      <span>Resets in 12h</span>
+                  );
+                })()}
+
+                {/* Subscription History Timeline */}
+                {!subLoading && subData && (subData.subscription_start || subData.renewal_date) && (
+                  <div className="mb-6 pt-4 border-t border-app">
+                    <h4 className="text-xs font-bold text-app uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <RotateCcw size={14} className="text-violet-500" /> Subscription History
+                    </h4>
+                    <div className="flex flex-col gap-0">
+                      {subData.subscription_start && (
+                        <div className="flex items-start gap-3 pb-4 relative">
+                          <div className="flex flex-col items-center">
+                            <div className="w-3 h-3 rounded-full bg-violet-600 ring-2 ring-violet-600/30 mt-0.5 shrink-0" />
+                            <div className="w-0.5 flex-1 bg-violet-300/50 dark:bg-violet-700/40 mt-1" style={{ minHeight: "20px" }} />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-app">{new Date(subData.subscription_start).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+                            <p className="text-[11px] text-app-muted">Started {isPro ? "Premium" : "Free Tier"}</p>
+                          </div>
+                        </div>
+                      )}
+                      {subData.renewal_date && (
+                        <div className="flex items-start gap-3 pb-4 relative">
+                          <div className="flex flex-col items-center">
+                            <div className="w-3 h-3 rounded-full bg-violet-500 ring-2 ring-violet-500/30 mt-0.5 shrink-0" />
+                            <div className="w-0.5 flex-1 bg-violet-300/50 dark:bg-violet-700/40 mt-1" style={{ minHeight: "20px" }} />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-app">{new Date(subData.renewal_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+                            <p className="text-[11px] text-app-muted">Scheduled Renewal</p>
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex items-start gap-3">
+                        <div className="w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-emerald-500/30 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Current</p>
+                          <p className="text-[11px] text-app-muted">{subData?.status === "ACTIVE" ? "Active" : subData?.status || "Active"}</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Compact Benefits Summary */}
                 <div className="pt-4 border-t border-app flex items-center justify-between">
@@ -1240,12 +1370,46 @@ const ProfilePage = () => {
                       <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium"><Check size={14} /> Priority Support</span>
                     </div>
                   </div>
-                  <Link to="/pricing" className="text-xs font-bold text-violet-600 hover:text-violet-700 transition-colors flex items-center gap-1">
-                    View All Benefits →
-                  </Link>
+                  <div className="flex flex-col items-end gap-1">
+                    <Link to="/pricing" className="text-xs font-bold text-violet-600 hover:text-violet-700 transition-colors flex items-center gap-1">
+                      View All Benefits →
+                    </Link>
+                    {isPro && (
+                      <button
+                        type="button"
+                        onClick={() => setShowCancelModal(true)}
+                        className="text-xs text-red-500 hover:text-red-600 font-medium transition-colors"
+                      >
+                        Cancel Subscription
+                      </button>
+                    )}
+                  </div>
                 </div>
               </Card>
             </motion.div>
+
+            {/* CancelSubscriptionModal */}
+            <CancelSubscriptionModal
+              isOpen={showCancelModal}
+              onClose={() => setShowCancelModal(false)}
+              loading={cancelLoading}
+              renewalDate={subData?.renewal_date ? new Date(subData.renewal_date).toLocaleDateString() : null}
+              onConfirm={async () => {
+                setCancelLoading(true);
+                try {
+                  await subscriptionService.cancelSubscription();
+                  setSubData((prev) => ({ ...prev, plan: "FREE", is_pro: false, status: "CANCELLED" }));
+                  setCurrentPlanState("free");
+                  window.dispatchEvent(new CustomEvent("app:refresh-plan", { detail: { plan: "free" } }));
+                  showToast("Subscription cancelled. Pro benefits remain until billing period ends.", "success");
+                } catch (err) {
+                  showToast("Failed to cancel. Please try again.", "error");
+                } finally {
+                  setCancelLoading(false);
+                  setShowCancelModal(false);
+                }
+              }}
+            />
 
             <motion.div
               initial={{ opacity: 0, y: 16 }}

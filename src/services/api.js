@@ -44,12 +44,28 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Handle 401 Unauthorized
+// Response Interceptor: Handle 401 Unauthorized & 403 PREMIUM_REQUIRED
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
       window.dispatchEvent(new CustomEvent("auth:logout"));
+    }
+    if (
+      error.response &&
+      error.response.status === 403 &&
+      error.response?.data?.code === "PREMIUM_REQUIRED"
+    ) {
+      window.dispatchEvent(
+        new CustomEvent("subscription:premium-required", {
+          detail: {
+            message:
+              error.response.data.message ||
+              "Upgrade to QuizGen Pro to unlock this feature!",
+            upgradeUrl: error.response.data.upgrade_url || "/pricing",
+          },
+        })
+      );
     }
     return Promise.reject(error);
   }

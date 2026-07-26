@@ -18,23 +18,45 @@ import {
 import Button from "../ui/Button/Button";
 import Logo from "../ui/Logo";
 import { AuthContext } from "../../context/AuthContext";
+import subscriptionService from "../../services/subscriptionService";
 import { getCurrentPlan } from "../../pages/pricing/PricingPage";
 
 const Sidebar = ({ user, dailyGoal, onMenuClose }) => {
   const { currentUser } = useContext(AuthContext);
   const [currentPlan, setCurrentPlanState] = useState(() => getCurrentPlan(currentUser || user));
+  const [subData, setSubData] = useState(null);
 
   useEffect(() => {
+    let isMounted = true;
+    const loadSub = async () => {
+      try {
+        const data = await subscriptionService.getSubscription();
+        if (isMounted && data) {
+          setSubData(data);
+          const activePlan = data.plan?.toLowerCase() || (data.is_pro ? "pro" : "free");
+          setCurrentPlanState(activePlan);
+        }
+      } catch (err) {
+        console.error("Sidebar sub fetch error:", err);
+      }
+    };
+    loadSub();
+
     const handlePlanChange = (e) => {
       if (e.detail?.plan) {
         setCurrentPlanState(e.detail.plan);
       }
+      loadSub();
     };
     window.addEventListener("app:refresh-plan", handlePlanChange);
-    return () => window.removeEventListener("app:refresh-plan", handlePlanChange);
+    return () => {
+      isMounted = false;
+      window.removeEventListener("app:refresh-plan", handlePlanChange);
+    };
   }, []);
 
-  const isPro = currentPlan === "pro";
+  const isPro = subData ? Boolean(subData.is_pro || subData.plan === "PRO") : currentPlan === "pro";
+  const daysRemaining = subData?.days_remaining ?? 30;
 
   const mainLinks = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
@@ -179,7 +201,7 @@ const Sidebar = ({ user, dailyGoal, onMenuClose }) => {
                 {isPro ? "👑 PRO MEMBER" : "Free Tier"}
               </span>
               <span className="text-[10px] text-app-muted truncate font-medium">
-                {isPro ? "• 24 days left" : "• Upgrade →"}
+                {isPro ? `• ${daysRemaining} days left` : "• Upgrade →"}
               </span>
             </div>
           </div>
