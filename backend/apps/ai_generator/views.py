@@ -114,8 +114,6 @@ class GenerateAIQuizView(APIView):
         referer = request.META.get('HTTP_REFERER', '') or request.headers.get('Referer', '')
         is_from_admin = (
             request.path.startswith('/api/custom_admin/') or
-            'admin' in request.path.lower() or
-            'admin' in referer.lower() or
             request.headers.get('X-Admin-Request') == 'true' or
             validated_data.get('is_admin') or
             request.data.get('is_admin') or

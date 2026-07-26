@@ -51,7 +51,6 @@ class QuizLibrarySerializer(serializers.ModelSerializer):
         if not obj.created_by:
             return True
         return (
-            obj.is_ai_generated or
             obj.created_by.username.lower() == 'admin' or
             obj.created_by.is_superuser or
             obj.created_by.is_staff or
@@ -59,10 +58,21 @@ class QuizLibrarySerializer(serializers.ModelSerializer):
         )
 
     def get_created_by_label(self, obj):
+        request = self.context.get('request')
+        user = request.user if request else None
+
+        # 1. If logged-in user created this quiz -> "Created by You"
+        if user and user.is_authenticated and obj.created_by_id == user.id:
+            return "Created by You"
+
+        # 2. If created by official Admin or staff -> "QuizGen AI"
         if self.get_is_admin_quiz(obj):
             return "QuizGen AI"
+
+        # 3. Otherwise show creator's username
         if obj.created_by:
             return obj.created_by.username
+
         return "QuizGen AI"
 
     def get_created_by_name(self, obj):
@@ -103,7 +113,6 @@ class QuizSerializer(serializers.ModelSerializer):
         if not obj.created_by:
             return True
         return (
-            obj.is_ai_generated or
             obj.created_by.username.lower() == 'admin' or
             obj.created_by.is_superuser or
             obj.created_by.is_staff or
@@ -111,10 +120,21 @@ class QuizSerializer(serializers.ModelSerializer):
         )
 
     def get_created_by_label(self, obj):
+        request = self.context.get('request')
+        user = request.user if request else None
+
+        # 1. If logged-in user created this quiz -> "Created by You"
+        if user and user.is_authenticated and obj.created_by_id == user.id:
+            return "Created by You"
+
+        # 2. If created by official Admin or staff -> "QuizGen AI"
         if self.get_is_admin_quiz(obj):
             return "QuizGen AI"
+
+        # 3. Otherwise show creator's username
         if obj.created_by:
             return obj.created_by.username
+
         return "QuizGen AI"
 
     def get_created_by_name(self, obj):
