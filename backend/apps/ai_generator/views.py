@@ -35,36 +35,53 @@ class GenerateAIQuizView(APIView):
         category_id = validated_data.get('category_id')
         quiz_mode = validated_data.get('quiz_mode', 'Theory')
 
-        # Premium Feature Protection Checks
-        from apps.users.models import Subscription
-        from django.utils import timezone
-        sub, _ = Subscription.objects.get_or_create(user=user)
-        is_pro = sub.is_pro
+        # Check if request is specifically from Admin Panel (via API route, header, or payload flag)
+        is_from_admin = bool(
+            getattr(self, 'is_admin_endpoint', False) or
+            request.data.get('is_admin') is True or
+            request.data.get('is_admin_quiz') is True or
+            request.data.get('from_admin') is True or
+            request.headers.get('X-Admin-Request') == 'true' or
+            '/api/custom_admin/' in request.path
+        )
 
-        # 1. Question count choice restriction for Free tier (Only 5 or 10)
-        if not is_pro and num_questions > 10:
-            return Response({
-                "code": "PREMIUM_REQUIRED",
-                "detail": "Generating 15, 20, or 25 questions per quiz is a Pro feature. Upgrade to QuizGen Pro to unlock!",
-                "message": "Generating 15, 20, or 25 questions per quiz is a Pro feature. Upgrade to QuizGen Pro to unlock!",
-                "upgrade_url": "/pricing"
-            }, status=status.HTTP_403_FORBIDDEN)
+        from apps.users.models import User as UserModel
+        from django.db.models import Q
+        admin_user = UserModel.objects.filter(
+            Q(username__iexact='admin') | Q(is_superuser=True)
+        ).first()
 
-        # 2. Daily Quiz Generation limit check (Free = 3/day, Pro = 10/day)
-        today = timezone.localdate()
-        today_creations = Quiz.objects.filter(
-            created_by=user,
-            created_at__date=today
-        ).count()
+        # Premium Feature Protection Checks (Only apply to regular user Main Web requests!)
+        if not is_from_admin:
+            from apps.users.models import Subscription
+            from django.utils import timezone
+            sub, _ = Subscription.objects.get_or_create(user=user)
+            is_pro = sub.is_pro
 
-        max_daily = 10 if is_pro else 3
-        if today_creations >= max_daily:
-            return Response({
-                "code": "PREMIUM_REQUIRED",
-                "detail": f"Daily quiz limit reached ({max_daily}/day). Upgrade to QuizGen Pro for 10 quizzes/day.",
-                "message": f"Daily quiz limit reached ({max_daily}/day). Upgrade to QuizGen Pro for 10 quizzes/day.",
-                "upgrade_url": "/pricing"
-            }, status=status.HTTP_403_FORBIDDEN)
+            # 1. Question count choice restriction for Free tier (Only 5 or 10)
+            if not is_pro and num_questions > 10:
+                return Response({
+                    "code": "PREMIUM_REQUIRED",
+                    "detail": "Generating 15, 20, or 25 questions per quiz is a Pro feature. Upgrade to QuizGen Pro to unlock!",
+                    "message": "Generating 15, 20, or 25 questions per quiz is a Pro feature. Upgrade to QuizGen Pro to unlock!",
+                    "upgrade_url": "/pricing"
+                }, status=status.HTTP_403_FORBIDDEN)
+
+            # 2. Daily Quiz Generation limit check (Free = 3/day, Pro = 10/day)
+            today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            today_creations = Quiz.objects.filter(
+                created_by=user,
+                created_at__gte=today_start
+            ).count()
+
+            max_daily = 10 if is_pro else 3
+            if today_creations >= max_daily:
+                return Response({
+                    "code": "PREMIUM_REQUIRED",
+                    "detail": f"Daily quiz limit reached ({max_daily}/day). Upgrade to QuizGen Pro for 10 quizzes/day.",
+                    "message": f"Daily quiz limit reached ({max_daily}/day). Upgrade to QuizGen Pro for 10 quizzes/day.",
+                    "upgrade_url": "/pricing"
+                }, status=status.HTTP_403_FORBIDDEN)
 
         # Check cache for identical AI generation requests
         cache_hash = hashlib.md5(f"{subject}_{difficulty}_{num_questions}_{prompt_topic}_{quiz_mode}".encode('utf-8')).hexdigest()
@@ -110,25 +127,6 @@ class GenerateAIQuizView(APIView):
             quiz_title = f"{subject}: {prompt_topic if prompt_topic else 'AI Generated Quiz'}"
             
         quiz_description = f"AI-generated {quiz_mode} quiz on {subject} - {difficulty} difficulty"
-
-        referer = request.META.get('HTTP_REFERER', '') or request.headers.get('Referer', '')
-        is_from_admin = bool(
-            request.data.get('is_admin') or
-            request.data.get('is_admin_quiz') or
-            request.data.get('from_admin') or
-            'custom_admin' in request.path or
-            'admin' in request.path or
-            user.is_superuser or
-            user.is_staff or
-            getattr(user, 'role', '') == 'Admin' or
-            user.username.lower() == 'admin'
-        )
-
-        from apps.users.models import User as UserModel
-        from django.db.models import Q
-        admin_user = UserModel.objects.filter(
-            Q(username__iexact='admin') | Q(is_superuser=True)
-        ).first()
 
         if is_from_admin:
             quiz_creator = admin_user or user
@@ -271,3 +269,13 @@ class GenerateAIQuizView(APIView):
             "quiz_mode": quiz_mode,
             "questions": formatted_questions
         }, status=status.HTTP_200_OK)
+
+
+class AdminGenerateAIQuizView(GenerateAIQuizView):
+    """
+    Dedicated AI Quiz Generation Endpoint for Admin Panel.
+    - Path: /api/custom_admin/ai/generate-quiz/
+    - Always assigns created_by to official superuser 'admin'
+    - Always labels quiz as 'QuizGen AI'
+    """
+    is_admin_endpoint = True

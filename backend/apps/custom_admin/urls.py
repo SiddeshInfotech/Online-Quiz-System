@@ -29,6 +29,8 @@ from apps.feedback.admin_views import (
     AdminFeedbackStatsView
 )
 
+from apps.ai_generator.views import AdminGenerateAIQuizView
+
 urlpatterns = [
     # Auth
     path('auth/login/', LoginView.as_view(), name='admin-auth-login'),
@@ -36,6 +38,11 @@ urlpatterns = [
 
     # A. Analytics
     path('analytics/', AdminDashboardAnalyticsView.as_view(), name='admin-analytics'),
+
+    # AI Quiz Generation (Admin Dedicated Routes)
+    path('ai/generate-quiz/', AdminGenerateAIQuizView.as_view(), name='admin-ai-generate-quiz'),
+    path('ai/generate/', AdminGenerateAIQuizView.as_view(), name='admin-ai-generate-alias'),
+    path('quizzes/generate-ai/', AdminGenerateAIQuizView.as_view(), name='admin-quizzes-generate-ai'),
 
     # B. Users
     path('users/', AdminUserListView.as_view(), name='admin-users-list'),
