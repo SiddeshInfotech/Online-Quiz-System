@@ -96,12 +96,7 @@ class GlobalLeaderboardView(APIView):
             ranked_users = User.objects.filter(
                 deactivated_at__isnull=True,
                 is_active=True
-            ).annotate(
-                calculated_rank=Window(
-                    expression=Rank(),
-                    order_by=F('total_points').desc()
-                )
-            ).order_by('calculated_rank')
+            ).order_by('-total_points', '-xp', 'id')
 
             # Pre-aggregate claimed badge counts in ONE query to avoid N+1 queries
             badge_counts = {
@@ -112,7 +107,7 @@ class GlobalLeaderboardView(APIView):
             }
 
             all_rankings = []
-            for user in ranked_users:
+            for rank_idx, user in enumerate(ranked_users, start=1):
                 profile_picture_url = None
                 if user.profile_picture:
                     try:
@@ -123,7 +118,7 @@ class GlobalLeaderboardView(APIView):
                 badge_count = badge_counts.get(user.id, 0)
 
                 all_rankings.append({
-                    "rank": user.calculated_rank,
+                    "rank": rank_idx,
                     "full_name": user.full_name or user.username,
                     "username": user.username,
                     "points": user.total_points,
@@ -134,8 +129,8 @@ class GlobalLeaderboardView(APIView):
                     "badge_count": badge_count,
                 })
 
-            # Cache rankings list for 30 seconds
-            cache.set("leaderboard_all_rankings", all_rankings, 30)
+            # Cache rankings list for 60 seconds
+            cache.set("leaderboard_all_rankings", all_rankings, 60)
 
         top_3 = all_rankings[:3] if len(all_rankings) >= 3 else all_rankings
 

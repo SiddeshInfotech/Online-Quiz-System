@@ -127,12 +127,12 @@ class AdminUsersListView(generics.ListAPIView):
     def get_queryset(self):
         from django.db.models import Count, Q
         from django.utils import timezone
-        today = timezone.localdate()
+        today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
         return User.objects.all().select_related('subscription').annotate(
             annotated_total_attempts=Count('attempts', distinct=True),
             annotated_penalty_count=Count('penalties', distinct=True),
-            annotated_quizzes_created_today=Count('quiz', filter=Q(quiz__created_at__date=today), distinct=True),
-            annotated_attempts_today=Count('attempts', filter=Q(attempts__started_at__date=today), distinct=True)
+            annotated_quizzes_created_today=Count('quiz', filter=Q(quiz__created_at__gte=today_start), distinct=True),
+            annotated_attempts_today=Count('attempts', filter=Q(attempts__started_at__gte=today_start), distinct=True)
         ).order_by('-date_joined')
 
 # Alias for backwards compatibility
@@ -443,7 +443,15 @@ class AdminSubscriptionsListView(APIView):
 
     def get(self, request):
         users = User.objects.all().select_related('subscription').order_by('-date_joined')
-        today = timezone.localdate()
+        today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+
+        # ⚡ OPTIMIZATION: Single aggregate query for daily quiz usage across all users (removes N+1 queries)
+        daily_used_counts = {
+            item['created_by_id']: item['count']
+            for item in Quiz.objects.filter(created_at__gte=today_start)
+            .values('created_by_id')
+            .annotate(count=Count('id'))
+        }
 
         result = []
         for user in users:
@@ -456,10 +464,7 @@ class AdminSubscriptionsListView(APIView):
             if sub and sub.end_date:
                 days_remaining = max(0, (sub.end_date - timezone.now()).days)
 
-            daily_quiz_used = Quiz.objects.filter(
-                created_by=user,
-                created_at__date=today
-            ).count()
+            daily_quiz_used = daily_used_counts.get(user.id, 0)
 
             result.append({
                 "user_id": user.id,

@@ -21,10 +21,11 @@ class UserSubscriptionView(APIView):
         plan = "PRO" if is_pro else "FREE"
         status_val = sub.status if is_pro else "ACTIVE"
         
-        today = timezone.localdate()
+        now_dt = timezone.now()
+        today_start = now_dt.replace(hour=0, minute=0, second=0, microsecond=0)
         daily_quiz_used = Quiz.objects.filter(
             created_by=user,
-            created_at__date=today
+            created_at__gte=today_start
         ).count()
 
         daily_quiz_limit = 10 if is_pro else 3
@@ -36,7 +37,7 @@ class UserSubscriptionView(APIView):
         # Daily Attempt Limits across all quizzes (Free = 10/day, Pro = Unlimited)
         daily_attempt_used = QuizAttempt.objects.filter(
             user=user,
-            started_at__date=today
+            started_at__gte=today_start
         ).count()
         daily_attempt_limit = 999999 if is_pro else 10
         daily_attempt_remaining = max(0, daily_attempt_limit - daily_attempt_used) if not is_pro else 999999

@@ -336,14 +336,14 @@ class DashboardSummaryView(APIView):
 
         daily_quiz_used = Quiz.objects.filter(
             created_by=user,
-            created_at__date=today_date
-        ).count()
+            created_at__gte=start_of_week_dt
+        ).filter(created_at__gte=now_dt.replace(hour=0, minute=0, second=0, microsecond=0)).count()
         daily_quiz_limit = 10 if is_pro else 3
         daily_quiz_remaining = max(0, daily_quiz_limit - daily_quiz_used)
 
         daily_attempt_used = QuizAttempt.objects.filter(
             user=user,
-            started_at__date=today_date
+            started_at__gte=now_dt.replace(hour=0, minute=0, second=0, microsecond=0)
         ).count()
         daily_attempt_limit = 999999 if is_pro else 10
         daily_attempt_remaining = max(0, 10 - daily_attempt_used) if not is_pro else 999999
@@ -387,19 +387,18 @@ class DashboardSummaryView(APIView):
     def _calculate_streak(self, user):
         try:
             today = timezone.localdate()
-            from django.db.models.functions import TruncDate
-            dates_list = QuizAttempt.objects.filter(
+            attempts_dates = QuizAttempt.objects.filter(
                 user=user,
                 submitted_at__isnull=False
-            ).annotate(sub_date=TruncDate('submitted_at')).values_list('sub_date', flat=True).distinct()
+            ).values_list('submitted_at', flat=True)
 
-            if not dates_list:
+            if not attempts_dates:
                 if user.current_streak != 0:
                     user.current_streak = 0
                     user.save(update_fields=['current_streak'])
                 return 0
 
-            dates_set = set(dates_list)
+            dates_set = {timezone.localdate(dt) for dt in attempts_dates if dt}
 
             streak = 0
             check_date = today
@@ -421,7 +420,7 @@ class DashboardSummaryView(APIView):
 
             longest_streak = max(getattr(user, 'longest_streak', 0) or 0, streak)
 
-            if user.current_streak != streak or user.longest_streak != longest_streak:
+            if user.current_streak != streak or getattr(user, 'longest_streak', 0) != longest_streak:
                 user.current_streak = streak
                 user.longest_streak = longest_streak
                 user.save(update_fields=['current_streak', 'longest_streak'])

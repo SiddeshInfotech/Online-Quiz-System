@@ -292,18 +292,19 @@ class UserSerializer(serializers.ModelSerializer):
 
         sub, _ = Subscription.objects.get_or_create(user=obj)
         is_pro = sub.is_pro
-        today = timezone.localdate()
+        now_dt = timezone.now()
+        today_start = now_dt.replace(hour=0, minute=0, second=0, microsecond=0)
 
         daily_quiz_used = Quiz.objects.filter(
             created_by=obj,
-            created_at__date=today
+            created_at__gte=today_start
         ).count()
         daily_quiz_limit = 10 if is_pro else 3
         daily_quiz_remaining = max(0, daily_quiz_limit - daily_quiz_used)
 
         daily_attempt_used = QuizAttempt.objects.filter(
             user=obj,
-            started_at__date=today
+            started_at__gte=today_start
         ).count()
         daily_attempt_limit = 999999 if is_pro else 10
         daily_attempt_remaining = max(0, 10 - daily_attempt_used) if not is_pro else 999999

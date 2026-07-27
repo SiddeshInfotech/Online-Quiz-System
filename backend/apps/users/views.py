@@ -811,6 +811,7 @@ class AllBadgesView(APIView):
         progress_cached = cache.get(progress_cache_key)
         if not progress_cached:
             progress_map = BadgeProgressHelper.get_all_progress(user, None)
+            cache.set(progress_cache_key, progress_map, 300)
         else:
             progress_map = progress_cached
         
