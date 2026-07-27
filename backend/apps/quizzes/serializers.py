@@ -61,13 +61,14 @@ class QuizLibrarySerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         user = request.user if request else None
 
-        # 1. If logged-in user created this quiz -> "Created by You"
+        # 1. If created by official Admin or staff account -> "QuizGen AI"
+        if self.get_is_admin_quiz(obj):
+            if not obj.created_by or obj.created_by.username.lower() == 'admin' or obj.created_by.is_superuser:
+                return "QuizGen AI"
+
+        # 2. If logged-in user created this quiz -> "Created by You"
         if user and user.is_authenticated and obj.created_by_id == user.id:
             return "Created by You"
-
-        # 2. If created by official Admin or staff -> "QuizGen AI"
-        if self.get_is_admin_quiz(obj):
-            return "QuizGen AI"
 
         # 3. Otherwise show creator's username
         if obj.created_by:
