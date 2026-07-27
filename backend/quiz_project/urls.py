@@ -3,6 +3,7 @@ from django.urls import path, include
 from django.http import JsonResponse
 from django.conf import settings
 from django.conf.urls.static import static
+from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 from apps.users.views import LoginView
 
 
@@ -32,6 +33,10 @@ urlpatterns = [
     path('api/custom_admin/auth/login/', LoginView.as_view(), name='custom-admin-auth-login'),
     path('api/custom_admin/login/', LoginView.as_view(), name='custom-admin-login'),
     path('api/auth/admin-login/', LoginView.as_view(), name='auth-admin-login-alias'),
+
+    # 🔐 JWT Token Refresh & Verify Routes
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='top-token-refresh'),
+    path('api/token/verify/', TokenVerifyView.as_view(), name='top-token-verify'),
 
     path('api/auth/', include('apps.users.urls')),
     path('api/users/', include('apps.users.urls')),
