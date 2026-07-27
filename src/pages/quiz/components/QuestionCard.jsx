@@ -47,43 +47,67 @@ const QuestionCard = ({
   const renderQuestionText = () => {
     const rawText = question.question_text || question.text || "";
 
-    if (!isCoding) {
+    const codeBlockRegex = /```(?:([a-zA-Z0-9_+#-]+)?\n)?([\s\S]*?)```/g;
+
+    if (!codeBlockRegex.test(rawText)) {
       return (
-        <p className="text-app text-lg leading-relaxed font-medium">
+        <p className="text-app text-lg md:text-xl leading-relaxed font-medium whitespace-pre-wrap">
           {rawText}
         </p>
       );
     }
 
-    const codeBlockRegex = /```(.*?)\n([\s\S]*?)```/;
-    const match = rawText.match(codeBlockRegex);
+    codeBlockRegex.lastIndex = 0;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
 
-    if (match) {
-      const fullMatch = match[0];
-      // Optional: language = match[1].trim()
-      const code = match[2];
-      const description = rawText.replace(fullMatch, "").trim();
+    while ((match = codeBlockRegex.exec(rawText)) !== null) {
+      if (match.index > lastIndex) {
+        const textBefore = rawText.substring(lastIndex, match.index).trim();
+        if (textBefore) {
+          parts.push({ type: "text", content: textBefore });
+        }
+      }
 
-      return (
-        <div className="flex flex-col gap-4">
-          {description && (
-            <p className="text-app text-lg leading-relaxed font-medium whitespace-pre-wrap">
-              {description}
-            </p>
-          )}
-          <div className="bg-[#1e1e1e] text-slate-50 rounded-xl p-4 md:p-5 overflow-x-auto shadow-inner border border-slate-800">
-            <pre className="font-mono text-sm leading-relaxed whitespace-pre">
-              <code>{code}</code>
-            </pre>
-          </div>
-        </div>
-      );
+      const lang = (match[1] || "").trim();
+      const code = match[2].trim();
+      parts.push({ type: "code", lang, content: code });
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < rawText.length) {
+      const textAfter = rawText.substring(lastIndex).trim();
+      if (textAfter) {
+        parts.push({ type: "text", content: textAfter });
+      }
     }
 
     return (
-      <p className="text-app text-lg leading-relaxed font-medium whitespace-pre-wrap">
-        {rawText}
-      </p>
+      <div className="flex flex-col gap-4">
+        {parts.map((part, i) => {
+          if (part.type === "text") {
+            return (
+              <p key={i} className="text-app text-lg md:text-xl leading-relaxed font-medium whitespace-pre-wrap">
+                {part.content}
+              </p>
+            );
+          }
+          return (
+            <div key={i} className="bg-[#1e1e1e] text-slate-100 rounded-2xl p-4 md:p-5 overflow-x-auto shadow-inner border border-slate-800 my-1">
+              {part.lang && (
+                <div className="text-xs font-mono text-slate-400 mb-2 pb-1.5 border-b border-slate-800/80 uppercase tracking-wider font-semibold">
+                  {part.lang}
+                </div>
+              )}
+              <pre className="font-mono text-sm md:text-base leading-relaxed whitespace-pre font-medium text-emerald-400">
+                <code>{part.content}</code>
+              </pre>
+            </div>
+          );
+        })}
+      </div>
     );
   };
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Check,
@@ -103,6 +103,21 @@ const FAQ = () => {
 const PricingPage = () => {
   const { currentUser, updateUser } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Determine where the back button should go:
+  // • If the caller passed state.from (e.g. Dashboard, Profile), go there.
+  // • Otherwise fall back to browser history (-1) or the landing page.
+  const backTarget = location.state?.from || null;
+  const handleBack = () => {
+    if (backTarget) {
+      navigate(backTarget);
+    } else if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/");
+    }
+  };
 
   const [billingCycle, setBillingCycle] = useState("MONTHLY"); // "MONTHLY" | "YEARLY"
   const [selectedQuestionsPerDay, setSelectedQuestionsPerDay] = useState(25);
@@ -235,18 +250,19 @@ const PricingPage = () => {
 
   return (
     <>
-      <Navbar />
+      {!currentUser && <Navbar />}
 
       <div className="w-full max-w-6xl mx-auto pb-16 pt-6 px-4 sm:px-6">
-        {/* Back to Home / Landing Page button */}
+        {/* Smart back button — returns to origin page */}
         <div className="mb-6">
-          <Link
-            to="/"
+          <button
+            type="button"
+            onClick={handleBack}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl surface border border-app text-sm font-semibold text-app-muted hover:text-app hover:border-violet-500/50 shadow-sm transition-all duration-200"
           >
             <ArrowLeft size={16} />
-            Back to Home
-          </Link>
+            {backTarget ? `Back to ${backTarget === "/dashboard" ? "Dashboard" : backTarget === "/profile" ? "Profile" : "Previous Page"}` : "Back"}
+          </button>
         </div>
 
         {/* Header */}

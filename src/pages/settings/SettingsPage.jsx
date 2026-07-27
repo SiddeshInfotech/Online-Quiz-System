@@ -268,7 +268,7 @@ const SettingsPage = () => {
             <Card className="p-0 overflow-hidden hover:shadow-xl transition-shadow duration-300 border-violet-500/20">
               <div
                 className="p-6 sm:p-8 flex items-center justify-between cursor-pointer hover:bg-[var(--bg-elevated)] transition-colors"
-                onClick={() => navigate('/pricing')}
+                onClick={() => navigate('/pricing', { state: { from: '/settings' } })}
               >
                 <div className="flex items-center gap-4">
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-md ${

@@ -21,8 +21,9 @@ const normalizeReviewQuestion = (q, idx) => {
 
   // Normalize options: string array or object array into resilient objects
   let options = [];
-  if (Array.isArray(q.options)) {
-    options = q.options.map((opt, i) => {
+  const rawOpts = q.options ?? q.choices ?? q.question_options ?? [];
+  if (Array.isArray(rawOpts)) {
+    options = rawOpts.map((opt, i) => {
       if (typeof opt === "string") {
         return { id: String(i), text: opt, value: opt };
       } else if (typeof opt === "object" && opt !== null) {

@@ -1190,7 +1190,7 @@ const ProfilePage = () => {
                     </div>
                   </div>
 
-                  <Link to="/pricing">
+                  <Link to="/pricing" state={{ from: "/profile" }}>
                     <Button variant={isPro ? "secondary" : "primary"} size="sm" className="gap-1.5 text-xs font-bold">
                       {isPro ? "Manage Subscription" : "Upgrade to Pro"}
                       <ArrowRight size={14} />
@@ -1238,9 +1238,9 @@ const ProfilePage = () => {
                 {/* Usage Progress Cards */}
                 {(() => {
                   const sk = "animate-pulse bg-slate-200 dark:bg-slate-700 rounded";
-                  const qUsed = subData?.daily_attempt_used ?? subData?.daily_quiz_used;
-                  const qLimit = subData?.daily_attempt_limit ?? subData?.daily_quiz_limit;
-                  const qRem = subData?.daily_attempt_remaining ?? subData?.daily_quiz_remaining ?? (qUsed != null && qLimit != null ? Math.max(0, qLimit - qUsed) : null);
+                  const qUsed = subData?.daily_quiz_used ?? subData?.daily_attempt_used;
+                  const qLimit = subData?.daily_quiz_limit ?? subData?.daily_attempt_limit;
+                  const qRem = subData?.daily_quiz_remaining ?? subData?.daily_attempt_remaining ?? (qUsed != null && qLimit != null ? Math.max(0, qLimit - qUsed) : null);
                   const qPct = qUsed != null && qLimit ? Math.min(100, Math.round((qUsed / qLimit) * 100)) : 0;
                   const cUsed = subData?.coding_question_used;
                   const cLimit = subData?.coding_question_limit;
@@ -1338,7 +1338,7 @@ const ProfilePage = () => {
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <Link to="/pricing" className="text-xs font-bold text-violet-600 hover:text-violet-700 transition-colors flex items-center gap-1">
+                    <Link to="/pricing" state={{ from: "/profile" }} className="text-xs font-bold text-violet-600 hover:text-violet-700 transition-colors flex items-center gap-1">
                       View All Benefits →
                     </Link>
                     {isPro && (
