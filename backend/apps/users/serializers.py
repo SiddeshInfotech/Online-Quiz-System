@@ -321,6 +321,10 @@ class UserSerializer(serializers.ModelSerializer):
             "daily_quizzes_used": daily_quiz_used,
             "daily_quizzes_remaining": daily_quiz_remaining,
 
+            "remaining_daily_quizzes": daily_quiz_remaining,
+            "quizzes_remaining": daily_quiz_remaining,
+            "remaining_quizzes": daily_quiz_remaining,
+            "quiz_remaining": daily_quiz_remaining,
             "max_daily_quizzes": daily_quiz_limit,
             "daily_attempt_limit": daily_attempt_limit,
             "daily_attempt_used": daily_attempt_used,

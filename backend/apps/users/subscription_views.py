@@ -67,6 +67,16 @@ class UserSubscriptionView(APIView):
             "daily_quiz_used": daily_quiz_used,
             "daily_quiz_remaining": daily_quiz_remaining,
 
+            "daily_quizzes_limit": daily_quiz_limit,
+            "daily_quizzes_used": daily_quiz_used,
+            "daily_quizzes_remaining": daily_quiz_remaining,
+
+            "remaining_daily_quizzes": daily_quiz_remaining,
+            "quizzes_remaining": daily_quiz_remaining,
+            "remaining_quizzes": daily_quiz_remaining,
+            "quiz_remaining": daily_quiz_remaining,
+            "max_daily_quizzes": daily_quiz_limit,
+
             # Overall Daily Attempts across all quizzes
             "daily_attempt_limit": daily_attempt_limit,
             "daily_attempt_used": daily_attempt_used,

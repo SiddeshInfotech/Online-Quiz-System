@@ -361,6 +361,10 @@ class DashboardSummaryView(APIView):
             "daily_quizzes_used": daily_quiz_used,
             "daily_quizzes_remaining": daily_quiz_remaining,
 
+            "remaining_daily_quizzes": daily_quiz_remaining,
+            "quizzes_remaining": daily_quiz_remaining,
+            "remaining_quizzes": daily_quiz_remaining,
+            "quiz_remaining": daily_quiz_remaining,
             "max_daily_quizzes": daily_quiz_limit,
             "daily_attempt_limit": daily_attempt_limit,
             "daily_attempt_used": daily_attempt_used,
@@ -374,6 +378,8 @@ class DashboardSummaryView(APIView):
         res_data["daily_quizzes_limit"] = daily_quiz_limit
         res_data["daily_quizzes_used"] = daily_quiz_used
         res_data["daily_quizzes_remaining"] = daily_quiz_remaining
+        res_data["quizzes_remaining"] = daily_quiz_remaining
+        res_data["remaining_quizzes"] = daily_quiz_remaining
 
         cache.set(cache_key, res_data, 15)
         return Response(res_data)
