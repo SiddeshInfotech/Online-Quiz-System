@@ -83,6 +83,11 @@ class UserSubscriptionView(APIView):
             "daily_attempt_used": daily_attempt_used,
             "daily_attempt_remaining": daily_attempt_remaining,
 
+            "total_attempts_limit": daily_attempt_limit,
+            "total_attempts_used": daily_attempt_used,
+            "total_attempts_remaining": daily_attempt_remaining,
+            "attempts_remaining": daily_attempt_remaining,
+
             # Question count limits
             "allowed_question_counts": allowed_question_counts,
             "max_questions_choice": max(allowed_question_counts),

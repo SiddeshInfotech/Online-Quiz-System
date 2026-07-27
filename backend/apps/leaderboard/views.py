@@ -53,6 +53,9 @@ class QuizLeaderboardView(APIView):
             if attempt.user.profile_picture:
                 profile_pic = attempt.user.profile_picture.url
 
+            is_user_pro = getattr(getattr(attempt.user, 'subscription', None), 'is_pro', False) or attempt.user.is_superuser or attempt.user.role == 'Admin'
+            user_plan = "PRO" if is_user_pro else "FREE"
+
             top_performers.append({
                 "rank": rank,
                 "user": {
@@ -60,8 +63,13 @@ class QuizLeaderboardView(APIView):
                     "username": attempt.user.username,
                     "full_name": attempt.user.full_name,
                     "email": attempt.user.email,
-                    "profile_picture": profile_pic, 
+                    "profile_picture": profile_pic,
+                    "is_pro": is_user_pro,
+                    "plan": user_plan,
+                    "subscription_plan": user_plan
                 },
+                "is_pro": is_user_pro,
+                "plan": user_plan,
                 "score": attempt.score,
                 "percentage": attempt.percentage,
                 "time_taken": time_taken,
@@ -91,12 +99,18 @@ class GlobalLeaderboardView(APIView):
             recalculate_user_points_and_stats(request.user)
             cache.delete("leaderboard_all_rankings")
 
+        from apps.users.models import Subscription
         all_rankings = cache.get("leaderboard_all_rankings")
         if not all_rankings:
             ranked_users = User.objects.filter(
                 deactivated_at__isnull=True,
                 is_active=True
             ).order_by('-total_points', '-xp', 'id')
+
+            pro_user_ids = set(
+                Subscription.objects.filter(plan='PRO', status='ACTIVE')
+                .values_list('user_id', flat=True)
+            )
 
             # Pre-aggregate claimed badge counts in ONE query to avoid N+1 queries
             badge_counts = {
@@ -116,6 +130,8 @@ class GlobalLeaderboardView(APIView):
                         profile_picture_url = None
 
                 badge_count = badge_counts.get(user.id, 0)
+                is_pro = user.id in pro_user_ids or user.is_superuser or user.role == 'Admin'
+                plan = "PRO" if is_pro else "FREE"
 
                 all_rankings.append({
                     "rank": rank_idx,
@@ -127,6 +143,9 @@ class GlobalLeaderboardView(APIView):
                     "profile_picture": profile_picture_url,
                     "user_id": user.id,
                     "badge_count": badge_count,
+                    "is_pro": is_pro,
+                    "plan": plan,
+                    "subscription_plan": plan
                 })
 
             # Cache rankings list for 60 seconds

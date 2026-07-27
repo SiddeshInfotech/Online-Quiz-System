@@ -369,6 +369,11 @@ class DashboardSummaryView(APIView):
             "daily_attempt_limit": daily_attempt_limit,
             "daily_attempt_used": daily_attempt_used,
             "daily_attempt_remaining": daily_attempt_remaining,
+
+            "total_attempts_limit": daily_attempt_limit,
+            "total_attempts_used": daily_attempt_used,
+            "total_attempts_remaining": daily_attempt_remaining,
+            "attempts_remaining": daily_attempt_remaining,
         }
 
         res_data["subscription"] = subscription_info
@@ -380,6 +385,14 @@ class DashboardSummaryView(APIView):
         res_data["daily_quizzes_remaining"] = daily_quiz_remaining
         res_data["quizzes_remaining"] = daily_quiz_remaining
         res_data["remaining_quizzes"] = daily_quiz_remaining
+
+        res_data["daily_attempt_limit"] = daily_attempt_limit
+        res_data["daily_attempt_used"] = daily_attempt_used
+        res_data["daily_attempt_remaining"] = daily_attempt_remaining
+        res_data["total_attempts_limit"] = daily_attempt_limit
+        res_data["total_attempts_used"] = daily_attempt_used
+        res_data["total_attempts_remaining"] = daily_attempt_remaining
+        res_data["attempts_remaining"] = daily_attempt_remaining
 
         cache.set(cache_key, res_data, 15)
         return Response(res_data)
