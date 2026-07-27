@@ -7,6 +7,7 @@ import notificationService from "../../services/notificationService";
 import libraryService from "../../services/libraryService";
 import useDebounce from "../../hooks/useDebounce";
 import { getLanguageIcon } from "../../utils/languageIcons";
+import { useAuth } from "../../hooks/useAuth";
 
 const getNotificationIcon = (type) => {
   switch (String(type).toLowerCase()) {
@@ -26,6 +27,7 @@ const getNotificationIcon = (type) => {
 };
 
 const TopNav = ({ user, notifications = [], onMenuToggle }) => {
+  const { logout } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [serverUnreadCount, setServerUnreadCount] = useState(0);
@@ -345,7 +347,7 @@ const TopNav = ({ user, notifications = [], onMenuToggle }) => {
                 <button 
                   onClick={() => {
                     setShowProfileMenu(false);
-                    navigate('/login');
+                    logout();
                   }} 
                   className="flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-colors w-full text-left"
                 >

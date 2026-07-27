@@ -351,10 +351,11 @@ const AdminQuizzesPage = () => {
     const targetTopic = aiForm.topic.trim() || `${targetSubject} Mastery`;
 
     try {
-      const aiResponse = await aiQuizService.generateQuiz({
+      const aiResponse = await customAdminService.generateAdminQuiz({
         subject: targetSubject,
         difficulty: aiForm.difficulty,
         quiz_mode: aiForm.quizMode,
+        quiz_type: aiForm.quizMode,
         number_of_questions: Number(aiForm.numQuestions),
         prompt_topic: targetTopic,
       });

@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Menu, X, Loader2 } from "lucide-react";
 
 import Button from "../../ui/Button";
 import Container from "../../ui/Container";
 import Logo from "../../ui/Logo";
 import ThemeToggle from "../../ui/ThemeToggle";
 import { useAuthModal } from "../../../context/AuthModalContext";
+import authService from "../../../services/authService";
+import { clearAuth } from "../../../utils/auth";
 
 const navLinks = [
   { label: "About", href: "#about", isAnchor: true },
@@ -17,7 +19,36 @@ const navLinks = [
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const { openModal } = useAuthModal();
+  const navigate = useNavigate();
+
+  // 🟢 Situation 2: Navbar Login Button Click Handler
+  const handleLoginButtonClick = async () => {
+    const token = localStorage.getItem("access_token");
+    // 🔍 1. Check if an access token exists in localStorage
+    if (token) {
+      setIsVerifying(true);
+      try {
+        // Fast backend verification check
+        await authService.verifyToken(token);
+        // 🟢 Token is VALID & Active! Send user straight to Dashboard (No password needed!)
+        navigate("/dashboard");
+        return;
+      } catch (err) {
+        // 🔴 Token is expired or invalid -> Clear stale storage
+        clearAuth();
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("user_data");
+      } finally {
+        setIsVerifying(false);
+      }
+    }
+    // 🔑 2. No valid token found -> Open Login Page / Modal
+    openModal("login");
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-app bg-[var(--bg-surface)]/80 backdrop-blur-md"
@@ -50,7 +81,19 @@ function Navbar() {
 
           <div className="hidden items-center gap-3 md:flex">
             <ThemeToggle />
-            <Button variant="ghost" onClick={() => openModal('login')}>Log In</Button>
+            <Button
+              variant="ghost"
+              onClick={handleLoginButtonClick}
+              disabled={isVerifying}
+            >
+              {isVerifying ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 size={16} className="animate-spin" /> Checking...
+                </span>
+              ) : (
+                "Log In"
+              )}
+            </Button>
             <Button onClick={() => openModal('signup')}>Get Started Free</Button>
           </div>
 
@@ -90,7 +133,17 @@ function Navbar() {
                   </Link>
                 )
               ))}
-              <Button variant="ghost" className="w-full" onClick={() => { setIsOpen(false); openModal('login'); }}>Log In</Button>
+              <Button
+                variant="ghost"
+                className="w-full"
+                onClick={() => {
+                  setIsOpen(false);
+                  handleLoginButtonClick();
+                }}
+                disabled={isVerifying}
+              >
+                Log In
+              </Button>
               <Button className="w-full" onClick={() => { setIsOpen(false); openModal('signup'); }}>Get Started Free</Button>
             </div>
           </div>

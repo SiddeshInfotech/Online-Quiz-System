@@ -213,6 +213,12 @@ const adminService = {
   updateAdminFeedback: (id, payload) => adminFeedbackService.updateFeedback(id, payload),
   toggleHideAdminFeedback: (id) => adminFeedbackService.hideFeedback(id),
   deleteAdminFeedback: (id) => adminFeedbackService.deleteFeedback(id),
+
+  /**
+   * Admin Panel AI Quiz Generator (Official System Quizzes)
+   * POST /api/custom_admin/ai/generate-quiz/
+   */
+  generateAdminQuiz: (quizPayload) => customAdminService.generateAdminQuiz(quizPayload),
 };
 
 export default adminService;

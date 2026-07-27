@@ -82,9 +82,17 @@ export const AuthProvider = ({ children }) => {
   }, [fetchProfile]);
 
   const logout = useCallback(() => {
+    // 🧹 1. Clear all stored JWT tokens & user data
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("user_data");
     clearAuth();
+
     setTokenState(null);
     setCurrentUser(null);
+
+    // 🚀 2. Navigate to Login Page or Landing Page
     window.location.href = "/login";
   }, []);
 

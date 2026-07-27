@@ -108,11 +108,18 @@ const Login = ({ inModal = false }) => {
     try {
       const data = await authService.login(localFormData.email, localFormData.password);
 
-      // Save token and user details
+      // 💾 Save new JWT tokens & user object to localStorage
       const token = data?.token || data?.access_token || data?.access;
       const refreshToken = data?.refresh || data?.refresh_token;
 
       if (token) {
+        localStorage.setItem("access_token", token);
+        if (refreshToken) localStorage.setItem("refresh_token", refreshToken);
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+          localStorage.setItem("user_data", JSON.stringify(data.user));
+        }
+
         login(token, data.user || null, refreshToken);
 
         // If backend didn't return user object, fetch profile separately
@@ -121,6 +128,7 @@ const Login = ({ inModal = false }) => {
         }
 
         if (inModal) closeModal();
+        // 🚀 Navigate to Dashboard
         navigate("/dashboard");
       } else {
         setApiError("Invalid response from server. Missing access token.");

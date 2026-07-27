@@ -39,6 +39,32 @@ const aiQuizService = {
     });
     return response.data;
   },
+
+  /**
+   * Admin Panel AI Quiz Generator (Official System Quizzes)
+   * POST /api/custom_admin/ai/generate-quiz/
+   *
+   * @param {Object} quizPayload
+   * @returns {Promise<any>}
+   */
+  generateAdminQuiz: async (quizPayload) => {
+    const adminToken =
+      localStorage.getItem("admin_token") ||
+      localStorage.getItem("access_token") ||
+      localStorage.getItem("token");
+
+    const response = await api.post(
+      "/custom_admin/ai/generate-quiz/",
+      quizPayload,
+      {
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+          "X-Admin-Request": "true",
+        },
+      }
+    );
+    return response.data;
+  },
 };
 
 export default aiQuizService;
