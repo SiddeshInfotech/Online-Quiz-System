@@ -118,6 +118,18 @@ const authService = {
     const response = await api.delete("/auth/delete-account/");
     return response.data;
   },
+
+  // POST /token/verify/ -> { token }
+  verifyToken: async (token) => {
+    const response = await api.post("/token/verify/", { token });
+    return response.data;
+  },
+
+  // POST /token/refresh/ -> { refresh }
+  refreshToken: async (refreshToken) => {
+    const response = await api.post("/token/refresh/", { refresh: refreshToken });
+    return response.data;
+  },
 };
 
 export default authService;

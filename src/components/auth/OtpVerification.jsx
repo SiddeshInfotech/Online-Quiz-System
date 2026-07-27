@@ -54,9 +54,11 @@ const OtpVerification = ({ email: propEmail, onBack, inModal = true }) => {
         clearSensitiveData();
       }
 
-      const token = response?.token || response?.access_token || response?.data?.token || response?.data?.access_token;
+      const token = response?.token || response?.access_token || response?.access || response?.data?.token || response?.data?.access_token || response?.data?.access;
+      const refreshToken = response?.refresh || response?.refresh_token || response?.data?.refresh || response?.data?.refresh_token;
+
       if (token) {
-        login(token, response?.user || null);
+        login(token, response?.user || null, refreshToken);
 
         if (!response?.user) {
           await fetchProfile();

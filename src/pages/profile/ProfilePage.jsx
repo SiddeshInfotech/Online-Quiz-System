@@ -1247,13 +1247,23 @@ const ProfilePage = () => {
                   const cRem = cUsed != null && cLimit != null ? Math.max(0, cLimit - cUsed) : null;
                   const cPct = cUsed != null && cLimit ? Math.min(100, Math.round((cUsed / cLimit) * 100)) : 0;
 
+                  // Total daily quiz attempts (separate from AI quiz generation quota)
+                  const aUsed  = subData?.total_attempts_used;
+                  const aLimit = subData?.total_attempts_limit;
+                  const aRem   = subData?.total_attempts_remaining ??
+                    (aLimit != null && aUsed != null ? Math.max(0, aLimit - aUsed) : null);
+                  const aIsUnlimited = isPro || aLimit === 999999 || aRem === 999999;
+                  const aPct = !aIsUnlimited && aUsed != null && aLimit
+                    ? Math.min(100, Math.round((aUsed / aLimit) * 100))
+                    : 0;
+
                   return (
                     <div className="grid grid-cols-1 gap-4 mb-6">
-                      {/* Daily Quizzes */}
+                      {/* Daily AI Quizzes (generation quota) */}
                       <div className="p-4 rounded-xl surface-subtle border border-app flex flex-col gap-2">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-app flex items-center gap-1.5">
-                            <Book size={15} className="text-violet-600" /> Daily Quizzes
+                            <Book size={15} className="text-violet-600" /> AI Quiz Generation
                           </span>
                           {subLoading ? (
                             <div className={`h-3.5 w-20 ${sk}`} />
@@ -1277,6 +1287,50 @@ const ProfilePage = () => {
                             <>
                               <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{qRem != null ? `${qRem} Remaining` : "—"}</span>
                               <span>Resets in {subData?.reset_hours ?? 24}h</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Daily Quiz Attempts */}
+                      <div className="p-4 rounded-xl surface-subtle border border-app flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-app flex items-center gap-1.5">
+                            <Zap size={15} className="text-amber-500" /> Daily Quiz Attempts
+                          </span>
+                          {subLoading ? (
+                            <div className={`h-3.5 w-24 ${sk}`} />
+                          ) : aIsUnlimited ? (
+                            <span className="text-xs font-extrabold text-amber-500 flex items-center gap-1">
+                              ⚡ Unlimited (PRO)
+                            </span>
+                          ) : (
+                            <span className="text-xs font-extrabold text-amber-600 dark:text-amber-400">
+                              {aUsed ?? "—"} / {aLimit ?? "—"} Used Today
+                            </span>
+                          )}
+                        </div>
+                        <div className="h-2 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden">
+                          {subLoading ? (
+                            <div className={`h-full w-1/3 ${sk} rounded-full`} />
+                          ) : aIsUnlimited ? (
+                            <div className="h-full w-full bg-gradient-to-r from-amber-400 to-orange-400 rounded-full" />
+                          ) : (
+                            <div
+                              className="h-full bg-gradient-to-r from-amber-500 to-orange-400 rounded-full transition-all duration-500"
+                              style={{ width: `${aPct}%` }}
+                            />
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-app-muted font-medium pt-0.5">
+                          {subLoading ? (
+                            <div className={`h-3 w-16 ${sk}`} />
+                          ) : (
+                            <>
+                              <span className={aIsUnlimited ? "text-amber-500 font-semibold" : "text-emerald-600 dark:text-emerald-400 font-semibold"}>
+                                {aIsUnlimited ? "No daily cap — go unlimited!" : aRem != null ? `${aRem} Remaining` : "—"}
+                              </span>
+                              {!aIsUnlimited && <span>Resets in {subData?.reset_hours ?? 24}h</span>}
                             </>
                           )}
                         </div>

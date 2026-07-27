@@ -109,9 +109,11 @@ const Login = ({ inModal = false }) => {
       const data = await authService.login(localFormData.email, localFormData.password);
 
       // Save token and user details
-      const token = data?.token || data?.access_token;
+      const token = data?.token || data?.access_token || data?.access;
+      const refreshToken = data?.refresh || data?.refresh_token;
+
       if (token) {
-        login(token, data.user || null);
+        login(token, data.user || null, refreshToken);
 
         // If backend didn't return user object, fetch profile separately
         if (!data.user) {
@@ -136,10 +138,11 @@ const Login = ({ inModal = false }) => {
 
     try {
       const data = await authService.googleLogin(credential);
-      const token = data?.token || data?.access_token;
+      const token = data?.token || data?.access_token || data?.access;
+      const refreshToken = data?.refresh || data?.refresh_token;
 
       if (token) {
-        login(token, data.user || null);
+        login(token, data.user || null, refreshToken);
 
         if (!data.user) {
           await fetchProfile();

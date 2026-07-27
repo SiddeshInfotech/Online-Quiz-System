@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect, useMemo, useCallback } from "react";
-import { getToken, setToken, removeToken, getCurrentUser, setUser, removeUser } from "../utils/auth";
+import { getToken, setToken, clearAuth, getCurrentUser, setUser } from "../utils/auth";
 import authService from "../services/authService";
 import { resolveMediaUrl } from "../services/api";
 
@@ -37,8 +37,7 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       // If profile fetch fails (e.g. expired token), clear auth state
       console.error("Failed to fetch profile:", err);
-      removeToken();
-      removeUser();
+      clearAuth();
       setTokenState(null);
       setCurrentUser(null);
       return null;
@@ -67,8 +66,8 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, [fetchProfile]);
 
-  const login = useCallback((newToken, user) => {
-    setToken(newToken);
+  const login = useCallback((newToken, user, newRefreshToken = null) => {
+    setToken(newToken, newRefreshToken);
     const normalised = normaliseUser(user);
     if (normalised) setUser(normalised);
 
@@ -83,8 +82,7 @@ export const AuthProvider = ({ children }) => {
   }, [fetchProfile]);
 
   const logout = useCallback(() => {
-    removeToken();
-    removeUser();
+    clearAuth();
     setTokenState(null);
     setCurrentUser(null);
     window.location.href = "/login";

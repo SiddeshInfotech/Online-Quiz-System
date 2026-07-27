@@ -10,13 +10,21 @@ import CTA from "../components/Landing/CTA";
 import Footer from "../components/layout/Footer";
 import AuthModal from "../components/auth/AuthModal";
 import { useAuthModal } from "../context/AuthModalContext";
+import useAuthGuard from "../hooks/useAuthGuard";
 
 function LandingPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { openModal } = useAuthModal();
 
+  // 🔐 Login & Landing Guard: if the user has a valid token, redirect to dashboard.
+  // The silent-refresh interceptor in api.js handles expired tokens transparently.
+  const { isCheckingAuth } = useAuthGuard();
+
   useEffect(() => {
+    // Don't open modals while auth check is in progress (avoid flash)
+    if (isCheckingAuth) return;
+
     const path = location.pathname;
     const searchParams = Object.fromEntries(new URLSearchParams(location.search));
 
@@ -38,7 +46,11 @@ function LandingPage() {
       const target = location.search ? `/${location.search}` : "/";
       navigate(target, { replace: true });
     }
-  }, [location.pathname, location.search, openModal, navigate]);
+  }, [isCheckingAuth, location.pathname, location.search, openModal, navigate]);
+
+  // Suppress landing page content while the guard is resolving to prevent
+  // a brief flash before the redirect kicks in.
+  if (isCheckingAuth) return null;
 
   return (
     <>
@@ -59,4 +71,4 @@ function LandingPage() {
   );
 }
 
-export default LandingPage;
+export default LandingPage;

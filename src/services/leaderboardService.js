@@ -83,6 +83,13 @@ const adaptEntry = (raw = {}, index) => {
         raw.quiz_count
       ) ?? 0
     ),
+    isPro: Boolean(
+      raw.is_pro ||
+      raw.isPro ||
+      raw.plan === "PRO" ||
+      raw.subscription_plan === "PRO" ||
+      raw.subscription_tier === "PRO"
+    ),
   };
 };
 
@@ -220,6 +227,8 @@ const getMockLeaderboardData = () => ({
       full_name: "Alex Turner",
       total_points: 12450,
       quizzes_completed: 142,
+      is_pro: true,
+      plan: "PRO",
       avatar: "https://ui-avatars.com/api/?name=Alex+Turner&background=8B5CF6&color=fff",
     },
     {
@@ -244,6 +253,8 @@ const getMockLeaderboardData = () => ({
       full_name: "Emily Davis",
       total_points: 8700,
       quizzes_completed: 98,
+      is_pro: true,
+      plan: "PRO",
       avatar: "https://ui-avatars.com/api/?name=Emily+Davis&background=3B82F6&color=fff",
     },
     {

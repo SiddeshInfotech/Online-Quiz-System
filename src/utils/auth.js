@@ -1,8 +1,14 @@
 export const TOKEN_KEY = "access_token";
+export const REFRESH_TOKEN_KEY = "refresh_token";
 export const USER_KEY = "user_data";
 
-export const setToken = (token) => {
-  localStorage.setItem(TOKEN_KEY, token);
+export const setToken = (token, refreshToken = null) => {
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  }
+  if (refreshToken) {
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  }
 };
 
 export const getToken = () => {
@@ -11,6 +17,20 @@ export const getToken = () => {
 
 export const removeToken = () => {
   localStorage.removeItem(TOKEN_KEY);
+};
+
+export const setRefreshToken = (refreshToken) => {
+  if (refreshToken) {
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  }
+};
+
+export const getRefreshToken = () => {
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+};
+
+export const removeRefreshToken = () => {
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
 };
 
 export const setUser = (user) => {
@@ -29,3 +49,10 @@ export const getCurrentUser = () => {
 export const removeUser = () => {
   localStorage.removeItem(USER_KEY);
 };
+
+export const clearAuth = () => {
+  removeToken();
+  removeRefreshToken();
+  removeUser();
+};
+

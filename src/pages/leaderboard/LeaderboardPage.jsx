@@ -154,6 +154,15 @@ const podiumConfig = [
   },
 ];
 
+const ProBadge = ({ className = "" }) => (
+  <span
+    className={`inline-flex items-center gap-1 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-sm shadow-amber-500/30 tracking-wider shrink-0 ${className}`}
+    title="QuizGen Pro Member"
+  >
+    👑 PRO
+  </span>
+);
+
 const PodiumBlock = ({ config, entry, isCurrentUser }) => {
   const Icon = config.icon;
   if (!entry) return <div className="flex-1" />;
@@ -186,15 +195,20 @@ const PodiumBlock = ({ config, entry, isCurrentUser }) => {
       </div>
 
       {/* Display name & points */}
-      <div className="text-center mb-1.5">
+      <div className="text-center mb-1.5 flex flex-col items-center">
         <p
-          className={`font-semibold text-app text-xs leading-tight truncate max-w-[80px] ${
-            isCurrentUser ? "text-violet-700" : ""
+          className={`font-semibold text-app text-xs leading-tight truncate max-w-[85px] ${
+            isCurrentUser ? "text-violet-700 dark:text-violet-400" : ""
           }`}
           title={entry.fullName || entry.username}
         >
           {entry.fullName || entry.username}
         </p>
+        {entry.isPro && (
+          <div className="mt-0.5">
+            <ProBadge className="text-[9px] px-1.5 py-0 scale-90" />
+          </div>
+        )}
         <p className="text-[10px] text-app-muted font-medium mt-0.5">
           {formatPoints(entry.points)} pts
         </p>
@@ -320,19 +334,22 @@ const TableRow = ({ id, entry, isCurrentUser, index }) => {
             <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-violet-500 rounded-full border-2 border-white dark:border-slate-900" />
           )}
         </div>
-        <p
-          className={`font-semibold text-sm truncate ${
-            isCurrentUser ? "text-violet-700 dark:text-violet-400" : "text-app"
-          }`}
-          title={entry.fullName || entry.username}
-        >
-          {entry.fullName || entry.username}
+        <div className="flex items-center gap-2 min-w-0 flex-wrap">
+          <p
+            className={`font-semibold text-sm truncate ${
+              isCurrentUser ? "text-violet-700 dark:text-violet-400" : "text-app"
+            }`}
+            title={entry.fullName || entry.username}
+          >
+            {entry.fullName || entry.username}
+          </p>
+          {entry.isPro && <ProBadge />}
           {isCurrentUser && (
-            <span className="ml-2 text-[10px] font-bold bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-300 rounded-full px-2 py-0.5 border border-violet-200 dark:border-violet-500/30">
+            <span className="text-[10px] font-bold bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-300 rounded-full px-2 py-0.5 border border-violet-200 dark:border-violet-500/30">
               You
             </span>
           )}
-        </p>
+        </div>
       </div>
     </td>
 

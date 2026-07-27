@@ -66,6 +66,17 @@ const SubscriptionWidget = () => {
   const codeRemaining = codeTotal != null && codeUsed != null ? Math.max(0, codeTotal - codeUsed) : null;
   const codePct = codeUsed != null && codeTotal ? Math.min(100, Math.round((codeUsed / codeTotal) * 100)) : 0;
 
+  // Total daily quiz attempts (separate from AI quiz generation quota)
+  const attemptsUsed   = subData?.total_attempts_used;
+  const attemptsTotal  = subData?.total_attempts_limit;
+  const attemptsRem    = subData?.total_attempts_remaining ??
+    (attemptsTotal != null && attemptsUsed != null ? Math.max(0, attemptsTotal - attemptsUsed) : null);
+  // 999999 is the backend sentinel for "unlimited" (PRO)
+  const attemptsIsUnlimited = isPro || attemptsTotal === 999999 || attemptsRem === 999999;
+  const attemptsPct = !attemptsIsUnlimited && attemptsUsed != null && attemptsTotal
+    ? Math.min(100, Math.round((attemptsUsed / attemptsTotal) * 100))
+    : 0;
+
   const renewalDateStr = subData?.renewal_date
     ? new Date(subData.renewal_date).toLocaleDateString()
     : null;
@@ -122,11 +133,11 @@ const SubscriptionWidget = () => {
 
         {/* Middle Usage Progress Bar Section */}
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 py-2.5 px-5 rounded-2xl surface-subtle border border-app flex-1 max-w-xl">
-          {/* Daily Quizzes */}
+          {/* Daily AI Quizzes (generation quota) */}
           <div className="flex-1 w-full flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-app-muted text-[10px] uppercase tracking-wider flex items-center gap-1.5">
-                <Book size={14} className="text-violet-600 dark:text-violet-400" /> Daily Quizzes
+                <Book size={14} className="text-violet-600 dark:text-violet-400" /> AI Quizzes
               </span>
               {loading ? (
                 <div className={`h-3 w-20 ${sk}`} />
@@ -146,6 +157,44 @@ const SubscriptionWidget = () => {
                 <div
                   className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-500 rounded-full transition-all duration-700"
                   style={{ width: `${quizPct}%` }}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="hidden sm:block w-px h-10 bg-app/30 shrink-0" />
+
+          {/* Daily Quiz Attempts */}
+          <div className="flex-1 w-full flex flex-col gap-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-app-muted text-[10px] uppercase tracking-wider flex items-center gap-1.5">
+                <Code2 size={14} className="text-amber-500" /> Attempts
+              </span>
+              {loading ? (
+                <div className={`h-3 w-20 ${sk}`} />
+              ) : attemptsIsUnlimited ? (
+                <span className="text-[10px] font-extrabold text-amber-500 flex items-center gap-1">
+                  ⚡ Unlimited
+                </span>
+              ) : (
+                <span className="font-extrabold text-app font-space-grotesk text-xs">
+                  {attemptsUsed ?? "—"} / {attemptsTotal ?? "—"}
+                  {attemptsRem != null && (
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold ml-1">({attemptsRem} left)</span>
+                  )}
+                </span>
+              )}
+            </div>
+            <div className="h-2 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden p-0.5 border border-app/50">
+              {loading ? (
+                <div className={`h-full w-2/5 ${sk} rounded-full`} />
+              ) : attemptsIsUnlimited ? (
+                <div className="h-full w-full bg-gradient-to-r from-amber-400 to-orange-400 rounded-full" />
+              ) : (
+                <div
+                  className="h-full bg-gradient-to-r from-amber-500 to-orange-400 rounded-full transition-all duration-700"
+                  style={{ width: `${attemptsPct}%` }}
                 />
               )}
             </div>
