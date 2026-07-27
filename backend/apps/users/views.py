@@ -54,7 +54,6 @@ class RegisterView(generics.CreateAPIView):
                     "message": "This email is already registered but not verified. A new OTP has been sent.",
                     "requires_verification": True,
                     "email": existing_user.email,
-                    "otp": otp_code,
                 }, status=status.HTTP_200_OK)
 
             # If user exists and is active → already registered
@@ -93,7 +92,6 @@ class RegisterView(generics.CreateAPIView):
                 "message": "Registration successful! Please verify your email with the OTP sent.",
                 "userId": user.id,
                 "email": user.email,
-                "otp": otp_code,
             }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -382,8 +380,7 @@ If you did not request this, please ignore this email.
             print(f"[ERROR] Email send failed: {e}")
 
         return Response({
-            "message": "OTP sent successfully to your email",
-            "otp": otp_code
+            "message": "OTP sent successfully to your email"
         }, status=status.HTTP_200_OK)
 
 
@@ -561,8 +558,7 @@ class ResendOTPView(APIView):
             print(f"Email failed: {e}")
 
         return Response({
-            "message": "OTP resent successfully",
-            "otp": otp_code
+            "message": "OTP resent successfully"
         }, status=200)
 
 

@@ -50,11 +50,11 @@ def notify_daily_goal_complete(user, completed, target):
     Idempotent per calendar day so we don't notify on every extra quiz.
     """
     try:
-        today = timezone.localdate()
+        today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
         already = Notification.objects.filter(
             user=user,
             type='daily_goal',
-            created_at__date=today,
+            created_at__gte=today_start,
         ).exists()
         if already:
             return None
@@ -82,11 +82,11 @@ def trigger_proactive_notifications(user):
         from apps.users.models import UserBadge
         from apps.notifications.models import Notification
 
-        today = timezone.localdate()
+        today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
         
         # 1. Daily Goal Warning
         completed_today = QuizAttempt.objects.filter(
-            user=user, submitted_at__date=today
+            user=user, submitted_at__gte=today_start
         ).exclude(submitted_at__isnull=True).count()
         target = getattr(user, 'daily_quiz_goal', 3) or 3
         
@@ -95,7 +95,7 @@ def trigger_proactive_notifications(user):
                 user=user,
                 type='daily_goal',
                 title__icontains="warning",
-                created_at__date=today
+                created_at__gte=today_start
             ).exists()
             if not warning_exists:
                 Notification.objects.create(

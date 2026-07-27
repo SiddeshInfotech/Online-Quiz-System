@@ -45,10 +45,11 @@ class StartAttemptView(APIView):
         is_pro = sub.is_pro
 
         # Check overall daily attempt limit across all quizzes (Free = Max 10 attempts/day, Pro = Unlimited)
-        today = timezone.localdate()
+        now_dt = timezone.now()
+        today_start = now_dt.replace(hour=0, minute=0, second=0, microsecond=0)
         today_attempts = QuizAttempt.objects.filter(
             user=request.user,
-            started_at__date=today
+            started_at__gte=today_start
         ).count()
 
         existing_attempt = QuizAttempt.objects.filter(
@@ -416,6 +417,13 @@ class SubmitAttemptView(APIView):
         # Minified response
         elapsed_ms = int((time.time() - start_time) * 1000)
         print(f"[SUCCESS] Quiz submitted in {elapsed_ms}ms")
+
+        # Invalidate leaderboard cache so real-time rankings update instantly
+        try:
+            from django.core.cache import cache
+            cache.delete("leaderboard_all_rankings")
+        except Exception:
+            pass
 
         return Response({
             "status": "success",

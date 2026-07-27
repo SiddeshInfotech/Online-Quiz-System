@@ -49,8 +49,7 @@ class OTPSendView(APIView):
             print(f"Email sending failed: {e}")
 
         return Response({
-            "message": "OTP sent successfully!",
-            "otp": otp_code  
+            "message": "OTP sent successfully!"
         }, status=status.HTTP_200_OK)
 
 class OTPVerifyView(APIView):
