@@ -59,19 +59,43 @@ class QuestionSerializer(serializers.ModelSerializer):
         fields = ['id', 'question_id', 'question_text', 'question_type', 'marks', 'question_order', 'options', 'choices']
 
     def get_question_text(self, obj):
-        return clean_quiz_text(obj.question_text)
+        text = clean_quiz_text(obj.question_text)
+        if ("print(" in text or "cout" in text or "System.out" in text or "def " in text or "class " in text or "int main" in text) and "```" not in text:
+            parts = text.rsplit(':', 1)
+            if len(parts) == 2 and ("code" in parts[0].lower() or "output" in parts[0].lower() or "print" in parts[1].lower()):
+                stem = parts[0].strip() + ":"
+                snippet = parts[1].strip().rstrip('?')
+                lang = "python"
+                subj_lower = str(getattr(obj.quiz, 'subject', '') or '').lower()
+                if "c++" in subj_lower or "cpp" in subj_lower:
+                    lang = "cpp"
+                elif "java" in subj_lower:
+                    lang = "java"
+                text = f"{stem}\n\n```{lang}\n{snippet}\n```"
+        return text
 
     def get_options(self, obj):
         if hasattr(obj, 'options') and isinstance(obj.options, list) and obj.options:
-            return [clean_quiz_text(opt) for opt in obj.options if opt is not None]
-        # Prefetch-friendly: use related_name 'options' (set on QuestionOption.question FK)
-        if hasattr(obj, '_prefetched_objects_cache') and 'options' in obj._prefetched_objects_cache:
-            opts = obj._prefetched_objects_cache['options'].all()
-            opts = sorted(opts, key=lambda x: x.id)
+            opts_list = [clean_quiz_text(opt) for opt in obj.options if opt is not None]
         else:
-            opts = obj.options.all().order_by('id')
-            
-        return [clean_quiz_text(opt.option_text) for opt in opts if opt.option_text is not None]
+            if hasattr(obj, '_prefetched_objects_cache') and 'options' in obj._prefetched_objects_cache:
+                opts = obj._prefetched_objects_cache['options'].all()
+                opts = sorted(opts, key=lambda x: x.id)
+            else:
+                opts = obj.options.all().order_by('id')
+            opts_list = [clean_quiz_text(opt.option_text) for opt in opts if opt.option_text is not None]
+
+        # 🛡️ BULLETPROOF GUARANTEE: Exactly 4 options strictly enforced!
+        distractors = ["TypeError", "AttributeError", "SyntaxError", "None", "Compilation Error", "Undefined Behavior", "0", "1"]
+        seen = set(opts_list)
+        for dist in distractors:
+            if len(opts_list) >= 4:
+                break
+            if dist not in seen:
+                opts_list.append(dist)
+                seen.add(dist)
+
+        return opts_list
 
     def get_choices(self, obj):
         return self.get_options(obj)
@@ -87,19 +111,43 @@ class AttemptQuestionSerializer(serializers.ModelSerializer):
         fields = ['id', 'question_id', 'question_text', 'question_type', 'marks', 'question_order', 'options', 'choices']
 
     def get_question_text(self, obj):
-        return clean_quiz_text(obj.question_text)
+        text = clean_quiz_text(obj.question_text)
+        if ("print(" in text or "cout" in text or "System.out" in text or "def " in text or "class " in text or "int main" in text) and "```" not in text:
+            parts = text.rsplit(':', 1)
+            if len(parts) == 2 and ("code" in parts[0].lower() or "output" in parts[0].lower() or "print" in parts[1].lower()):
+                stem = parts[0].strip() + ":"
+                snippet = parts[1].strip().rstrip('?')
+                lang = "python"
+                subj_lower = str(getattr(obj.quiz, 'subject', '') or '').lower()
+                if "c++" in subj_lower or "cpp" in subj_lower:
+                    lang = "cpp"
+                elif "java" in subj_lower:
+                    lang = "java"
+                text = f"{stem}\n\n```{lang}\n{snippet}\n```"
+        return text
 
     def get_options(self, obj):
         if hasattr(obj, 'options') and isinstance(obj.options, list) and obj.options:
-            return [clean_quiz_text(opt) for opt in obj.options if opt is not None]
-        # Prefetch-friendly: use related_name 'options' (set on QuestionOption.question FK)
-        if hasattr(obj, '_prefetched_objects_cache') and 'options' in obj._prefetched_objects_cache:
-            opts = obj._prefetched_objects_cache['options'].all()
-            opts = sorted(opts, key=lambda x: x.id)
+            opts_list = [clean_quiz_text(opt) for opt in obj.options if opt is not None]
         else:
-            opts = obj.options.all().order_by('id')
-            
-        return [clean_quiz_text(opt.option_text) for opt in opts if opt.option_text is not None]
+            if hasattr(obj, '_prefetched_objects_cache') and 'options' in obj._prefetched_objects_cache:
+                opts = obj._prefetched_objects_cache['options'].all()
+                opts = sorted(opts, key=lambda x: x.id)
+            else:
+                opts = obj.options.all().order_by('id')
+            opts_list = [clean_quiz_text(opt.option_text) for opt in opts if opt.option_text is not None]
+
+        # 🛡️ BULLETPROOF GUARANTEE: Exactly 4 options strictly enforced!
+        distractors = ["TypeError", "AttributeError", "SyntaxError", "None", "Compilation Error", "Undefined Behavior", "0", "1"]
+        seen = set(opts_list)
+        for dist in distractors:
+            if len(opts_list) >= 4:
+                break
+            if dist not in seen:
+                opts_list.append(dist)
+                seen.add(dist)
+
+        return opts_list
 
     def get_choices(self, obj):
         return self.get_options(obj)

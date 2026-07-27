@@ -171,16 +171,16 @@ class GenerateAIQuizView(APIView):
                 if options:
                     seen_opts = set()
                     for opt in options:
-                        clean_opt = clean_quiz_text(str(opt))
-                        if clean_opt and clean_opt.lower() not in seen_opts:
-                            seen_opts.add(clean_opt.lower())
+                        clean_opt = clean_quiz_text(str(opt)).strip()
+                        if clean_opt and clean_opt not in seen_opts:
+                            seen_opts.add(clean_opt)
                             trimmed_options.append(clean_opt)
 
                     if len(trimmed_options) > 4:
                         trimmed_options = trimmed_options[:4]
 
                     # 🛡️ GUARANTEE: Ensure correct_answer is ALWAYS in trimmed_options!
-                    has_correct = any(opt.lower() == trimmed_correct.lower() for opt in trimmed_options)
+                    has_correct = any(opt == trimmed_correct for opt in trimmed_options)
                     if not has_correct and trimmed_correct:
                         if len(trimmed_options) >= 4:
                             trimmed_options[0] = trimmed_correct
@@ -188,7 +188,7 @@ class GenerateAIQuizView(APIView):
                             trimmed_options.append(trimmed_correct)
 
                     try:
-                        correct_index = [opt.lower() for opt in trimmed_options].index(trimmed_correct.lower())
+                        correct_index = [opt for opt in trimmed_options].index(trimmed_correct)
                     except ValueError:
                         correct_index = 0
                         trimmed_options[0] = trimmed_correct
@@ -197,6 +197,31 @@ class GenerateAIQuizView(APIView):
                 else:
                     final_correct_text = trimmed_correct
                     correct_index = 0
+                    trimmed_options = [trimmed_correct]
+
+                # 🛡️ GUARANTEE STRICTLY 4 OPTIONS FOR EVERY QUESTION!
+                fallback_distractors = ["TypeError", "AttributeError", "SyntaxError", "None", "Compilation Error", "Undefined Behavior", "0", "1"]
+                seen_set = set(trimmed_options)
+                for dist in fallback_distractors:
+                    if len(trimmed_options) >= 4:
+                        break
+                    if dist not in seen_set:
+                        trimmed_options.append(dist)
+                        seen_set.add(dist)
+
+                # Format code snippet in question_text if unformatted
+                if ("print(" in question_text or "cout" in question_text or "System.out" in question_text or "def " in question_text or "class " in question_text or "int main" in question_text) and "```" not in question_text:
+                    parts = question_text.rsplit(':', 1)
+                    if len(parts) == 2 and ("code" in parts[0].lower() or "output" in parts[0].lower() or "print" in parts[1].lower()):
+                        stem = parts[0].strip() + ":"
+                        snippet = parts[1].strip().rstrip('?')
+                        lang = "python"
+                        subj_lower = str(subject).lower()
+                        if "c++" in subj_lower or "cpp" in subj_lower:
+                            lang = "cpp"
+                        elif "java" in subj_lower:
+                            lang = "java"
+                        question_text = f"{stem}\n\n```{lang}\n{snippet}\n```"
 
                 question = Question.objects.create(
                     quiz=quiz,
