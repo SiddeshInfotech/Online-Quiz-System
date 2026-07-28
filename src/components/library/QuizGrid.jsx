@@ -84,42 +84,44 @@ const QuizGrid = ({
               className="
                 inline-flex items-center gap-2 h-9 px-3
                 rounded-lg border border-app surface
-                text-xs font-medium text-slate-600
-                hover:border-slate-300 transition-all
+                text-xs font-medium text-app-2
+                hover:border-violet-400 transition-all cursor-pointer
                 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2
               "
               aria-haspopup="listbox"
               aria-expanded={sortOpen}
             >
-              <span className="text-slate-400">Sort by:</span>
-              <span className="font-semibold text-app-2">{currentSort}</span>
+              <span className="text-app-muted">Sort by:</span>
+              <span className="font-semibold text-app">{currentSort}</span>
               <ChevronDown
                 size={14}
-                className={`text-slate-400 transition-transform duration-200 ${
+                className={`text-app-muted transition-transform duration-200 ${
                   sortOpen ? "rotate-180" : ""
                 }`}
               />
             </button>
 
             {sortOpen && (
-              <div className="absolute right-0 top-full mt-1 w-44 surface rounded-xl border border-app shadow-xl z-20 py-1 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="absolute right-0 top-full mt-1.5 w-48 surface border border-app rounded-xl shadow-2xl z-30 py-1.5 animate-in fade-in slide-in-from-top-2 duration-150 font-inter">
                 {sortOptions.map((opt) => (
                   <button
                     key={opt}
+                    type="button"
                     onClick={() => {
                       onSortChange(opt);
                       setSortOpen(false);
                     }}
                     className={`
-                      w-full text-left px-4 py-2 text-xs font-medium transition-colors
+                      w-full text-left px-4 py-2.5 text-xs font-semibold transition-colors flex items-center justify-between cursor-pointer
                       ${
                         currentSort === opt
-                          ? "text-violet-600 bg-violet-50"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-violet-600"
+                          ? "text-violet-600 dark:text-violet-400 bg-violet-500/10 font-bold"
+                          : "text-app hover:bg-violet-500/10 hover:text-violet-600 dark:hover:text-violet-400"
                       }
                     `}
                   >
-                    {opt}
+                    <span>{opt}</span>
+                    {currentSort === opt && <span className="text-violet-600 dark:text-violet-400 font-bold">✓</span>}
                   </button>
                 ))}
               </div>

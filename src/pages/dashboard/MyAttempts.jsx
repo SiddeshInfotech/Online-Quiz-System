@@ -12,12 +12,15 @@ import {
   XCircle,
   RotateCcw,
   Eye,
+  Lock,
 } from "lucide-react";
 
 import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import attemptsService from "../../services/attemptsService";
+import { useAuth } from "../../hooks/useAuth";
+import { getCurrentPlan } from "../pricing/PricingPage";
 import { getLanguageIcon } from "../../utils/languageIcons";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -119,11 +122,19 @@ const AttemptCard = ({ attempt }) => {
   const difficulty = attempt.difficulty_level || attempt.difficulty || "";
   const category = attempt.category || "";
 
-  // Backend Retry Metadata
-  const canRetry = attempt.can_retry ?? attempt.quiz?.can_retry ?? false;
-  const retryCount = attempt.attempt_count ?? attempt.retry_count ?? 1;
-  const maxRetry = attempt.max_attempts ?? attempt.max_retry ?? 1;
-  const retryTooltip = `You have used ${retryCount} of ${maxRetry} allowed ${maxRetry === 1 ? "attempt" : "attempts"}.`;
+  const { currentUser } = useAuth();
+  const userPlan = (getCurrentPlan(currentUser) || "free").toLowerCase();
+  const isPro = userPlan === "pro" || userPlan === "premium" || Boolean(currentUser?.is_pro || currentUser?.is_premium || currentUser?.subscription?.is_pro);
+
+  // Retries count logic: Free tier has 0 retries allowed, Pro tier has 1 retry allowed.
+  const maxRetriesAllowed = isPro ? 1 : 0;
+  const attemptsMade = attempt.attempt_count ?? attempt.attempts_count ?? 1;
+  const retriesUsed = attemptsMade > 1 ? 1 : 0;
+
+  const canRetry = isPro && retriesUsed < maxRetriesAllowed && attempt.can_retry !== false;
+  const retryTooltip = isPro
+    ? (canRetry ? "1 retry available on Pro Plan." : "Maximum 1 retry used on Pro Plan.")
+    : "Free Plan allows 1 attempt per quiz with 0 retries. Upgrade to Pro for retries!";
 
   const navigate = useNavigate();
   const [isRetrying, setIsRetrying] = useState(false);
@@ -141,7 +152,21 @@ const AttemptCard = ({ attempt }) => {
   const [retryError, setRetryError] = useState(null);
 
   const handleRetry = async () => {
+    if (!isPro) {
+      window.dispatchEvent(
+        new CustomEvent("subscription:premium-required", {
+          detail: {
+            message: "Quiz retries are exclusive to QuizGen Pro members (1 retry per quiz). Upgrade to Pro to retry your quizzes!",
+            featureKey: "quiz_retry",
+            upgradeUrl: "/pricing",
+          },
+        })
+      );
+      return;
+    }
+
     if (!canRetry) return;
+
     try {
       setIsRetrying(true);
       setRetryError(null);
@@ -213,9 +238,9 @@ const AttemptCard = ({ attempt }) => {
                     )}
                     {displayStatus}
                   </Badge>
-                  <Badge variant={canRetry ? "warning" : "gray"}>
+                  <Badge variant={!isPro ? "gray" : canRetry ? "warning" : "gray"}>
                     <RotateCcw size={11} className="mr-1" />
-                    Retry: {retryCount} / {maxRetry} Used
+                    {!isPro ? "No Retries (Free)" : `Retry: ${retriesUsed} / ${maxRetriesAllowed} Used`}
                   </Badge>
                 </div>
               </div>
@@ -249,21 +274,44 @@ const AttemptCard = ({ attempt }) => {
               <Eye size={14} />
               View Answers
             </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="gap-2 w-full justify-center text-xs"
-              onClick={handleRetry}
-              disabled={isRetrying || !canRetry}
-              title={retryTooltip}
-            >
-              {isRetrying ? (
-                <div className="w-3.5 h-3.5 border-2 border-slate-400/30 border-t-slate-600 rounded-full animate-spin" />
-              ) : (
-                <RotateCcw size={14} />
-              )}
-              {isRetrying ? "Starting..." : !canRetry ? "Retry Limit Reached" : "Retry Quiz"}
-            </Button>
+            {!isPro ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="gap-2 w-full justify-center text-xs opacity-80 hover:opacity-100 border-amber-500/30 text-amber-600 dark:text-amber-400 cursor-pointer font-semibold"
+                onClick={() => {
+                  window.dispatchEvent(
+                    new CustomEvent("subscription:premium-required", {
+                      detail: {
+                        message: "Quiz retries are exclusive to QuizGen Pro members (1 retry per quiz). Upgrade to Pro to retry your quizzes!",
+                        featureKey: "quiz_retry",
+                        upgradeUrl: "/pricing",
+                      },
+                    })
+                  );
+                }}
+                title="Free Tier: No Retries Allowed. Upgrade to Pro!"
+              >
+                <Lock size={14} className="text-amber-500" />
+                Retry (Pro Only)
+              </Button>
+            ) : (
+              <Button
+                variant={canRetry ? "primary" : "secondary"}
+                size="sm"
+                className="gap-2 w-full justify-center text-xs cursor-pointer"
+                onClick={handleRetry}
+                disabled={isRetrying || !canRetry}
+                title={retryTooltip}
+              >
+                {isRetrying ? (
+                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <RotateCcw size={14} />
+                )}
+                {isRetrying ? "Starting..." : !canRetry ? "Retry Limit Reached" : "Retry Quiz"}
+              </Button>
+            )}
           </div>
         </div>
       </div>

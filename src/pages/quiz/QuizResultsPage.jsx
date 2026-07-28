@@ -2,6 +2,8 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import attemptsService from "../../services/attemptsService";
 import Button from "../../components/ui/Button";
+import { useAuth } from "../../hooks/useAuth";
+import { getCurrentPlan } from "../pricing/PricingPage";
 
 // Components
 import ResultHero from "./components/results/ResultHero";
@@ -14,6 +16,7 @@ import ResultActions from "./components/results/ResultActions";
 const QuizResultsPage = () => {
   const { attemptId } = useParams();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
 
   // Always fetch the result from the API — never rely on submit response state.
   // The submit endpoint now returns only { status, attempt_id, result_id }.
@@ -42,9 +45,14 @@ const QuizResultsPage = () => {
 
   const [actionError, setActionError] = useState(null);
 
-  const canRetry = result?.can_retry ?? result?.quiz?.can_retry ?? false;
-  const attemptCount = result?.attempt_count ?? result?.quiz?.attempt_count ?? null;
-  const maxAttempts = result?.max_attempts ?? result?.quiz?.max_attempts ?? null;
+  // Plan & Tier Check: Free = 1 attempt total (0 retries), Pro = 2 attempts total (1 retry)
+  const userPlan = (getCurrentPlan(currentUser) || "free").toLowerCase();
+  const isPro = userPlan === "pro" || userPlan === "premium" || Boolean(currentUser?.is_pro || currentUser?.is_premium || currentUser?.subscription?.is_pro);
+
+  const maxAttempts = isPro ? 2 : 1;
+  const rawAttemptCount = result?.attempt_count ?? result?.quiz?.attempt_count ?? 1;
+  const attemptCount = Math.min(rawAttemptCount, maxAttempts);
+  const canRetry = isPro ? (rawAttemptCount < maxAttempts && result?.can_retry !== false) : false;
 
   const handleRetry = async () => {
     const quizId = result?.quiz?.id || result?.quiz_id;
@@ -132,7 +140,7 @@ const QuizResultsPage = () => {
         </div>
       )}
       <div className="max-w-5xl mx-auto space-y-6">
-        
+
         {/* Header Section */}
         <ResultHero result={result} isLoading={isLoading} />
 
@@ -148,12 +156,19 @@ const QuizResultsPage = () => {
 
           {/* Right Column (Info Card) */}
           <div className="lg:col-span-1">
-            <QuizInfoCard result={result} isLoading={isLoading} />
+            <QuizInfoCard
+              result={result}
+              isLoading={isLoading}
+              isPro={isPro}
+              attemptCount={attemptCount}
+              maxAttempts={maxAttempts}
+            />
           </div>
         </div>
 
         {/* Actions */}
-        <ResultActions 
+        <ResultActions
+          isPro={isPro}
           canRetry={canRetry}
           attemptCount={attemptCount}
           maxAttempts={maxAttempts}
@@ -163,7 +178,7 @@ const QuizResultsPage = () => {
           isLoading={isLoading}
           returnLabel="Back to Dashboard"
         />
-        
+
       </div>
     </div>
   );

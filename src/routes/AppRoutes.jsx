@@ -1,12 +1,12 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route, Outlet } from "react-router-dom";
 
-import LandingPage from "../pages/LandingPage";
 import DashboardLayout from "../layouts/DashboardLayout";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import { AdminAuthProvider } from "../context/AdminAuthContext";
 
 // Lazy-loaded pages for bundle optimization
+const LandingPage = lazy(() => import("../pages/LandingPage"));
 const TermsOfServicePage = lazy(() => import("../pages/legal/TermsOfServicePage"));
 const PrivacyPolicyPage = lazy(() => import("../pages/legal/PrivacyPolicyPage"));
 const ContactPage = lazy(() => import("../pages/contact/ContactPage"));

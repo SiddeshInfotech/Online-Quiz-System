@@ -42,7 +42,7 @@ const LibraryPage = () => {
   const [categories, setCategories] = useState(PROGRAMMING_CATEGORIES);
   const [allQuizzes, setAllQuizzes] = useState([]);
   const [metaMessage, setMetaMessage] = useState("");
-  
+
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [loadingLibrary, setLoadingLibrary] = useState(false);
   const [error, setError] = useState(null);
@@ -88,7 +88,7 @@ const LibraryPage = () => {
 
   const handleApplyFilters = useCallback(() => {
     setAppliedFilters({ ...sidebarFilters });
-    
+
     // Sync activeCategory with Filter Drawer subject
     if (sidebarFilters.subject === "All Subjects") {
       setActiveCategory("all");
@@ -99,7 +99,7 @@ const LibraryPage = () => {
       if (cat) {
         setActiveCategory(cat.id);
       } else {
-        setActiveCategory("all"); 
+        setActiveCategory("all");
       }
     }
 
@@ -116,7 +116,7 @@ const LibraryPage = () => {
           libraryService.getCategories().catch(() => null),
           libraryService.getLibraryMeta().catch(() => null),
         ]);
-        
+
         if (catRes && Array.isArray(catRes) && catRes.length > 0) {
           const apiCats = catRes.map(c => ({
             id: c.id || String(c.name).toLowerCase(),
@@ -124,7 +124,7 @@ const LibraryPage = () => {
           }));
           setCategories([{ id: "all", label: "All Categories" }, ...apiCats]);
         }
-        
+
         if (metaRes && metaRes.message) {
           setMetaMessage(metaRes.message);
         }
@@ -142,11 +142,10 @@ const LibraryPage = () => {
     const fetchQuizzes = async () => {
       try {
         setLoadingLibrary(true);
-        
+
         // Map ordering parameter
         let orderingParam = "-created_at";
         if (currentSort === "Oldest") orderingParam = "created_at";
-        else if (currentSort === "Most Popular") orderingParam = "-attempts_count";
         else if (currentSort === "Difficulty: Easy") orderingParam = "difficulty";
         else if (currentSort === "Difficulty: Hard") orderingParam = "-difficulty";
 
@@ -203,6 +202,34 @@ const LibraryPage = () => {
               return prog === 0 && !q.is_completed;
             }
             return true;
+          });
+        }
+
+        // Client-side sort guarantee (ensures all sort modes work deterministically)
+        const diffWeight = { easy: 1, medium: 2, hard: 3 };
+        if (currentSort === "Oldest") {
+          rawList.sort((a, b) => {
+            const dateA = a.created_at ? new Date(a.created_at).getTime() : (typeof a.id === "number" ? a.id : 0);
+            const dateB = b.created_at ? new Date(b.created_at).getTime() : (typeof b.id === "number" ? b.id : 0);
+            return dateA - dateB;
+          });
+        } else if (currentSort === "Difficulty: Easy") {
+          rawList.sort((a, b) => {
+            const weightA = diffWeight[(a.difficulty || "medium").toLowerCase()] || 2;
+            const weightB = diffWeight[(b.difficulty || "medium").toLowerCase()] || 2;
+            return weightA - weightB;
+          });
+        } else if (currentSort === "Difficulty: Hard") {
+          rawList.sort((a, b) => {
+            const weightA = diffWeight[(a.difficulty || "medium").toLowerCase()] || 2;
+            const weightB = diffWeight[(b.difficulty || "medium").toLowerCase()] || 2;
+            return weightB - weightA;
+          });
+        } else if (currentSort === "Newest") {
+          rawList.sort((a, b) => {
+            const dateA = a.created_at ? new Date(a.created_at).getTime() : (typeof a.id === "number" ? a.id : 0);
+            const dateB = b.created_at ? new Date(b.created_at).getTime() : (typeof b.id === "number" ? b.id : 0);
+            return dateB - dateA;
           });
         }
 
@@ -280,25 +307,23 @@ const LibraryPage = () => {
               setScopeTab("all");
               setCurrentPage(1);
             }}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer ${
-              scopeTab === "all"
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer ${scopeTab === "all"
                 ? "bg-violet-600 text-white shadow-md shadow-violet-600/20"
                 : "surface-subtle text-app-2 border border-app hover:border-violet-400 hover:text-violet-600"
-            }`}
+              }`}
           >
             <Globe size={15} />
-            All Public Quizzes
+            All Quizzes
           </button>
           <button
             onClick={() => {
               setScopeTab("my_quizzes");
               setCurrentPage(1);
             }}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer ${
-              scopeTab === "my_quizzes"
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer ${scopeTab === "my_quizzes"
                 ? "bg-violet-600 text-white shadow-md shadow-violet-600/20"
                 : "surface-subtle text-app-2 border border-app hover:border-violet-400 hover:text-violet-600"
-            }`}
+              }`}
           >
             <UserCheck size={15} />
             My Created Quizzes

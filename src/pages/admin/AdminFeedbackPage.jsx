@@ -15,6 +15,7 @@ import {
   Clock,
   Send,
   X,
+  ArrowLeft,
   ChevronLeft,
   ChevronRight,
   User,
@@ -88,11 +89,10 @@ const StarDisplay = ({ rating = 0, size = 16, interactive = false, onChange }) =
         >
           <Star
             size={size}
-            className={`${
-              star <= currentRating
-                ? "text-amber-400 fill-amber-400"
-                : "text-slate-700 fill-slate-800/40"
-            } transition-colors`}
+            className={`${star <= currentRating
+              ? "text-amber-400 fill-amber-400"
+              : "text-slate-700 fill-slate-800/40"
+              } transition-colors`}
           />
         </button>
       ))}
@@ -287,7 +287,7 @@ const AdminFeedbackPage = () => {
       };
 
       const res = await adminFeedbackService.getFeedbacks(params);
-      
+
       if (res && Array.isArray(res.results)) {
         setFeedbacks(res.results);
         setPaginationInfo({
@@ -523,9 +523,8 @@ const AdminFeedbackPage = () => {
       <AdminConfirmModal
         isOpen={Boolean(deleteTarget)}
         title="Delete User Feedback?"
-        message={`Are you sure you want to delete feedback #${deleteTarget?.id} submitted by ${
-          deleteTarget?.user_name || deleteTarget?.student_name || deleteTarget?.username || "this user"
-        }? This action cannot be undone.`}
+        message={`Are you sure you want to delete feedback #${deleteTarget?.id} submitted by ${deleteTarget?.user_name || deleteTarget?.student_name || deleteTarget?.username || "this user"
+          }? This action cannot be undone.`}
         confirmText="Delete Feedback"
         cancelText="Cancel"
         variant="danger"
@@ -623,11 +622,10 @@ const AdminFeedbackPage = () => {
                           key={st}
                           type="button"
                           onClick={() => setEditStatus(st)}
-                          className={`py-2 px-1 rounded-lg text-xs font-semibold border text-center transition-all cursor-pointer ${
-                            isActive
-                              ? activeStyle
-                              : "border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900"
-                          }`}
+                          className={`py-2 px-1 rounded-lg text-xs font-semibold border text-center transition-all cursor-pointer ${isActive
+                            ? activeStyle
+                            : "border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                            }`}
                         >
                           {st}
                         </button>
@@ -658,37 +656,39 @@ const AdminFeedbackPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Moderation Detail Drawer */}
+      {/* Moderation Detail View (100% Fullscreen Overlay) */}
       <AnimatePresence>
         {selectedFeedback && (
-          <div className="fixed inset-0 z-50 flex justify-end">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
-              onClick={handleCloseDrawer}
-            />
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 15 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 bg-slate-950 flex flex-col w-full h-full overflow-hidden text-slate-100 font-inter"
+          >
+            {/* Fullscreen Header */}
+            <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md flex items-center justify-between shrink-0 sticky top-0 z-20">
+              <div className="flex items-center gap-4 min-w-0">
+                <button
+                  type="button"
+                  onClick={handleCloseDrawer}
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors flex items-center gap-2 text-xs font-semibold shrink-0 cursor-pointer"
+                >
+                  <ArrowLeft size={18} />
+                  <span className="hidden sm:inline">Back to List</span>
+                </button>
 
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="relative z-10 w-full max-w-xl bg-slate-900 border-l border-slate-800 h-full flex flex-col shadow-2xl text-slate-100"
-            >
-              {/* Drawer Header */}
-              <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/95 sticky top-0 z-20">
+                <div className="h-5 w-px bg-slate-800 hidden sm:block" />
+
                 <div className="flex items-center gap-3.5 min-w-0">
-                  {/* User Profile Avatar / Initial */}
                   {selectedFeedback.profile_picture ? (
                     <img
                       src={resolveMediaUrl(selectedFeedback.profile_picture || selectedFeedback.user_avatar)}
                       alt="Avatar"
-                      className="w-12 h-12 rounded-2xl object-cover border border-violet-500/30 shrink-0"
+                      className="w-10 h-10 rounded-2xl object-cover border border-violet-500/30 shrink-0"
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded-2xl bg-violet-600/20 border border-violet-500/30 text-violet-300 flex items-center justify-center font-bold text-base shrink-0 shadow-lg shadow-violet-600/10">
+                    <div className="w-10 h-10 rounded-2xl bg-violet-600/20 border border-violet-500/30 text-violet-300 flex items-center justify-center font-bold text-sm shrink-0 shadow-lg shadow-violet-600/10">
                       {(selectedFeedback.user_name || selectedFeedback.student_name || selectedFeedback.username || "U")[0].toUpperCase()}
                     </div>
                   )}
@@ -696,268 +696,268 @@ const AdminFeedbackPage = () => {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2.5 flex-wrap">
                       <h3 className="font-bold text-base font-space-grotesk text-slate-100 leading-snug truncate">
-                        {selectedFeedback.user_name || selectedFeedback.student_name || selectedFeedback.username || "Anonymous User"}
+                        Feedback Details
                       </h3>
                       <StatusBadge status={selectedFeedback.status} />
                     </div>
                     <p className="text-xs text-slate-400 mt-0.5 truncate">
-                      {selectedFeedback.email || "No email"} • <span className="font-mono text-slate-400">#FB-{selectedFeedback.id}</span>
+                      Submitted by <strong className="text-slate-200">{selectedFeedback.user_name || selectedFeedback.username || "User"}</strong> ({selectedFeedback.email || "No email"}) • <span className="font-mono text-slate-400">#FB-{selectedFeedback.id}</span>
                     </p>
                   </div>
                 </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCloseDrawer}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Fullscreen Body Scrollable */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-6 text-xs max-w-4xl mx-auto w-full">
+              {drawerLoading ? (
+                <div className="space-y-4 animate-pulse">
+                  <div className="h-24 bg-slate-900 rounded-xl border border-slate-800" />
+                  <div className="h-28 bg-slate-900 rounded-xl border border-slate-800" />
+                  <div className="h-12 bg-slate-900 rounded-xl border border-slate-800" />
+                </div>
+              ) : (
+                <>
+                  {/* User Information Card */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      User Information
+                    </label>
+                    <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                      <div>
+                        <span className="text-slate-400 font-medium block text-[11px] mb-0.5">Username</span>
+                        <strong className="text-slate-100 font-semibold text-sm">@{selectedFeedback.username || "N/A"}</strong>
+                      </div>
+
+                      <div>
+                        <span className="text-slate-400 font-medium block text-[11px] mb-0.5">Submitted Date</span>
+                        <span className="text-slate-200 font-medium">{formatDate(selectedFeedback.created_at)}</span>
+                      </div>
+
+                      <div>
+                        <span className="text-slate-400 font-medium block text-[11px] mb-0.5">Email Address</span>
+                        <span className="text-slate-200 font-mono text-xs truncate block">{selectedFeedback.email || "N/A"}</span>
+                      </div>
+
+                      <div>
+                        <span className="text-slate-400 font-medium block text-[11px] mb-0.5">Rating</span>
+                        <StarDisplay rating={selectedFeedback.rating} size={16} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Customer Feedback Card */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Customer Feedback Message
+                      </label>
+                      <StarDisplay rating={selectedFeedback.rating} size={16} />
+                    </div>
+                    <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800 text-slate-100 font-medium text-sm leading-relaxed whitespace-pre-wrap">
+                      "{selectedFeedback.message}"
+                    </div>
+                  </div>
+
+                  {/* Status Management */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Status Management
+                    </label>
+                    <div className="bg-slate-900 p-2 rounded-2xl border border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {["Pending", "Reviewed", "Replied", "Hidden"].map((st) => {
+                        const isActive = (selectedFeedback.status || "").toLowerCase() === st.toLowerCase();
+                        let activeStyle = "bg-violet-600 text-white shadow-md font-bold border-violet-500";
+                        if (st === "Pending") activeStyle = "bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold";
+                        if (st === "Reviewed") activeStyle = "bg-sky-500/20 text-sky-300 border-sky-500/40 font-bold";
+                        if (st === "Replied") activeStyle = "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold";
+                        if (st === "Hidden") activeStyle = "bg-slate-800 text-slate-200 border-slate-700 font-bold";
+
+                        return (
+                          <button
+                            key={st}
+                            type="button"
+                            onClick={() => handleStatusChange(selectedFeedback, st)}
+                            className={`py-2.5 px-2 rounded-xl text-xs font-semibold border text-center transition-all cursor-pointer ${isActive
+                              ? activeStyle
+                              : "border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-950"
+                              }`}
+                          >
+                            {st}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-slate-800/80 my-3" />
+
+                  {/* Admin Reply Section */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <Reply size={14} className="text-violet-400" /> Admin Reply
+                      </label>
+
+                      <div className="flex items-center gap-2">
+                        {(selectedFeedback.reply_message || selectedFeedback.admin_reply) && !isReplying && (
+                          <button
+                            type="button"
+                            onClick={() => setIsReplying(true)}
+                            className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                          >
+                            <Edit2 size={13} /> Edit Reply
+                          </button>
+                        )}
+
+                        {!(selectedFeedback.reply_message || selectedFeedback.admin_reply) && !isReplying && (
+                          <button
+                            type="button"
+                            onClick={() => setIsReplying(true)}
+                            className="px-3.5 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-md cursor-pointer"
+                          >
+                            <Reply size={13} /> Reply
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Reply Confirmation Card */}
+                    {(selectedFeedback.reply_message || selectedFeedback.admin_reply) && !isReplying && (
+                      <div className="bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/30 p-5 rounded-2xl space-y-2">
+                        <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2">
+                          <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                            <CheckCircle2 size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" /> ✔ Reply Sent
+                          </span>
+                          <span className="text-[10px] font-medium text-emerald-700/80 dark:text-emerald-400/80">
+                            {formatDate(selectedFeedback.reply_date || selectedFeedback.replied_at || selectedFeedback.updated_at)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-800 dark:text-slate-100 leading-relaxed font-normal italic">
+                          "{selectedFeedback.reply_message || selectedFeedback.admin_reply}"
+                        </p>
+                        <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold pt-1">
+                          Replied by {selectedFeedback.replied_by_username || "Admin Staff"}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Collapsible Reply Editor */}
+                    {isReplying && (
+                      <form onSubmit={handleSaveReply} className="space-y-3 bg-slate-900 p-5 rounded-2xl border border-slate-800">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            Select Quick Template:
+                          </span>
+                          <span className="text-[10px] text-violet-400 font-medium">Click chip to insert</span>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5">
+                          {PREDEFINED_REPLIES.map((tmpl, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setReplyText(tmpl)}
+                              className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-violet-500/50 hover:bg-violet-600/10 text-slate-300 hover:text-violet-300 text-[11px] font-medium transition-all text-left cursor-pointer"
+                            >
+                              {tmpl}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="relative">
+                          <textarea
+                            rows={5}
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-100 focus:outline-none focus:border-violet-500 resize-none leading-relaxed"
+                            placeholder="Write a professional response..."
+                            maxLength={1000}
+                          />
+                          <div className={`text-right text-[10px] mt-1 font-mono ${replyText.length > 1000 ? 'text-red-400' : 'text-slate-500'}`}>
+                            {replyText.length} / 1000
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2.5 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setIsReplying(false)}
+                            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium text-xs transition-colors cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={isSubmittingReply}
+                            className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-xl text-xs transition-colors shadow-lg flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                          >
+                            <Send size={13} />
+                            {isSubmittingReply ? "Saving..." : "Save Reply"}
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Footer Actions Bar */}
+            <div className="p-4 sm:px-8 border-t border-slate-800 bg-slate-900/95 sticky bottom-0 z-20 flex flex-wrap items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleToggleHide(selectedFeedback)}
+                  className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  {(selectedFeedback.status || "").toLowerCase() === "hidden" ? (
+                    <>
+                      <Eye size={14} className="text-emerald-400" /> Unhide Feedback
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff size={14} className="text-amber-400" /> Hide Feedback
+                    </>
+                  )}
+                </button>
 
                 <button
-                  onClick={handleCloseDrawer}
-                  className="p-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+                  type="button"
+                  onClick={() => setDeleteTarget(selectedFeedback)}
+                  className="px-3.5 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  <X size={20} />
+                  <Trash2 size={14} /> Delete Feedback
                 </button>
               </div>
 
-              {/* Drawer Body Scrollable */}
-              <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 text-xs">
-                {drawerLoading ? (
-                  <div className="space-y-4 animate-pulse">
-                    <div className="h-24 bg-slate-950 rounded-xl border border-slate-800" />
-                    <div className="h-28 bg-slate-950 rounded-xl border border-slate-800" />
-                    <div className="h-12 bg-slate-950 rounded-xl border border-slate-800" />
-                  </div>
-                ) : (
-                  <>
-                    {/* User Information Card (Two-column layout) */}
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        User Information
-                      </label>
-                      <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                        <div>
-                          <span className="text-slate-500 font-medium block text-[11px] mb-0.5">Username</span>
-                          <strong className="text-slate-200 font-semibold">@{selectedFeedback.username || "N/A"}</strong>
-                        </div>
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleCloseDrawer}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium text-xs transition-colors cursor-pointer"
+                >
+                  Close View
+                </button>
 
-                        <div>
-                          <span className="text-slate-500 font-medium block text-[11px] mb-0.5">Submitted Date</span>
-                          <span className="text-slate-300 font-medium">{formatDate(selectedFeedback.created_at)}</span>
-                        </div>
-
-                        <div>
-                          <span className="text-slate-500 font-medium block text-[11px] mb-0.5">Email Address</span>
-                          <span className="text-slate-300 font-mono text-[11px] truncate block">{selectedFeedback.email || "N/A"}</span>
-                        </div>
-
-                        <div>
-                          <span className="text-slate-500 font-medium block text-[11px] mb-0.5">Rating</span>
-                          <StarDisplay rating={selectedFeedback.rating} size={15} />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Customer Feedback Card */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                          Customer Feedback
-                        </label>
-                        <StarDisplay rating={selectedFeedback.rating} size={16} />
-                      </div>
-                      <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-slate-100 font-medium text-sm leading-relaxed whitespace-pre-wrap">
-                        "{selectedFeedback.message}"
-                      </div>
-                    </div>
-
-                    {/* Status Management Segmented Pill Tabs */}
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        Status Management
-                      </label>
-                      <div className="bg-slate-950 p-1.5 rounded-xl border border-slate-800 grid grid-cols-4 gap-1">
-                        {["Pending", "Reviewed", "Replied", "Hidden"].map((st) => {
-                          const isActive = (selectedFeedback.status || "").toLowerCase() === st.toLowerCase();
-                          let activeStyle = "bg-violet-600 text-white shadow-md font-bold border-violet-500";
-                          if (st === "Pending") activeStyle = "bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold";
-                          if (st === "Reviewed") activeStyle = "bg-sky-500/20 text-sky-300 border-sky-500/40 font-bold";
-                          if (st === "Replied") activeStyle = "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold";
-                          if (st === "Hidden") activeStyle = "bg-slate-800 text-slate-200 border-slate-700 font-bold";
-
-                          return (
-                            <button
-                              key={st}
-                              type="button"
-                              onClick={() => handleStatusChange(selectedFeedback, st)}
-                              className={`py-2 px-1 rounded-lg text-xs font-semibold border text-center transition-all cursor-pointer ${
-                                isActive
-                                  ? activeStyle
-                                  : "border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900"
-                              }`}
-                            >
-                              {st}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="h-px bg-slate-800/80 my-2" />
-
-                    {/* Admin Reply Section */}
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                          <Reply size={14} className="text-violet-400" /> Admin Reply
-                        </label>
-
-                        <div className="flex items-center gap-2">
-                          {(selectedFeedback.reply_message || selectedFeedback.admin_reply) && !isReplying && (
-                            <button
-                              type="button"
-                              onClick={() => setIsReplying(true)}
-                              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-                            >
-                              <Edit2 size={12} /> Edit Reply
-                            </button>
-                          )}
-
-                          {!(selectedFeedback.reply_message || selectedFeedback.admin_reply) && !isReplying && (
-                            <button
-                              type="button"
-                              onClick={() => setIsReplying(true)}
-                              className="px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-semibold flex items-center gap-1 transition-colors shadow-md cursor-pointer"
-                            >
-                              <Reply size={12} /> Reply
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Reply Confirmation Card */}
-                      {(selectedFeedback.reply_message || selectedFeedback.admin_reply) && !isReplying && (
-                        <div className="bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/30 p-4 rounded-xl space-y-2">
-                          <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2">
-                            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                              <CheckCircle2 size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" /> ✔ Reply Sent
-                            </span>
-                            <span className="text-[10px] font-medium text-emerald-700/80 dark:text-emerald-400/80">
-                              {formatDate(selectedFeedback.reply_date || selectedFeedback.replied_at || selectedFeedback.updated_at)}
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-800 dark:text-slate-100 leading-relaxed font-normal italic">
-                            "{selectedFeedback.reply_message || selectedFeedback.admin_reply}"
-                          </p>
-                          <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold pt-1">
-                            Replied by {selectedFeedback.replied_by_username || "Admin Staff"}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Collapsible Reply Editor */}
-                      {isReplying && (
-                        <form onSubmit={handleSaveReply} className="space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                              Select Quick Template:
-                            </span>
-                            <span className="text-[10px] text-violet-400 font-medium">Click chip to insert</span>
-                          </div>
-
-                          <div className="flex flex-wrap gap-1.5">
-                            {PREDEFINED_REPLIES.map((tmpl, idx) => (
-                              <button
-                                key={idx}
-                                type="button"
-                                onClick={() => setReplyText(tmpl)}
-                                className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 hover:border-violet-500/50 hover:bg-violet-600/10 text-slate-300 hover:text-violet-300 text-[11px] font-medium transition-all text-left cursor-pointer"
-                              >
-                                {tmpl}
-                              </button>
-                            ))}
-                          </div>
-
-                          <div className="relative">
-                            <textarea
-                              rows={5}
-                              value={replyText}
-                              onChange={(e) => setReplyText(e.target.value)}
-                              className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-100 focus:outline-none focus:border-violet-500 resize-none leading-relaxed"
-                              placeholder="Write a professional response..."
-                              maxLength={1000}
-                            />
-                            <div className={`text-right text-[10px] mt-1 font-mono ${replyText.length > 1000 ? 'text-red-400' : 'text-slate-500'}`}>
-                              {replyText.length} / 1000
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-end gap-2.5 pt-1">
-                            <button
-                              type="button"
-                              onClick={() => setIsReplying(false)}
-                              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium text-xs transition-colors cursor-pointer"
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="submit"
-                              disabled={isSubmittingReply}
-                              className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-xl text-xs transition-colors shadow-lg flex items-center gap-2 disabled:opacity-50 cursor-pointer"
-                            >
-                              <Send size={13} />
-                              {isSubmittingReply ? "Saving..." : "Save Reply"}
-                            </button>
-                          </div>
-                        </form>
-                      )}
-                    </div>
-                  </>
-                )}
+                <button
+                  type="button"
+                  onClick={() => handleOpenEdit(selectedFeedback)}
+                  className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-semibold text-xs transition-colors shadow-lg flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Edit2 size={14} /> Edit Feedback
+                </button>
               </div>
-
-              {/* Footer Actions */}
-              <div className="p-4 sm:p-5 border-t border-slate-800 bg-slate-900/95 sticky bottom-0 z-20 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleToggleHide(selectedFeedback)}
-                    className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    {(selectedFeedback.status || "").toLowerCase() === "hidden" ? (
-                      <>
-                        <Eye size={14} className="text-emerald-400" /> Unhide Feedback
-                      </>
-                    ) : (
-                      <>
-                        <EyeOff size={14} className="text-amber-400" /> Hide Feedback
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setDeleteTarget(selectedFeedback)}
-                    className="px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <Trash2 size={14} /> Delete Feedback
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleCloseDrawer}
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium text-xs transition-colors cursor-pointer"
-                  >
-                    Close
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEdit(selectedFeedback)}
-                    className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-semibold text-xs transition-colors shadow-lg flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Edit2 size={14} /> Edit Feedback
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -1264,11 +1264,10 @@ const AdminFeedbackPage = () => {
                             type="button"
                             onClick={() => handleToggleHide(item)}
                             title={isHidden ? "Unhide Feedback" : "Hide Feedback"}
-                            className={`p-1.5 rounded-xl transition-colors cursor-pointer ${
-                              isHidden
-                                ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-                                : "bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
-                            }`}
+                            className={`p-1.5 rounded-xl transition-colors cursor-pointer ${isHidden
+                              ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+                              : "bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
+                              }`}
                           >
                             {isHidden ? <Eye size={14} /> : <EyeOff size={14} />}
                           </button>
@@ -1328,11 +1327,10 @@ const AdminFeedbackPage = () => {
                     <button
                       key={pageNum}
                       onClick={() => setCurrentPage(pageNum)}
-                      className={`w-8 h-8 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                        currentPage === pageNum
-                          ? "bg-violet-600 text-white shadow-md"
-                          : "bg-slate-950 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
-                      }`}
+                      className={`w-8 h-8 rounded-xl text-xs font-semibold transition-all cursor-pointer ${currentPage === pageNum
+                        ? "bg-violet-600 text-white shadow-md"
+                        : "bg-slate-950 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                        }`}
                     >
                       {pageNum}
                     </button>

@@ -80,7 +80,7 @@ const AuthModal = () => {
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4 sm:p-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -96,7 +96,7 @@ const AuthModal = () => {
 
           {/* Modal Container: 50 / 50 Split */}
           <motion.div
-            className="relative w-full max-w-[950px] max-h-[92vh] overflow-hidden rounded-2xl md:rounded-3xl shadow-2xl surface border border-app/50 flex flex-col md:flex-row bg-[var(--bg-surface)] text-[var(--text-app)]"
+            className="relative w-full max-w-[950px] my-auto rounded-2xl md:rounded-3xl shadow-2xl surface border border-app/50 flex flex-col md:flex-row bg-[var(--bg-surface)] text-[var(--text-app)]"
             initial={{ scale: 0.95, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -125,8 +125,8 @@ const AuthModal = () => {
             </div>
 
             {/* Right Side: 50% Form */}
-            <div className="w-full md:w-1/2 flex flex-col justify-center overflow-y-auto no-scrollbar">
-              <div className="p-6 sm:p-8 md:p-10 min-h-full flex flex-col justify-center">
+            <div className="w-full md:w-1/2 flex flex-col">
+              <div className="p-6 sm:p-8 md:p-10 flex flex-col">
                 {renderView()}
               </div>
             </div>

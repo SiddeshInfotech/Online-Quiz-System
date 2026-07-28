@@ -12,7 +12,7 @@ const InfoRow = ({ icon: Icon, label, value }) => (
   </div>
 );
 
-const QuizInfoCard = ({ result, isLoading }) => {
+const QuizInfoCard = ({ result, isLoading, isPro = false, attemptCount: propAttemptCount, maxAttempts: propMaxAttempts }) => {
   if (isLoading) {
     return (
       <div className="surface rounded-3xl p-6 shadow-sm border border-app">
@@ -28,11 +28,10 @@ const QuizInfoCard = ({ result, isLoading }) => {
 
   if (!result) return null;
 
-  const attemptCount = result.attempt_count ?? result.quiz?.attempt_count ?? null;
-  const maxAttempts = result.max_attempts ?? result.quiz?.max_attempts ?? null;
-  const attemptsDisplay = maxAttempts != null 
-    ? `${attemptCount ?? 1} / ${maxAttempts}` 
-    : (attemptCount != null ? `${attemptCount}` : "--");
+  const maxAttempts = propMaxAttempts ?? (isPro ? 2 : 1);
+  const rawAttemptCount = propAttemptCount ?? result.attempt_count ?? result.quiz?.attempt_count ?? 1;
+  const attemptCount = Math.min(rawAttemptCount, maxAttempts);
+  const attemptsDisplay = `${attemptCount} / ${maxAttempts}`;
 
   return (
     <motion.div

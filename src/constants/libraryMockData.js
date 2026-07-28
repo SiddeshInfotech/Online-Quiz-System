@@ -260,7 +260,6 @@ export const allQuizzes = [
 export const sortOptions = [
   "Newest",
   "Oldest",
-  "Most Popular",
   "Difficulty: Easy",
   "Difficulty: Hard",
 ];
