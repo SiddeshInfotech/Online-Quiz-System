@@ -34,14 +34,27 @@ class BadgeProgressHelper:
             'id', 'user_id', 'quiz_id', 'percentage', 'submitted_at', 'started_at', 'score'
         ).order_by('-submitted_at')[:100])
         
-        # Single query for UserAnswer statistics
-        answer_stats = UserAnswer.objects.filter(attempt__user=user).aggregate(
-            total_correct=Count('id', filter=Q(is_correct=True)),
-            reviewed_count=Count('id', filter=Q(reviewed=True))
-        )
-        total_correct = answer_stats['total_correct'] or 0
-        reviewed_count = answer_stats['reviewed_count'] or 0
+        attempt_ids = [a.id for a in attempts_list]
         
+        # Single indexed query for UserAnswer statistics using attempt_ids
+        total_correct = 0
+        reviewed_count = 0
+        attempts_with_mistakes = set()
+        
+        if attempt_ids:
+            answer_stats = UserAnswer.objects.filter(attempt_id__in=attempt_ids).aggregate(
+                total_correct=Count('id', filter=Q(is_correct=True)),
+                reviewed_count=Count('id', filter=Q(reviewed=True))
+            )
+            total_correct = answer_stats['total_correct'] or 0
+            reviewed_count = answer_stats['reviewed_count'] or 0
+
+            attempts_with_mistakes = set(
+                UserAnswer.objects.filter(attempt_id__in=attempt_ids, is_correct=False)
+                .values_list('attempt_id', flat=True)
+                .distinct()
+            )
+
         # Pre-aggregate data in-memory
         total_attempts = len(attempts_list)
         perfect_count = sum(1 for a in attempts_list if a.percentage == 100)
@@ -63,14 +76,7 @@ class BadgeProgressHelper:
                 .values('quiz_id')
                 .annotate(count=Count('id'))
             }
-        
-        # Precompute UserAnswer mistake flags for all user's attempts in one query
-        attempts_with_mistakes = set(
-            UserAnswer.objects.filter(attempt__user=user, is_correct=False)
-            .values_list('attempt_id', flat=True)
-            .distinct()
-        )
-        
+
         # Subject stats in memory
         subject_data = {}
         for att in attempts_list:

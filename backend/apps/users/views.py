@@ -209,7 +209,11 @@ class LoginView(generics.GenericAPIView):
                     "error": "Please verify your email before logging in."
                 }, status=status.HTTP_403_FORBIDDEN)
 
-            # ✅ User is active → login
+            # ✅ Pre-warm user progress cache in non-blocking background thread
+            import threading
+            from apps.users.services.badge_progress import BadgeProgressHelper
+            threading.Thread(target=BadgeProgressHelper.get_all_progress, args=(user,), daemon=True).start()
+
             refresh = RefreshToken.for_user(user)
             return Response({
                 "message": "Login Successful",
