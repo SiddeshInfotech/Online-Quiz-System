@@ -83,37 +83,28 @@ class GenerateAIQuizView(APIView):
                     "upgrade_url": "/pricing"
                 }, status=status.HTTP_403_FORBIDDEN)
 
-        # Check cache for identical AI generation requests
-        cache_hash = hashlib.md5(f"{subject}_{difficulty}_{num_questions}_{prompt_topic}_{quiz_mode}".encode('utf-8')).hexdigest()
-        cache_key = f"ai_gen_quiz_{cache_hash}"
-        cached_result = cache.get(cache_key)
-
-        if cached_result:
-            quiz_title = cached_result.get("quiz_title", "").strip()
-            questions_data = cached_result.get("questions", [])
-        else:
-            try:
-                ai_service = AIService()
-                generation_result = ai_service.generate_quiz(
-                    subject=subject,
-                    difficulty=difficulty,
-                    num_questions=num_questions,
-                    prompt_topic=prompt_topic,
-                    quiz_mode=quiz_mode
-                )
-                quiz_title = generation_result.get("quiz_title", "").strip()
-                questions_data = generation_result.get("questions", [])
-                cache.set(cache_key, generation_result, 600)
-            except ValueError as e:
-                return Response({
-                    "error": str(e)
-                }, status=status.HTTP_400_BAD_REQUEST)
-            except Exception as e:
-                return Response({
-                    "error": "AI generation failed",
-                    "details": str(e),
-                    "traceback": traceback.format_exc()
-                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # Always generate fresh, 100% unique AI quiz (no stale cache return)
+        try:
+            ai_service = AIService()
+            generation_result = ai_service.generate_quiz(
+                subject=subject,
+                difficulty=difficulty,
+                num_questions=num_questions,
+                prompt_topic=prompt_topic,
+                quiz_mode=quiz_mode
+            )
+            quiz_title = generation_result.get("quiz_title", "").strip()
+            questions_data = generation_result.get("questions", [])
+        except ValueError as e:
+            return Response({
+                "error": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "error": "AI generation failed",
+                "details": str(e),
+                "traceback": traceback.format_exc()
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         category = None
         if category_id:
@@ -166,47 +157,41 @@ class GenerateAIQuizView(APIView):
                 from apps.questions.serializers import clean_quiz_text
                 trimmed_correct = clean_quiz_text(str(correct_answer)).strip()
 
+                # 🛡️ BULLETPROOF OPTION DEDUPLICATION & STRICT 4 OPTIONS GUARANTEE
                 trimmed_options = []
+                seen_set = set()
+
                 if options:
-                    seen_opts = set()
                     for opt in options:
                         clean_opt = clean_quiz_text(str(opt)).strip()
-                        if clean_opt and clean_opt not in seen_opts:
-                            seen_opts.add(clean_opt)
+                        if clean_opt and clean_opt not in seen_set:
+                            seen_set.add(clean_opt)
                             trimmed_options.append(clean_opt)
 
-                    if len(trimmed_options) > 4:
-                        trimmed_options = trimmed_options[:4]
-
-                    # 🛡️ GUARANTEE: Ensure correct_answer is ALWAYS in trimmed_options!
-                    has_correct = any(opt == trimmed_correct for opt in trimmed_options)
-                    if not has_correct and trimmed_correct:
-                        if len(trimmed_options) >= 4:
-                            trimmed_options[0] = trimmed_correct
-                        else:
-                            trimmed_options.append(trimmed_correct)
-
-                    try:
-                        correct_index = [opt for opt in trimmed_options].index(trimmed_correct)
-                    except ValueError:
-                        correct_index = 0
+                if trimmed_correct and trimmed_correct not in seen_set:
+                    if len(trimmed_options) >= 4:
                         trimmed_options[0] = trimmed_correct
+                        seen_set.add(trimmed_correct)
+                    else:
+                        trimmed_options.append(trimmed_correct)
+                        seen_set.add(trimmed_correct)
 
-                    final_correct_text = trimmed_options[correct_index]
-                else:
-                    final_correct_text = trimmed_correct
-                    correct_index = 0
-                    trimmed_options = [trimmed_correct]
-
-                # 🛡️ GUARANTEE STRICTLY 4 OPTIONS FOR EVERY QUESTION!
-                fallback_distractors = ["TypeError", "AttributeError", "SyntaxError", "None", "Compilation Error", "Undefined Behavior", "0", "1"]
-                seen_set = set(trimmed_options)
+                fallback_distractors = ["TypeError", "AttributeError", "SyntaxError", "None", "Compilation Error", "Undefined Behavior", "0", "1", "2", "True", "False"]
                 for dist in fallback_distractors:
                     if len(trimmed_options) >= 4:
                         break
                     if dist not in seen_set:
                         trimmed_options.append(dist)
                         seen_set.add(dist)
+
+                trimmed_options = trimmed_options[:4]
+                try:
+                    correct_index = trimmed_options.index(trimmed_correct)
+                except ValueError:
+                    correct_index = 0
+                    trimmed_options[0] = trimmed_correct
+
+                final_correct_text = trimmed_options[correct_index]
 
                 # Format code snippet in question_text if unformatted
                 if ("print(" in question_text or "cout" in question_text or "System.out" in question_text or "def " in question_text or "class " in question_text or "int main" in question_text) and "```" not in question_text:

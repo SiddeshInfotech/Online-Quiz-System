@@ -512,6 +512,9 @@ class AIService:
         # Sub-topic generators for 100% unique question generation beyond static pool with deep code-trace explanations
         subtopics_coding = [
             ("Variables & Data Types", lambda v, s: (
+                f"What is the output of the following {subject} snippet (Var #{v})?\n\n```{s}\nlet val{v} = {v * 5};\nval{v} += 10;\nconsole.log(val{v});\n```" if s in ["javascript", "js", "react", "typescript"] else
+                f"What is the output of the following {subject} snippet (Var #{v})?\n\n```{s}\nint val{v} = {v * 5};\nval{v} += 10;\nSystem.out.println(val{v});\n```" if s == "java" else
+                f"What is the output of the following {subject} snippet (Var #{v})?\n\n```{s}\nint val{v} = {v * 5};\nval{v} += 10;\nConsole.WriteLine(val{v});\n```" if s == "csharp" else
                 f"What is the output of the following {subject} snippet (Var #{v})?\n\n```{s}\nint val{v} = {v * 5};\nval{v} += 10;\nprintf(\"%d\", val{v});\n```" if s == "c" else
                 f"What is the output of the following {subject} snippet (Var #{v})?\n\n```{s}\nint val{v} = {v * 5};\nval{v} += 10;\ncout << val{v};\n```" if s == "cpp" else
                 f"What is the output of the following {subject} code (Var #{v})?\n\n```{s}\nval{v} = {v * 5}\nval{v} += 10\nprint(val{v})\n```",
@@ -520,14 +523,20 @@ class AIService:
                 f"Variable val{v} starts at {v * 5}. The compound assignment val{v} += 10 adds 10 to {v * 5}, updating val{v} to {v * 5 + 10}."
             )),
             ("Conditionals & Logic", lambda v, s: (
+                f"What will this {subject} condition log (Check #{v})?\n\n```{s}\nconst score{v} = {v * 15};\nconsole.log(score{v} >= 30 ? \"Pass\" : \"Fail\");\n```" if s in ["javascript", "js", "react", "typescript"] else
+                f"What will this {subject} condition evaluate to (Check #{v})?\n\n```{s}\nint score{v} = {v * 15};\nSystem.out.println(score{v} >= 30 ? \"Pass\" : \"Fail\");\n```" if s == "java" else
+                f"What will this {subject} condition evaluate to (Check #{v})?\n\n```{s}\nint score{v} = {v * 15};\nConsole.WriteLine(score{v} >= 30 ? \"Pass\" : \"Fail\");\n```" if s == "csharp" else
                 f"What will this {subject} condition evaluate to (Check #{v})?\n\n```{s}\nint score{v} = {v * 15};\nif (score{v} >= 30) {{\n    printf(\"Pass\");\n}} else {{\n    printf(\"Fail\");\n}}\n```" if s == "c" else
                 f"What will this {subject} condition evaluate to (Check #{v})?\n\n```{s}\nint score{v} = {v * 15};\nif (score{v} >= 30) {{\n    cout << \"Pass\";\n}} else {{\n    cout << \"Fail\";\n}}\n```" if s == "cpp" else
                 f"What will this {subject} code output (Check #{v})?\n\n```{s}\nscore{v} = {v * 15}\nprint(\"Pass\" if score{v} >= 30 else \"Fail\")\n```",
-                ["Pass" if v * 15 >= 30 else "Fail", "Fail" if v * 15 >= 30 else "Pass", "Error", "None"],
+                ["Pass" if v * 15 >= 30 else "Fail", "Fail" if v * 15 >= 30 else "Pass", "Error", "Undefined"],
                 "Pass" if v * 15 >= 30 else "Fail",
                 f"score{v} evaluates to {v * 15}. Since {v * 15} is {'greater than or equal to 30' if v * 15 >= 30 else 'less than 30'}, the conditional branch executes and produces '{'Pass' if v * 15 >= 30 else 'Fail'}'."
             )),
             ("Loop Execution", lambda v, s: (
+                f"What total count does this {subject} loop log (Loop #{v})?\n\n```{s}\nlet total{v} = 0;\nfor (let i = 0; i < {v}; i++) {{\n    total{v} += i;\n}}\nconsole.log(total{v});\n```" if s in ["javascript", "js", "react", "typescript"] else
+                f"What total count does this {subject} loop produce (Loop #{v})?\n\n```{s}\nint total{v} = 0;\nfor (int i = 0; i < {v}; i++) {{\n    total{v} += i;\n}}\nSystem.out.println(total{v});\n```" if s == "java" else
+                f"What total count does this {subject} loop produce (Loop #{v})?\n\n```{s}\nint total{v} = 0;\nfor (int i = 0; i < {v}; i++) {{\n    total{v} += i;\n}}\nConsole.WriteLine(total{v});\n```" if s == "csharp" else
                 f"What total count does this {subject} loop produce (Loop #{v})?\n\n```{s}\nint total{v} = 0;\nfor (int i = 0; i < {v}; i++) {{\n    total{v} += i;\n}}\nprintf(\"%d\", total{v});\n```" if s == "c" else
                 f"What total count does this {subject} loop produce (Loop #{v})?\n\n```{s}\nint total{v} = 0;\nfor (int i = 0; i < {v}; i++) {{\n    total{v} += i;\n}}\ncout << total{v};\n```" if s == "cpp" else
                 f"What does this {subject} loop calculate (Loop #{v})?\n\n```{s}\ntotal{v} = sum(range({v}))\nprint(total{v})\n```",
@@ -536,6 +545,9 @@ class AIService:
                 f"The loop iterates {v} times from i = 0 to {v - 1}. Accumulating the loop counter yields total{v} = {sum(range(v))}."
             )),
             ("Array / List Processing", lambda v, s: (
+                f"What element is logged by this {subject} array code (Array #{v})?\n\n```{s}\nconst items{v} = [{v * 2}, {v * 3}, {v * 4}];\nconsole.log(items{v}[1]);\n```" if s in ["javascript", "js", "react", "typescript"] else
+                f"What element is printed by this {subject} array code (Array #{v})?\n\n```{s}\nint[] items{v} = {{{v * 2}, {v * 3}, {v * 4}}};\nSystem.out.println(items{v}[1]);\n```" if s == "java" else
+                f"What element is printed by this {subject} array code (Array #{v})?\n\n```{s}\nint[] items{v} = {{{v * 2}, {v * 3}, {v * 4}}};\nConsole.WriteLine(items{v}[1]);\n```" if s == "csharp" else
                 f"What element is printed by this {subject} array code (Array #{v})?\n\n```{s}\nint arr{v}[] = {{{v * 2}, {v * 3}, {v * 4}}};\nprintf(\"%d\", arr{v}[1]);\n```" if s == "c" else
                 f"What element is printed by this {subject} array code (Array #{v})?\n\n```{s}\nint arr{v}[] = {{{v * 2}, {v * 3}, {v * 4}}};\ncout << arr{v}[1];\n```" if s == "cpp" else
                 f"What element does this {subject} list access (List #{v})?\n\n```{s}\nitems{v} = [{v * 2}, {v * 3}, {v * 4}]\nprint(items{v}[1])\n```",
@@ -544,42 +556,47 @@ class AIService:
                 f"The collection contains [{v * 2}, {v * 3}, {v * 4}]. Index 1 accesses the second element, returning {v * 3}."
             )),
             ("Function Mechanics", lambda v, s: (
-                f"What is returned by this {subject} helper function (Fn #{v})?\n\n```{s}\nint multiply{v}(int a, int b) {{\n    return a * b + {v};\n}}\n// Called as: multiply{v}(3, 4)\n```" if s in ["cpp", "c"] else
+                f"What is logged by this {subject} function (Fn #{v})?\n\n```{s}\nfunction compute{v}(a, b) {{\n    return a * b + {v};\n}}\nconsole.log(compute{v}(3, 4));\n```" if s in ["javascript", "js", "react", "typescript"] else
+                f"What is returned by this {subject} helper function (Fn #{v})?\n\n```{s}\nstatic int multiply{v}(int a, int b) {{\n    return a * b + {v};\n}}\n// Called as: multiply{v}(3, 4)\n```" if s in ["java", "csharp", "cpp", "c"] else
                 f"What is the result of calling this {subject} function (Fn #{v})?\n\n```{s}\ndef compute{v}(a, b):\n    return a * b + {v}\nprint(compute{v}(3, 4))\n```",
                 [str(12 + v), str(12), str(7 + v), "0"],
                 str(12 + v),
                 f"The function multiplies parameters 3 * 4 = 12 and adds {v}, evaluating to 12 + {v} = {12 + v}."
             )),
             ("String Manipulation", lambda v, s: (
+                f"What is logged by this {subject} string property (Str #{v})?\n\n```{s}\nconst s{v} = \"Code{v}\";\nconsole.log(s{v}.length);\n```" if s in ["javascript", "js", "react", "typescript"] else
+                f"What is printed by this {subject} string operation (Str #{v})?\n\n```{s}\nString s{v} = \"Code{v}\";\nSystem.out.println(s{v}.length());\n```" if s == "java" else
+                f"What is printed by this {subject} string operation (Str #{v})?\n\n```{s}\nstring s{v} = \"Code{v}\";\nConsole.WriteLine(s{v}.Length);\n```" if s == "csharp" else
                 f"What is printed by this {subject} string operation (Str #{v})?\n\n```{s}\nchar s{v}[] = \"Tech{v}\";\nprintf(\"%zu\", strlen(s{v}));\n```" if s == "c" else
                 f"What is printed by this {subject} string operation (Str #{v})?\n\n```{s}\nstring s{v} = \"Tech{v}\";\ncout << s{v}.length();\n```" if s == "cpp" else
                 f"What is the output of this {subject} string method (Str #{v})?\n\n```{s}\ns{v} = \"Code{v}\"\nprint(len(s{v}))\n```",
                 [str(4 + len(str(v))), str(4), str(len(str(v))), "Error"],
                 str(4 + len(str(v))),
-                f"The string 'Tech{v}' / 'Code{v}' contains 4 letters plus '{v}' ({len(str(v))} digits), giving a length of {4 + len(str(v))}."
+                f"The string 'Code{v}' contains 4 letters plus '{v}' ({len(str(v))} digits), giving a length of {4 + len(str(v))}."
             ))
         ]
 
         subtopics_theory = [
-            ("Core Paradigm", f"What is the fundamental architectural philosophy of {subject}?", ["Structured modular design with high reusability", "Single-threaded synchronous blocking execution", "Direct binary patch assembly", "Pure procedural memory mapping"], "Structured modular design with high reusability", f"{subject} prioritizes modular architecture, clean separation of concerns, and reusable components."),
-            ("Memory Model", f"How does {subject} manage runtime memory allocation and lifecycle?", ["Allocates memory dynamically via runtime stack/heap primitives", "Uses fixed physical disk caching", "Requires manual register manipulation", "Does not allocate memory"], "Allocates memory dynamically via runtime stack/heap primitives", f"In {subject}, runtime objects are allocated on the heap while function call frames are managed on the stack."),
-            ("Type System", f"Which type system design feature applies directly to {subject}?", ["Enforces clear type rules for variable safety and evaluation", "Disallows function definitions", "Requires all variables to be string types", "Does not support primitive types"], "Enforces clear type rules for variable safety and evaluation", f"The type system in {subject} validates variable types to prevent invalid operations at compile or run time."),
-            ("Scope & Visibility", f"How are identifiers and variables scoped in {subject}?", ["Scoped lexically within block, function, or namespace boundaries", "Global visibility for all local variables", "Randomized pointer scope", "Class-only scope"], "Scoped lexically within block, function, or namespace boundaries", f"Lexical scoping in {subject} confines variable visibility to the enclosing block, function, or namespace."),
-            ("Error Handling", f"What mechanism is standard for handling runtime exceptions in {subject}?", ["Try-Catch exception blocks and error status return codes", "Immediate OS kernel halt", "Ignoring invalid operations", "Syntax re-compilation"], "Try-Catch exception blocks and error status return codes", f"Exception handling in {subject} uses try-catch structures to intercept runtime errors and prevent crashes."),
-            ("Performance Optimization", f"Which practice improves execution efficiency in {subject}?", ["Using appropriate data structures and minimizing redundant operations", "Inserting infinite loops", "Avoiding function calls entirely", "Storing all data on disk"], "Using appropriate data structures and minimizing redundant operations", f"Selecting optimal data structures (e.g. O(1) hash maps) reduces computational complexity and memory overhead.")
+            ("Core Paradigm", lambda v: (f"What is the fundamental architectural philosophy of {subject} (Aspect #{v})?", ["Structured modular design with high reusability", "Single-threaded synchronous blocking execution", "Direct binary patch assembly", "Pure procedural memory mapping"], "Structured modular design with high reusability", f"{subject} (Aspect #{v}) prioritizes modular architecture, clean separation of concerns, and reusable components.")),
+            ("Memory Model", lambda v: (f"How does {subject} manage runtime memory allocation and lifecycle (Aspect #{v})?", ["Allocates memory dynamically via runtime stack/heap primitives", "Uses fixed physical disk caching", "Requires manual register manipulation", "Does not allocate memory"], "Allocates memory dynamically via runtime stack/heap primitives", f"In {subject} (Aspect #{v}), runtime objects are allocated on the heap while function call frames are managed on the stack.")),
+            ("Type System", lambda v: (f"Which type system design feature applies directly to {subject} (Aspect #{v})?", ["Enforces clear type rules for variable safety and evaluation", "Disallows function definitions", "Requires all variables to be string types", "Does not support primitive types"], "Enforces clear type rules for variable safety and evaluation", f"The type system in {subject} (Aspect #{v}) validates variable types to prevent invalid operations at compile or run time.")),
+            ("Scope & Visibility", lambda v: (f"How are identifiers and variables scoped in {subject} (Aspect #{v})?", ["Scoped lexically within block, function, or namespace boundaries", "Global visibility for all local variables", "Randomized pointer scope", "Class-only scope"], "Scoped lexically within block, function, or namespace boundaries", f"Lexical scoping in {subject} (Aspect #{v}) confines variable visibility to the enclosing block, function, or namespace.")),
+            ("Error Handling", lambda v: (f"What mechanism is standard for handling runtime exceptions in {subject} (Aspect #{v})?", ["Try-Catch exception blocks and error status return codes", "Immediate OS kernel halt", "Ignoring invalid operations", "Syntax re-compilation"], "Try-Catch exception blocks and error status return codes", f"Exception handling in {subject} (Aspect #{v}) uses try-catch structures to intercept runtime errors and prevent crashes.")),
+            ("Performance Optimization", lambda v: (f"Which practice improves execution efficiency in {subject} (Aspect #{v})?", ["Using appropriate data structures and minimizing redundant operations", "Inserting infinite loops", "Avoiding function calls entirely", "Storing all data on disk"], "Using appropriate data structures and minimizing redundant operations", f"Selecting optimal data structures in {subject} (Aspect #{v}) reduces computational complexity and memory overhead."))
         ]
 
         while len(questions) < num_questions:
             if idx < len(pool):
                 item = pool[idx]
             else:
-                var_num = random.randint(10, 999)
+                var_num = random.randint(10, 999) + idx * 7
                 if quiz_mode == "Coding":
                     topic_name, gen_fn = subtopics_coding[(idx - len(pool)) % len(subtopics_coding)]
                     q_text, opts, ans, exp = gen_fn(var_num, subj_key)
                     item = {"q": q_text, "opts": opts, "ans": ans, "exp": exp}
                 else:
-                    topic_title_sub, q_stem, opts, ans, exp = subtopics_theory[(idx - len(pool)) % len(subtopics_theory)]
+                    topic_name, gen_fn = subtopics_theory[(idx - len(pool)) % len(subtopics_theory)]
+                    q_stem, opts, ans, exp = gen_fn(var_num)
                     item = {
                         "q": q_stem,
                         "opts": list(opts),
@@ -604,13 +621,25 @@ class AIService:
             "questions": questions
         }
 
+    def _get_recent_exclusions(self, subject):
+        try:
+            from apps.questions.models import Question
+            stems = list(Question.objects.filter(quiz__subject__iexact=subject).values_list('question_text', flat=True).order_by('-id')[:20])
+            cleaned = [s[:100].replace('\n', ' ').strip() for s in stems if s]
+            if cleaned:
+                return "\nDO NOT REPEAT OR GENERATE ANY OF THE FOLLOWING PREVIOUSLY ASKED QUESTIONS:\n- " + "\n- ".join(cleaned) + "\n"
+        except Exception:
+            pass
+        return ""
+
     def _generate_theory_quiz(self, subject, difficulty, num_questions, prompt_topic):
+        exclusions = self._get_recent_exclusions(subject)
         prompt = f"""
 You are an expert quiz generator. Generate exactly {num_questions} 100% UNIQUE theory questions on "{subject}".
 
 Difficulty: {difficulty}
 Focus: {prompt_topic if prompt_topic else 'General'}
-
+{exclusions}
 CRITICAL STRICT RULES:
 1. SUBJECT MATCHING: All questions MUST be 100% focused on "{subject}".
 2. ZERO DUPLICATES: Every question MUST cover a completely distinct topic or concept.
@@ -636,14 +665,15 @@ Return ONLY valid JSON.
         return self._call_openrouter(prompt, num_questions)
 
     def _generate_coding_quiz(self, subject, difficulty, num_questions, prompt_topic):
+        exclusions = self._get_recent_exclusions(subject)
         prompt = f"""
 You are an expert programming logic question generator. Generate exactly {num_questions} 100% UNIQUE programming questions specifically for "{subject}".
 
 Difficulty: {difficulty}
 Focus: {prompt_topic if prompt_topic else 'General'}
-
+{exclusions}
 CRITICAL STRICT RULES:
-1. SUBJECT LANGUAGE MATCHING: Every code snippet MUST be written in valid {subject} syntax inside a markdown code block tagged ```{subject.lower()}.
+1. STRICT SUBJECT LANGUAGE MATCHING: Every single code snippet MUST be written in 100% valid {subject} syntax inside a markdown code block tagged ```{subject.lower()}. NEVER mix syntax from other programming languages! If the subject is JavaScript, DO NOT write Python syntax like print(), len(), def, or dicts. Use console.log(), let/const, and arrow functions!
 2. PRECISE EXECUTION: Mentally execute the code snippet step-by-step. The `correct_answer` MUST be the exact, literal stdout or return value produced by running the code.
 3. OPTIONS MATCH CODE: One of the 4 options MUST EXACTLY match `correct_answer`. Do NOT provide options that omit space separators or tuple brackets.
 4. STEP-BY-STEP EXPLANATION: Include a detailed, step-by-step code execution trace in the "explanation" field showing variable assignments, loop iterations, and operator evaluation. Never use generic or placeholder text. Never mention C/C++ pointers for Python/JS code.
@@ -882,17 +912,38 @@ Return ONLY valid JSON.
                     if not isinstance(options, list) or len(options) < 4:
                         continue
 
-                    clean_opts = [str(opt).strip() for opt in options[:4] if str(opt).strip()]
-                    if len(clean_opts) < 4:
-                        continue
+                    # Deduplicate options strictly using set tracking
+                    clean_opts = []
+                    seen_opts = set()
+                    for opt in options:
+                        c_opt = str(opt).strip()
+                        if c_opt and c_opt not in seen_opts:
+                            seen_opts.add(c_opt)
+                            clean_opts.append(c_opt)
+
+                    # Ensure correct answer is in options without duplicating any existing option
+                    if correct and correct not in seen_opts:
+                        if len(clean_opts) >= 4:
+                            clean_opts[0] = correct
+                            seen_opts.add(correct)
+                        else:
+                            clean_opts.append(correct)
+                            seen_opts.add(correct)
+
+                    # Fill with distinct distractors if fewer than 4 unique options
+                    fallbacks = ["TypeError", "AttributeError", "SyntaxError", "None", "Compilation Error", "Undefined Behavior", "0", "1"]
+                    for dist in fallbacks:
+                        if len(clean_opts) >= 4:
+                            break
+                        if dist not in seen_opts:
+                            clean_opts.append(dist)
+                            seen_opts.add(dist)
+
+                    clean_opts = clean_opts[:4]
 
                     # Reject if generic placeholder options are detected
                     if any(opt.lower() in generic_placeholders for opt in clean_opts):
                         continue
-
-                    # Guarantee correct answer is in options
-                    if correct not in clean_opts:
-                        clean_opts[0] = correct
 
                     seen_q_texts.add(q_lower)
                     valid_questions.append({
