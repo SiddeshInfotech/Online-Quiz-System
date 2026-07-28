@@ -49,8 +49,13 @@ class FeedbackCreateView(APIView):
         except Exception as e:
             logger.error(f"Failed to send DB admin notification for feedback: {e}")
 
-        # ✅ Send email admin notification
-        self._send_admin_notification(request.user, feedback, is_new=True)
+        # ✅ Send email admin notification in non-blocking background thread
+        import threading
+        threading.Thread(
+            target=self._send_admin_notification,
+            args=(request.user, feedback, True),
+            daemon=True
+        ).start()
 
         return Response({
             "message": "Feedback submitted successfully",

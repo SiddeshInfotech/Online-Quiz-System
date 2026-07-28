@@ -15,6 +15,12 @@ class UserSubscriptionView(APIView):
 
     def get(self, request):
         user = request.user
+        from django.core.cache import cache
+        cache_key = f"user_sub_view_{user.id}"
+        cached_res = cache.get(cache_key)
+        if cached_res:
+            return Response(cached_res)
+
         sub, _ = Subscription.objects.get_or_create(user=user)
         
         is_pro = sub.is_pro
@@ -106,12 +112,12 @@ class UserSubscriptionView(APIView):
                 "badges_and_xp": True,
                 "extended_question_counts": is_pro,
                 "quiz_retries": is_pro,
-                "unlimited_daily_attempts": is_pro,
                 "advanced_analytics": is_pro,
                 "priority_support": is_pro,
                 "export_results": is_pro
             }
         }
+        cache.set(cache_key, response_data, 60)
         return Response(response_data, status=status.HTTP_200_OK)
 
 

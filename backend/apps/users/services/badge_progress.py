@@ -27,10 +27,12 @@ class BadgeProgressHelper:
         print(f"[PROGRESS CACHE MISS] user={user.id}, computing...")
         start = time.time()
         
-        # --- Optimized Pass: Fetch attempts into list to avoid repetitive queries ---
+        # --- Optimized Pass: Fetch recent attempts into list to avoid repetitive queries ---
         attempts_list = list(QuizAttempt.objects.filter(
             user=user, submitted_at__isnull=False
-        ).select_related('quiz').order_by('-submitted_at'))
+        ).select_related('quiz').only(
+            'id', 'user_id', 'quiz_id', 'percentage', 'submitted_at', 'started_at', 'score'
+        ).order_by('-submitted_at')[:100])
         
         # Single query for UserAnswer statistics
         answer_stats = UserAnswer.objects.filter(attempt__user=user).aggregate(

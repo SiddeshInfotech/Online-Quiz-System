@@ -105,7 +105,7 @@ class GlobalLeaderboardView(APIView):
             ranked_users = User.objects.filter(
                 deactivated_at__isnull=True,
                 is_active=True
-            ).order_by('-total_points', '-xp', 'id')
+            ).order_by('-total_points', '-xp', 'id')[:100]
 
             pro_user_ids = set(
                 Subscription.objects.filter(plan='PRO', status='ACTIVE')
@@ -148,8 +148,8 @@ class GlobalLeaderboardView(APIView):
                     "subscription_plan": plan
                 })
 
-            # Cache rankings list for 60 seconds
-            cache.set("leaderboard_all_rankings", all_rankings, 60)
+            # Cache rankings list for 120 seconds
+            cache.set("leaderboard_all_rankings", all_rankings, 120)
 
         top_3 = all_rankings[:3] if len(all_rankings) >= 3 else all_rankings
 
@@ -165,10 +165,7 @@ class GlobalLeaderboardView(APIView):
             except Exception:
                 current_user_profile_pic = None
 
-        current_user_badge_count = UserBadge.objects.filter(
-            user=request.user, 
-            status='CLAIMED'
-        ).count()
+        current_user_badge_count = current_user.get("badge_count", 0) if current_user else 0
 
         return Response({
             "personal_stats": {

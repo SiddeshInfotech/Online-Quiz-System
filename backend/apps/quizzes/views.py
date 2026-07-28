@@ -147,6 +147,18 @@ class QuizLibraryListView(generics.ListAPIView):
             annotated_total_questions=Count('question', distinct=True)
         )
 
+    def list(self, request, *args, **kwargs):
+        from django.core.cache import cache
+        cache_key = f"quiz_library_list_{request.user.id}_{request.query_params.urlencode()}"
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return Response(cached_data)
+
+        response = super().list(request, *args, **kwargs)
+        if response.status_code == 200:
+            cache.set(cache_key, response.data, 60)
+        return response
+
 class RecommendedQuizzesListView(generics.ListAPIView):
     serializer_class = QuizLibrarySerializer
     permission_classes = [permissions.IsAuthenticated]

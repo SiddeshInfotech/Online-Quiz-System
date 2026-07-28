@@ -136,6 +136,9 @@ class UserSerializer(serializers.ModelSerializer):
     total_attempts = serializers.SerializerMethodField()
     subscription = serializers.SerializerMethodField()
 
+    is_pro = serializers.SerializerMethodField()
+    plan = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -144,19 +147,30 @@ class UserSerializer(serializers.ModelSerializer):
             'subject_interests', 'profile_completion', 'missing_fields', 'badge_count',
             'quizzes_completed', 'total_points', 'xp', 'level',
             'current_streak', 'longest_streak', 'total_attempts',
-            'is_staff', 'is_superuser', 'subscription'
+            'is_staff', 'is_superuser', 'is_pro', 'plan', 'subscription'
         ]
         read_only_fields = [
             'id', 'role', 'date_joined',
             'quizzes_completed', 'total_points', 'xp', 'level',
             'current_streak', 'longest_streak', 'total_attempts',
-            'is_staff', 'is_superuser', 'subscription'
+            'is_staff', 'is_superuser', 'is_pro', 'plan', 'subscription'
         ]
         extra_kwargs = {
             'username': {'required': False},
             'email': {'required': False},
             'subject_interests': {'required': False},
         }
+
+    def get_is_pro(self, obj):
+        if hasattr(obj, '_prefetched_objects_cache') and 'subscription' in obj._prefetched_objects_cache:
+            sub = obj._prefetched_objects_cache['subscription']
+            return sub.is_pro if sub else False
+        from apps.users.models import Subscription
+        sub, _ = Subscription.objects.get_or_create(user=obj)
+        return sub.is_pro
+
+    def get_plan(self, obj):
+        return "PRO" if self.get_is_pro(obj) else "FREE"
 
     def validate_username(self, value):
         if not value:
