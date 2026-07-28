@@ -946,9 +946,10 @@ Return ONLY valid JSON.
                         continue
 
                     seen_q_texts.add(q_lower)
+                    sanitized_q_text = self._sanitize_language_syntax(q_text, prompt)
                     valid_questions.append({
                         "question_type": q.get("question_type", "Coding"),
-                        "question_text": q_text,
+                        "question_text": sanitized_q_text,
                         "options": clean_opts,
                         "correct_answer": correct,
                         "explanation": str(q.get("explanation", "")).strip()
@@ -1049,3 +1050,46 @@ Return ONLY valid JSON.
                 last_error = f"{model} error: {str(e)}"
 
         raise ValueError(f"All AI models failed. Last error: {last_error}")
+
+    def _sanitize_language_syntax(self, question_text, subject):
+        if not question_text or "```" not in question_text:
+            return question_text
+
+        subj_lower = str(subject).lower().strip()
+
+        # JavaScript / TypeScript / React / Node.js
+        if any(kw in subj_lower for kw in ["javascript", "js", "react", "node", "typescript", "ts"]):
+            question_text = re.sub(r'print\((.*?)\)', r'console.log(\1)', question_text)
+            question_text = re.sub(r'\bdef\s+([a-zA-Z0-9_]+)\((.*?)\):', r'function \1(\2) {', question_text)
+            question_text = re.sub(r'\bcout\s*<<\s*(.*?);', r'console.log(\1);', question_text)
+            question_text = re.sub(r'System\.out\.println\((.*?)\);', r'console.log(\1);', question_text)
+
+        # Python / Django / Flask
+        elif any(kw in subj_lower for kw in ["python", "py", "django", "flask"]):
+            question_text = re.sub(r'console\.log\((.*?)\);?', r'print(\1)', question_text)
+            question_text = re.sub(r'System\.out\.println\((.*?)\);?', r'print(\1)', question_text)
+            question_text = re.sub(r'\bcout\s*<<\s*(.*?);', r'print(\1)', question_text)
+
+        # C++ / CPP
+        elif any(kw in subj_lower for kw in ["c++", "cpp"]):
+            question_text = re.sub(r'console\.log\((.*?)\);?', r'cout << \1;', question_text)
+            question_text = re.sub(r'System\.out\.println\((.*?)\);?', r'cout << \1;', question_text)
+            question_text = re.sub(r'print\((.*?)\)', r'cout << \1;', question_text)
+
+        # Java
+        elif "java" in subj_lower and "script" not in subj_lower:
+            question_text = re.sub(r'console\.log\((.*?)\);?', r'System.out.println(\1);', question_text)
+            question_text = re.sub(r'\bcout\s*<<\s*(.*?);', r'System.out.println(\1);', question_text)
+            question_text = re.sub(r'print\((.*?)\)', r'System.out.println(\1);', question_text)
+
+        # C# / CSharp
+        elif any(kw in subj_lower for kw in ["c#", "csharp", "cs"]):
+            question_text = re.sub(r'console\.log\((.*?)\);?', r'Console.WriteLine(\1);', question_text)
+            question_text = re.sub(r'print\((.*?)\)', r'Console.WriteLine(\1);', question_text)
+
+        # C
+        elif subj_lower == "c" or subj_lower == "c programming":
+            question_text = re.sub(r'console\.log\((.*?)\);?', r'printf("%d\n", \1);', question_text)
+            question_text = re.sub(r'print\((.*?)\)', r'printf("%d\n", \1);', question_text)
+
+        return question_text
