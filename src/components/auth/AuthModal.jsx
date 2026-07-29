@@ -96,7 +96,7 @@ const AuthModal = () => {
 
           {/* Modal Container: 50 / 50 Split */}
           <motion.div
-            className="relative w-full max-w-[950px] my-auto rounded-2xl md:rounded-3xl shadow-2xl surface border border-app/50 flex flex-col md:flex-row bg-[var(--bg-surface)] text-[var(--text-app)]"
+            className="relative w-full max-w-[950px] max-h-[88vh] my-auto rounded-2xl md:rounded-3xl shadow-2xl surface border border-app/50 flex flex-col md:flex-row bg-[var(--bg-surface)] text-[var(--text-app)] overflow-hidden"
             initial={{ scale: 0.95, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -105,13 +105,13 @@ const AuthModal = () => {
             {/* Close Button */}
             <button
               onClick={closeModal}
-              className="absolute top-4 right-4 z-20 p-2 rounded-full surface-elev text-app-muted hover:text-app hover:bg-[var(--bg-elevated)] transition-colors"
+              className="absolute top-4 right-4 z-20 p-2 rounded-full surface-elev text-app-muted hover:text-app hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer"
             >
               <X size={20} />
             </button>
 
-            {/* Left Side: 50% Full-bleed Image with no text or extra overlays */}
-            <div className="hidden md:block w-1/2 relative overflow-hidden bg-slate-950 min-h-[450px]">
+            {/* Left Side: 50% Full-bleed Image */}
+            <div className="hidden md:block w-1/2 relative bg-slate-950 self-stretch overflow-hidden min-h-[450px]">
               <img
                 src={authImage}
                 alt="Authentication"
@@ -124,9 +124,9 @@ const AuthModal = () => {
                <Logo isDarkBg={false} />
             </div>
 
-            {/* Right Side: 50% Form */}
-            <div className="w-full md:w-1/2 flex flex-col">
-              <div className="p-6 sm:p-8 md:p-10 flex flex-col">
+            {/* Right Side: 50% Form with internal scrolling */}
+            <div className="w-full md:w-1/2 flex flex-col max-h-[88vh] overflow-y-auto">
+              <div className="p-6 sm:p-8 md:p-9 flex flex-col">
                 {renderView()}
               </div>
             </div>

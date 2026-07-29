@@ -1,9 +1,7 @@
 import {
   Sparkles,
   BarChart3,
-  BookOpen,
   ShieldCheck,
-  Users,
   Smartphone,
 } from "lucide-react";
 
@@ -25,22 +23,10 @@ const features = [
       "Track scores, progress, and learning performance with beautiful reports.",
   },
   {
-    icon: <BookOpen size={26} />,
-    title: "Question Bank",
-    description:
-      "Create and manage reusable question banks for future quizzes.",
-  },
-  {
     icon: <ShieldCheck size={26} />,
     title: "Secure Authentication",
     description:
       "Secure authentication to protect your account and quiz data.",
-  },
-  {
-    icon: <Users size={26} />,
-    title: "Community Access",
-    description:
-      "Join a growing community of students sharing and learning together.",
   },
   {
     icon: <Smartphone size={26} />,
@@ -60,7 +46,7 @@ function Features() {
           description="Powerful tools to create, manage, and analyze quizzes effortlessly."
         />
 
-        <div className="mt-16 grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-16 grid gap-8 md:grid-cols-2 xl:grid-cols-4">
           {features.map((feature) => (
             <FeatureCard
               key={feature.title}

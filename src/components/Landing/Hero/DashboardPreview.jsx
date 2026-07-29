@@ -1,13 +1,22 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../hooks/useAuth";
 import { useAuthModal } from "../../../context/AuthModalContext";
 
 function DashboardPreview() {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const { openModal } = useAuthModal();
 
   const handleGenerateClick = (e) => {
-    if (openModal) {
-      openModal("signup");
+    e.preventDefault();
+    if (isAuthenticated) {
+      navigate("/dashboard");
+    } else {
+      if (openModal) {
+        openModal("signup");
+      }
+      navigate("/signup");
     }
   };
 
@@ -35,13 +44,12 @@ function DashboardPreview() {
             <p className="mt-1 text-sm text-white/80">
               10 questions  Python  Medium
             </p>
-            <Link
-              to="/signup"
+            <button
               onClick={handleGenerateClick}
-              className="mt-5 inline-block rounded-xl bg-white px-5 py-3 text-sm font-medium text-[var(--accent)] transition hover:scale-105 dark:bg-[#0A0A0F] dark:text-[#F5C451]"
+              className="mt-5 inline-block cursor-pointer rounded-xl bg-white px-5 py-3 text-sm font-medium text-[var(--accent)] transition hover:scale-105 dark:bg-[#0A0A0F] dark:text-[#F5C451]"
             >
               Generate quiz
-            </Link>
+            </button>
           </div>
 
           <div className="space-y-3">

@@ -1,7 +1,6 @@
 import {
   FileText,
   Sparkles,
-  Share2,
 } from "lucide-react";
 
 import Container from "../../ui/Container";
@@ -21,12 +20,6 @@ const steps = [
     description:
       "AI creates a complete quiz instantly with answers.",
   },
-  {
-    icon: <Share2 size={26} />,
-    title: "Share & Analyze",
-    description:
-      "Share quizzes with students and monitor performance.",
-  },
 ];
 
 function HowItWorks() {
@@ -35,11 +28,11 @@ function HowItWorks() {
       <Container>
         <SectionHeading
           badge="How It Works"
-          title="Create a Quiz in 3 Simple Steps"
+          title="Create a Quiz in 2 Simple Steps"
           description="Generate quizzes within seconds using AI."
         />
 
-        <div className="mt-16 grid gap-8 lg:grid-cols-3">
+        <div className="mt-16 grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
           {steps.map((step) => (
             <StepCard key={step.title} {...step} />
           ))}

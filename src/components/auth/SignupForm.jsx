@@ -174,7 +174,7 @@ const SignupForm = ({ onSuccess, inModal = false }) => {
             )}
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            <form onSubmit={handleSubmit} className="mt-5 space-y-3.5">
                 {/* 🔥 Username Field */}
                 <div className="relative">
                     <Input
@@ -189,7 +189,7 @@ const SignupForm = ({ onSuccess, inModal = false }) => {
                 </div>
 
                 {/* First + Last Name */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                     <Input
                         name="firstName"
                         placeholder="First Name"
@@ -279,7 +279,7 @@ const SignupForm = ({ onSuccess, inModal = false }) => {
             </form>
 
             {/* Divider */}
-            <div className="my-7">
+            <div className="my-5">
                 <AuthDivider />
             </div>
             <div className="space-y-4">
@@ -287,11 +287,11 @@ const SignupForm = ({ onSuccess, inModal = false }) => {
             </div>
 
             {/* Footer */}
-            <div className="mt-8">
+            <div className="mt-5">
                 {inModal ? (
                     <p className="text-center text-sm text-app-muted">
                         Already have an account?{" "}
-                        <button onClick={() => changeView('login')} className="font-semibold text-violet-600 hover:text-violet-700">
+                        <button onClick={() => changeView('login')} className="font-semibold text-violet-600 hover:text-violet-700 cursor-pointer">
                             Sign In
                         </button>
                     </p>
