@@ -135,6 +135,18 @@ class AdminUsersListView(generics.ListAPIView):
             annotated_attempts_today=Count('attempts', filter=Q(attempts__started_at__gte=today_start), distinct=True)
         ).order_by('-date_joined')
 
+    def list(self, request, *args, **kwargs):
+        from django.core.cache import cache
+        cache_key = f"admin_users_list_{request.query_params.urlencode()}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        res = super().list(request, *args, **kwargs)
+        if res.status_code == 200:
+            cache.set(cache_key, res.data, 60)
+        return res
+
 # Alias for backwards compatibility
 AdminUserListView = AdminUsersListView
 

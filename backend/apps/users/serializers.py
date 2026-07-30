@@ -292,11 +292,17 @@ class UserSerializer(serializers.ModelSerializer):
         return missing
 
     def get_badge_count(self, obj):
-        return UserBadge.objects.filter(user=obj, status='CLAIMED').count()
+        from django.core.cache import cache
+        ck = f"badge_count_{obj.id}"
+        cached = cache.get(ck)
+        if cached is not None:
+            return cached
+        count = UserBadge.objects.filter(user=obj, status='CLAIMED').count()
+        cache.set(ck, count, 300)
+        return count
 
     def get_total_attempts(self, obj):
-        from apps.attempts.models import QuizAttempt
-        return QuizAttempt.objects.filter(user=obj, submitted_at__isnull=False).count()
+        return getattr(obj, 'quizzes_completed', 0) or getattr(obj, 'total_attempts', 0)
 
     def get_subscription(self, obj):
         from apps.users.models import Subscription

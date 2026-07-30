@@ -125,6 +125,11 @@ class SubscriptionPlansView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
+        from django.core.cache import cache
+        cached_plans = cache.get("subscription_plans_static")
+        if cached_plans:
+            return Response(cached_plans, status=status.HTTP_200_OK)
+
         plans = [
             {
                 "id": 1,
@@ -180,6 +185,7 @@ class SubscriptionPlansView(APIView):
                 ]
             }
         ]
+        cache.set("subscription_plans_static", plans, 300)
         return Response(plans, status=status.HTTP_200_OK)
 
 

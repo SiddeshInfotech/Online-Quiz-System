@@ -209,10 +209,21 @@ class LoginView(generics.GenericAPIView):
                     "error": "Please verify your email before logging in."
                 }, status=status.HTTP_403_FORBIDDEN)
 
-            # ✅ Pre-warm user progress cache in non-blocking background thread
+            # ✅ Pre-warm user progress, dashboard summary, and subscription caches in background thread
             import threading
-            from apps.users.services.badge_progress import BadgeProgressHelper
-            threading.Thread(target=BadgeProgressHelper.get_all_progress, args=(user,), daemon=True).start()
+            def _prewarm_user_caches(u):
+                try:
+                    from apps.users.services.badge_progress import BadgeProgressHelper
+                    from apps.analytics.views import DashboardSummaryView
+                    from apps.users.subscription_views import UserSubscriptionView
+                    BadgeProgressHelper.get_all_progress(u)
+                    fake_req = type('Req', (), {'user': u, 'META': {}, 'query_params': {}})()
+                    DashboardSummaryView().get(fake_req)
+                    UserSubscriptionView().get(fake_req)
+                except Exception as e:
+                    print(f"[CACHE PREWARM ERROR] {e}")
+
+            threading.Thread(target=_prewarm_user_caches, args=(user,), daemon=True).start()
 
             refresh = RefreshToken.for_user(user)
             return Response({
