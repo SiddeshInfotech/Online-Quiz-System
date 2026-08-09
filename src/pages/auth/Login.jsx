@@ -5,13 +5,10 @@ import { Mail, ArrowRight, Loader2 } from "lucide-react";
 import authService from "../../services/authService";
 import { useAuth } from "../../hooks/useAuth";
 import { useAuthModal } from "../../context/AuthModalContext";
-
 import Logo from "../../components/ui/Logo";
-
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
-
 import AuthHeader from "../../components/auth/AuthHeader";
 import PasswordInput from "../../components/auth/PasswordInput";
 import SocialButton from "../../components/auth/SocialButton";

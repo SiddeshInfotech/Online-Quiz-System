@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../components/layout/Navbar";
 import Hero from "../components/Landing/Hero";
-import TrustedCompanies from "../components/Landing/TrustedCompanies";
 import HowItWorks from "../components/Landing/HowItWorks";
 import Features from "../components/Landing/Features";
 import Testimonials from "../components/Landing/Testimonials";
@@ -58,7 +57,6 @@ function LandingPage() {
 
       <main>
         <Hero />
-        <TrustedCompanies />
         <HowItWorks />
         <Features />
         <Testimonials />
