@@ -455,6 +455,31 @@ class AIService:
                     "q": "What will `typeof NaN` evaluate to in JavaScript?",
                     "opts": ["\"number\"", "\"NaN\"", "\"undefined\"", "\"object\""],
                     "ans": "\"number\""
+                },
+                {
+                    "q": "How does Event Loop handle asynchronous callbacks in JavaScript?",
+                    "opts": ["Executes tasks from the microtask queue (Promises) before the macrotask queue (setTimeout)", "Executes setTimeout callbacks before Promise microtasks", "Executes all tasks synchronously in parallel", "Spawns a new OS process per callback"],
+                    "ans": "Executes tasks from the microtask queue (Promises) before the macrotask queue (setTimeout)"
+                },
+                {
+                    "q": "What is variable Hoisting in JavaScript?",
+                    "opts": ["Variables declared with 'var' are moved to the top of their scope during compilation", "Functions are executed before variable declarations", "Global variables are deleted automatically", "Variables declared with 'let' can be accessed before initialization"],
+                    "ans": "Variables declared with 'var' are moved to the top of their scope during compilation"
+                },
+                {
+                    "q": "What is the primary difference between `let` and `var` in ES6?",
+                    "opts": ["`let` is block-scoped, whereas `var` is function-scoped", "`var` is block-scoped, whereas `let` is global", "They have identical scoping rules", "`let` cannot be reassigned"],
+                    "ans": "`let` is block-scoped, whereas `var` is function-scoped"
+                },
+                {
+                    "q": "What does `Array.prototype.map()` return in JavaScript?",
+                    "opts": ["A new array containing the results of calling a provided function on every element", "Modifies the original array in-place", "Returns a single accumulated number", "Returns a boolean indicating if elements match"],
+                    "ans": "A new array containing the results of calling a provided function on every element"
+                },
+                {
+                    "q": "What is the purpose of `Promise.all()` in JavaScript?",
+                    "opts": ["Fulfills when all promises fulfill, or rejects immediately when any promise rejects", "Fulfills as soon as the first promise fulfills", "Executes promises sequentially in series", "Suppresses all promise errors"],
+                    "ans": "Fulfills when all promises fulfill, or rejects immediately when any promise rejects"
                 }
             ],
             "c": [
@@ -840,8 +865,11 @@ Return ONLY valid JSON.
 
     def _call_openrouter(self, prompt, num_questions):
         models_to_try = [
+            "openrouter/free",
             "google/gemma-4-26b-a4b-it:free",
-            "inclusionai/ling-3.0-flash:free"
+            "google/gemma-4-31b-it:free",
+            "nvidia/nemotron-3.5-lightning:free",
+            "openai/gpt-oss-20b:free"
         ]
 
         last_error = None
@@ -865,7 +893,7 @@ Return ONLY valid JSON.
                     self.api_url,
                     headers=self.headers,
                     json=payload,
-                    timeout=0.8,
+                    timeout=12,
                     stream=False
                 )
 
@@ -1016,7 +1044,7 @@ Return ONLY valid JSON.
                     self.api_url,
                     headers=self.headers,
                     json=payload,
-                    timeout=4,
+                    timeout=12,
                     stream=False
                 )
 
