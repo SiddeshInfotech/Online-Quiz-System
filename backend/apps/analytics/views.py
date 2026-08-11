@@ -159,17 +159,32 @@ class DashboardSummaryView(APIView):
         start_of_week_date = today_date - timedelta(days=idx_sun)
         start_of_week_dt = timezone.make_aware(datetime.combine(start_of_week_date, datetime.min.time()))
 
-        # Filter attempts completed in current week (Sun - Sat)
+        # Filter attempts completed/started in current week (Sun - Sat)
         weekly_attempts_qs = completed_attempts.filter(submitted_at__gte=start_of_week_dt)
 
-        weekly_quizzes_attempted = weekly_attempts_qs.count()
+        weekly_started_count = QuizAttempt.objects.filter(user=user, started_at__gte=start_of_week_dt).count()
+        weekly_quizzes_attempted = max(weekly_attempts_qs.count(), weekly_started_count)
         weekly_avg_score = round(float(weekly_attempts_qs.aggregate(avg=Avg('percentage'))['avg'] or 0), 1)
 
-        # Time spent in current week formatted (e.g. 1h 45m or 45m)
+        # Time spent in current week formatted (e.g. 1h 45m, 45m, or 25s)
         weekly_time_sec = weekly_attempts_qs.aggregate(tot=Sum('time_spent_seconds'))['tot'] or 0
+        if weekly_time_sec == 0 and weekly_attempts_qs.exists():
+            for att in weekly_attempts_qs:
+                if att.submitted_at and att.started_at:
+                    weekly_time_sec += max(1, int((att.submitted_at - att.started_at).total_seconds()))
+
         w_hours = weekly_time_sec // 3600
         w_mins = (weekly_time_sec % 3600) // 60
-        time_spent_formatted = f"{w_hours}h {w_mins}m" if w_hours > 0 else f"{w_mins}m"
+        w_secs = weekly_time_sec % 60
+
+        if w_hours > 0:
+            time_spent_formatted = f"{w_hours}h {w_mins}m"
+        elif w_mins > 0:
+            time_spent_formatted = f"{w_mins}m"
+        elif w_secs > 0:
+            time_spent_formatted = f"{w_secs}s"
+        else:
+            time_spent_formatted = "0m"
 
         # Accuracy in current week
         weekly_answers_stats = UserAnswer.objects.filter(attempt__in=weekly_attempts_qs).aggregate(

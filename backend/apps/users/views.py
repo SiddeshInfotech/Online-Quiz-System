@@ -853,39 +853,42 @@ class AllBadgesView(APIView):
                 claimed_ids.add(bid)
                 claimed_at_map[bid] = ub.claimed_at
 
-        badges_list = cache.get("all_badges_static_list")
+        badges_list = cache.get("all_badges_dict_list_v2")
         if not badges_list:
-            badges_list = list(Badge.objects.all().order_by('badge_id'))
-            cache.set("all_badges_static_list", badges_list, 3600)
+            badges_list = list(Badge.objects.all().order_by('badge_id').values(
+                'badge_id', 'name', 'description', 'image_url', 'category', 'rarity', 'requirement', 'xp_reward'
+            ))
+            cache.set("all_badges_dict_list_v2", badges_list, 3600)
 
         rarity_xp_map = {'COMMON': 25, 'RARE': 50, 'EPIC': 100, 'LEGENDARY': 250}
         
         badge_results = []
         for b in badges_list:
-            bid = b.badge_id
+            bid = b['badge_id']
             is_claimed = bid in claimed_ids
             is_unlocked = bid in earned_ids
             status_str = "CLAIMED" if is_claimed else ("CLAIMABLE" if is_unlocked else "LOCKED")
             
             cur_prog = int(progress_map.get(bid, 0) or 0)
-            target = BadgeProgressHelper.get_target(b) or 1
+            target = BadgeProgressHelper.get_target(bid) or 1
             pct = min(100.0, round((cur_prog / target) * 100.0, 2)) if target > 0 else (100.0 if cur_prog > 0 else 0.0)
             
             e_at = awarded_at_map.get(bid)
             c_at = claimed_at_map.get(bid)
 
-            xp_rew = b.xp_reward if (b.xp_reward and b.xp_reward != 10) else rarity_xp_map.get((b.rarity or 'COMMON').upper(), 25)
+            badge_xp = b.get('xp_reward')
+            xp_rew = badge_xp if (badge_xp and badge_xp != 10) else rarity_xp_map.get((b.get('rarity') or 'COMMON').upper(), 25)
 
             badge_results.append({
                 "badge_id": bid,
-                "badge_name": b.name,
-                "name": b.name,
-                "description": b.description,
-                "icon_url": b.image_url,
-                "image_url": b.image_url,
-                "category": b.category,
-                "rarity": b.rarity,
-                "requirement": b.requirement,
+                "badge_name": b['name'],
+                "name": b['name'],
+                "description": b['description'],
+                "icon_url": b['image_url'],
+                "image_url": b['image_url'],
+                "category": b['category'],
+                "rarity": b['rarity'],
+                "requirement": b['requirement'],
                 "is_unlocked": is_unlocked,
                 "is_claimed": is_claimed,
                 "status": status_str,
