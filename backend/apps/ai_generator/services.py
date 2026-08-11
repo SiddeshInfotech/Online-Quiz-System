@@ -21,14 +21,10 @@ class AIService:
         } if self.api_key else {}
 
     def generate_quiz(self, subject, difficulty, num_questions, prompt_topic="", quiz_mode="Theory"):
-        try:
-            if quiz_mode == "Coding":
-                return self._generate_coding_quiz(subject, difficulty, num_questions, prompt_topic)
-            else:
-                return self._generate_theory_quiz(subject, difficulty, num_questions, prompt_topic)
-        except Exception as e:
-            print(f"[WARNING] AI OpenRouter models failed ({e}), generating bulletproof fallback quiz...")
-            return self._generate_fallback_quiz(subject, difficulty, num_questions, prompt_topic, quiz_mode)
+        if quiz_mode == "Coding":
+            return self._generate_coding_quiz(subject, difficulty, num_questions, prompt_topic)
+        else:
+            return self._generate_theory_quiz(subject, difficulty, num_questions, prompt_topic)
 
     def _generate_fallback_quiz(self, subject, difficulty, num_questions, prompt_topic, quiz_mode):
         topic_title = prompt_topic.strip() if prompt_topic else "Core Principles"
@@ -778,6 +774,8 @@ Return ONLY valid JSON.
             raise ValueError("Empty output from AI model")
 
         text = raw_text.strip()
+        # Strip AI thinking tags (<think>...</think>) if present
+        text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
 
         # 1. Remove markdown fences
         code_block = re.search(r'```(?:json)?\s*(.*?)\s*```', text, re.DOTALL)
@@ -865,11 +863,10 @@ Return ONLY valid JSON.
 
     def _call_openrouter(self, prompt, num_questions):
         models_to_try = [
-            "openrouter/free",
+            "openai/gpt-4o-mini",
+            "meta-llama/llama-3.3-70b-instruct",
             "google/gemma-4-26b-a4b-it:free",
-            "google/gemma-4-31b-it:free",
-            "nvidia/nemotron-3.5-lightning:free",
-            "openai/gpt-oss-20b:free"
+            "openrouter/free"
         ]
 
         last_error = None
@@ -886,7 +883,7 @@ Return ONLY valid JSON.
                         {"role": "user", "content": prompt}
                     ],
                     "temperature": 0.7,
-                    "max_tokens": 3000,
+                    "max_tokens": 1500,
                 }
 
                 response = requests.post(
