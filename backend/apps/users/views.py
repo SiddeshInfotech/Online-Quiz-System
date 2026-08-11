@@ -733,7 +733,11 @@ class AchievementStatsView(APIView):
 
     def get(self, request):
         user = request.user
-        
+        cache_key = f"achievement_stats_{user.id}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
         total_badges = Badge.objects.count()
         claimed_badges = UserBadge.objects.filter(
             user=user, status='CLAIMED'
@@ -765,7 +769,7 @@ class AchievementStatsView(APIView):
             rarity_counts[rarity] = rarity_counts.get(rarity, 0) + 1
             category_counts[category] = category_counts.get(category, 0) + 1
 
-        return Response({
+        res_data = {
             "level": level,
             "current_level_xp": current_level_xp,
             "current_xp": current_xp,
@@ -778,20 +782,28 @@ class AchievementStatsView(APIView):
             "total_badges": total_badges,
             "rarity_distribution": rarity_counts,
             "category_distribution": category_counts,
-        })
+        }
+        cache.set(cache_key, res_data, 300)
+        return Response(res_data)
 
 
 class AchievementCategoriesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        user = request.user
+        cache_key = f"achievement_cats_{user.id}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
         from django.db.models import Count
 
         total_counts = Badge.objects.values('category').annotate(count=Count('id'))
         total_map = {item['category']: item['count'] for item in total_counts}
 
         earned_counts = UserBadge.objects.filter(
-            user=request.user,
+            user=user,
             status='CLAIMED'
         ).values('badge__category').annotate(count=Count('id'))
         earned_map = {item['badge__category']: item['count'] for item in earned_counts}
@@ -804,6 +816,7 @@ class AchievementCategoriesView(APIView):
                 "total": total_map.get(cat, 0),
                 "earned": earned_map.get(cat, 0),
             })
+        cache.set(cache_key, category_data, 300)
         return Response(category_data)
     
 
@@ -833,27 +846,65 @@ class AllBadgesView(APIView):
         claimed_at_map = {}
         
         for ub in user_badges:
-            earned_ids.add(ub.badge.badge_id)
-            awarded_at_map[ub.badge.badge_id] = ub.earned_at
+            bid = ub.badge.badge_id
+            earned_ids.add(bid)
+            awarded_at_map[bid] = ub.earned_at
             if ub.status == 'CLAIMED':
-                claimed_ids.add(ub.badge.badge_id)
-                claimed_at_map[ub.badge.badge_id] = ub.claimed_at
+                claimed_ids.add(bid)
+                claimed_at_map[bid] = ub.claimed_at
+
+        badges_list = cache.get("all_badges_static_list")
+        if not badges_list:
+            badges_list = list(Badge.objects.all().order_by('badge_id'))
+            cache.set("all_badges_static_list", badges_list, 3600)
+
+        rarity_xp_map = {'COMMON': 25, 'RARE': 50, 'EPIC': 100, 'LEGENDARY': 250}
         
-        badges = Badge.objects.all().order_by('badge_id')
-        context = {
-            'user': user,
-            'progress_map': progress_map,
-            'earned_ids': earned_ids,
-            'claimed_ids': claimed_ids,
-            'awarded_at_map': awarded_at_map,
-            'claimed_at_map': claimed_at_map,
-        }
-        serializer = AllBadgeSerializer(badges, many=True, context=context)
+        badge_results = []
+        for b in badges_list:
+            bid = b.badge_id
+            is_claimed = bid in claimed_ids
+            is_unlocked = bid in earned_ids
+            status_str = "CLAIMED" if is_claimed else ("CLAIMABLE" if is_unlocked else "LOCKED")
+            
+            cur_prog = int(progress_map.get(bid, 0) or 0)
+            target = BadgeProgressHelper.get_target(b) or 1
+            pct = min(100.0, round((cur_prog / target) * 100.0, 2)) if target > 0 else (100.0 if cur_prog > 0 else 0.0)
+            
+            e_at = awarded_at_map.get(bid)
+            c_at = claimed_at_map.get(bid)
+
+            xp_rew = b.xp_reward if (b.xp_reward and b.xp_reward != 10) else rarity_xp_map.get((b.rarity or 'COMMON').upper(), 25)
+
+            badge_results.append({
+                "badge_id": bid,
+                "badge_name": b.name,
+                "name": b.name,
+                "description": b.description,
+                "icon_url": b.image_url,
+                "image_url": b.image_url,
+                "category": b.category,
+                "rarity": b.rarity,
+                "requirement": b.requirement,
+                "is_unlocked": is_unlocked,
+                "is_claimed": is_claimed,
+                "status": status_str,
+                "current_progress": cur_prog,
+                "required_target": target,
+                "progress_percentage": pct,
+                "progress": cur_prog,
+                "target": target,
+                "xp_reward": xp_rew,
+                "earned_at": e_at.isoformat() if hasattr(e_at, 'isoformat') else (e_at if isinstance(e_at, str) else None),
+                "claimed_at": c_at.isoformat() if hasattr(c_at, 'isoformat') else (c_at if isinstance(c_at, str) else None),
+                "awarded_at": e_at.isoformat() if hasattr(e_at, 'isoformat') else (e_at if isinstance(e_at, str) else None),
+            })
+
         data = {
-            "total": badges.count(),
+            "total": len(badges_list),
             "claimable": len(earned_ids) - len(claimed_ids),
             "claimed": len(claimed_ids),
-            "badges": serializer.data
+            "badges": badge_results
         }
         
         cache.set(cache_key, data, 600)

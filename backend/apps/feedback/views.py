@@ -155,12 +155,20 @@ class MyFeedbackView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        from django.core.cache import cache
+        cache_key = f"my_feedback_{request.user.id}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
         qs = Feedback.objects.filter(user=request.user).select_related('user', 'replied_by').order_by('created_at')
-        return Response({
+        res_data = {
             "count": qs.count(),
             "max_allowed": MAX_FEEDBACK_PER_USER,
             "results": FeedbackSerializer(qs, many=True).data
-        }, status=status.HTTP_200_OK)
+        }
+        cache.set(cache_key, res_data, 60)
+        return Response(res_data, status=status.HTTP_200_OK)
 
 
 class MyFeedbackDetailView(APIView):
