@@ -67,16 +67,6 @@ class BadgeProgressHelper:
             q_counts = Question.objects.filter(quiz_id__in=quiz_ids).values('quiz_id').annotate(count=Count('id'))
             question_counts = {item['quiz_id']: item['count'] for item in q_counts}
         
-        # Precompute QuizAttempt counts per quiz (scoped to user's quizzes)
-        quiz_attempts_counts = {}
-        if quiz_ids:
-            quiz_attempts_counts = {
-                item['quiz_id']: item['count']
-                for item in QuizAttempt.objects.filter(quiz_id__in=quiz_ids, submitted_at__isnull=False)
-                .values('quiz_id')
-                .annotate(count=Count('id'))
-            }
-
         # Subject stats in memory
         subject_data = {}
         for att in attempts_list:
@@ -108,26 +98,22 @@ class BadgeProgressHelper:
         max_no_mistake_streak = 0
         perfect_consecutive = 0
         max_perfect_consecutive = 0
-        
-        # Group attempts by quiz in memory
+
         attempts_by_quiz = {}
-        # Group attempts by date in memory
         attempts_by_date = {}
         
         for att in reversed(attempts_list):
-            # Grouping by quiz
             qid = att.quiz_id
             if qid not in attempts_by_quiz:
                 attempts_by_quiz[qid] = []
             attempts_by_quiz[qid].append(att)
             
-            # Grouping by date (local time)
             local_dt = timezone.localtime(att.submitted_at)
             day = local_dt.date()
             if day not in attempts_by_date:
                 attempts_by_date[day] = []
             attempts_by_date[day].append(att)
-            
+
             # Process attempt
             q_count = question_counts.get(qid, 0)
             
@@ -167,8 +153,7 @@ class BadgeProgressHelper:
             
             # Hidden gem (<=2 attempts globally)
             if not hidden_gem:
-                total_quiz_attempts = quiz_attempts_counts.get(qid, 0)
-                if total_quiz_attempts <= 2:
+                if len(attempts_by_quiz.get(qid, [])) <= 2:
                     hidden_gem = True
             
             # No mistake streak
@@ -186,6 +171,8 @@ class BadgeProgressHelper:
                 perfect_consecutive = 0
             if perfect_consecutive > max_perfect_consecutive:
                 max_perfect_consecutive = perfect_consecutive
+
+        quiz_attempts_counts = {qid: len(atts) for qid, atts in attempts_by_quiz.items()}
         
         # Today's data and max daily stats
         today = timezone.localtime(timezone.now()).date()
