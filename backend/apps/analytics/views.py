@@ -394,7 +394,7 @@ class DashboardSummaryView(APIView):
         res_data["total_attempts_remaining"] = daily_attempt_remaining
         res_data["attempts_remaining"] = daily_attempt_remaining
 
-        cache.set(cache_key, res_data, 15)
+        cache.set(cache_key, res_data, 300)
         return Response(res_data)
 
     def _calculate_streak(self, user):
@@ -403,7 +403,7 @@ class DashboardSummaryView(APIView):
             attempts_dates = QuizAttempt.objects.filter(
                 user=user,
                 submitted_at__isnull=False
-            ).values_list('submitted_at', flat=True)
+            ).order_by('-submitted_at').values_list('submitted_at', flat=True)[:60]
 
             if not attempts_dates:
                 if user.current_streak != 0:

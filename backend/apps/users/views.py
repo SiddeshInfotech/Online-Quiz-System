@@ -101,21 +101,21 @@ class RegisterView(generics.CreateAPIView):
         try:
             from_email = os.environ.get('FROM_EMAIL', 'zeeshanansari1081015@gmail.com')
             if purpose == 'verification':
-                subject = 'Verify Your Email - Online Quiz System'
+                subject = 'Verify Your Email - QuizGen AI'
                 html_content = f"""
-                <p>Hello {user.full_name or user.username},</p>
+                <p>Welcome {user.full_name or user.username},</p>
                 <p>Thank you for registering! Your OTP for email verification is: <b>{otp_code}</b></p>
                 <p>This OTP is valid for 10 minutes.</p>
                 <p>If you did not register, please ignore this email.</p>
-                <p>- Online Quiz Team</p>
+                <p>- QuizGen AI Team</p>
                 """
             else:  # password reset
-                subject = 'Password Reset OTP - Online Quiz System'
+                subject = 'Password Reset OTP - QuizGen AI'
                 html_content = f"""
-                <p>Hello {user.full_name or user.username},</p>
+                <p>Welcome {user.full_name or user.username},</p>
                 <p>Your OTP for password reset is: <b>{otp_code}</b></p>
                 <p>This OTP is valid for 10 minutes.</p>
-                <p>- Online Quiz Team</p>
+                <p>- QuizGen AI Team</p>
                 """
 
             message = Mail(
@@ -248,20 +248,20 @@ class LoginView(generics.GenericAPIView):
         try:
             from_email = os.environ.get('FROM_EMAIL', 'zeeshanansari1081015@gmail.com')
             if purpose == 'verification':
-                subject = 'Verify Your Email - Online Quiz System'
+                subject = 'Verify Your Email - QuizGen AI'
                 html_content = f"""
-                <p>Hello {user.full_name or user.username},</p>
+                <p>Welcome {user.full_name or user.username},</p>
                 <p>Your OTP for email verification is: <b>{otp_code}</b></p>
                 <p>This OTP is valid for 10 minutes.</p>
-                <p>- Online Quiz Team</p>
+                <p>- QuizGen AI Team</p>
                 """
             else:
-                subject = 'Password Reset OTP - Online Quiz System'
+                subject = 'Password Reset OTP - QuizGen AI'
                 html_content = f"""
-                <p>Hello {user.full_name or user.username},</p>
+                <p>Welcome {user.full_name or user.username},</p>
                 <p>Your OTP for password reset is: <b>{otp_code}</b></p>
                 <p>This OTP is valid for 10 minutes.</p>
-                <p>- Online Quiz Team</p>
+                <p>- QuizGen AI Team</p>
                 """
             message = Mail(
                 from_email=from_email,

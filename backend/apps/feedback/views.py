@@ -112,22 +112,42 @@ class FeedbackListView(generics.ListAPIView):
     def get_queryset(self):
         return Feedback.objects.filter(is_hidden=False).exclude(status='Hidden').select_related('user', 'replied_by').order_by('-created_at')
 
+    def list(self, request, *args, **kwargs):
+        from django.core.cache import cache
+        cache_key = f"public_feedback_list_{request.query_params.urlencode()}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        res = super().list(request, *args, **kwargs)
+        if res.status_code == 200:
+            cache.set(cache_key, res.data, 60)
+        return res
+
 
 class FeedbackSummaryView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        from django.core.cache import cache
+        cache_key = "feedback_summary_global"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
         qs = Feedback.objects.filter(is_hidden=False).exclude(status='Hidden')
         total_reviews = qs.count()
         avg_rating = qs.aggregate(Avg('rating'))['rating__avg'] or 0
         distribution = {
             str(r): qs.filter(rating=r).count() for r in range(1, 6)
         }
-        return Response({
+        res_data = {
             "average_rating": round(avg_rating, 2),
             "total_reviews": total_reviews,
             "distribution": distribution
-        })
+        }
+        cache.set(cache_key, res_data, 60)
+        return Response(res_data)
 
 
 class MyFeedbackView(APIView):

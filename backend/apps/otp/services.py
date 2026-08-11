@@ -11,9 +11,9 @@ def generate_otp(length=6):
     return ''.join(random.choices(string.digits, k=length))
 
 def send_otp_email(user, otp_code, purpose='Password Reset'):
-    subject = f"{purpose} OTP for Online Quiz System"
+    subject = f"{purpose} OTP for QuizGen AI"
     message = f"""
-    Hello {user.full_name or user.username},
+    Welcome {user.full_name or user.username},
     
     Your OTP for {purpose.lower()} is: {otp_code}
     
@@ -22,7 +22,7 @@ def send_otp_email(user, otp_code, purpose='Password Reset'):
     If you didn't request this, please ignore this email.
     
     Regards,
-    Online Quiz System Team
+    QuizGen AI Team
     """
     from_email = settings.DEFAULT_FROM_EMAIL
     recipient_list = [user.email]

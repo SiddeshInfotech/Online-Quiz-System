@@ -227,14 +227,14 @@ class BadgeProgressHelper:
             else:
                 goal_days = 0
         
-        # Early bird / Night owl
+        # Early bird (5 AM - 9 AM) / Night owl (10 PM - 4 AM)
         early_bird = False
         night_owl = False
         for att in attempts_list:
             local_time = timezone.localtime(att.submitted_at)
-            if local_time.hour < 9:
+            if 5 <= local_time.hour < 9:
                 early_bird = True
-            if local_time.hour >= 22:
+            if local_time.hour >= 22 or 0 <= local_time.hour < 4:
                 night_owl = True
             if early_bird and night_owl:
                 break
