@@ -2,6 +2,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.utils import timezone
+from django.core.cache import cache
 from datetime import datetime
 from .models import QuizAttempt, UserAnswer, Result
 from rest_framework.permissions import IsAuthenticated
@@ -164,7 +165,7 @@ class StartAttemptView(APIView):
                             "difficulty": quiz.difficulty,
                             "duration_minutes": quiz.duration_minutes,
                             "time_limit_minutes": quiz.duration_minutes,
-                            "total_questions": questions.count()
+                            "total_questions": len(question_data)
                         },
                         "questions": question_data,
                     },
@@ -193,7 +194,7 @@ class StartAttemptView(APIView):
                         "difficulty": quiz.difficulty,
                         "duration_minutes": quiz.duration_minutes,
                         "time_limit_minutes": quiz.duration_minutes,
-                        "total_questions": questions.count()
+                        "total_questions": len(question_data)
                     },
                     "questions": question_data,
                 },
@@ -228,7 +229,7 @@ class StartAttemptView(APIView):
                     "difficulty": quiz.difficulty,
                     "duration_minutes": quiz.duration_minutes,
                     "time_limit_minutes": quiz.duration_minutes,
-                    "total_questions": questions.count()
+                    "total_questions": len(question_data)
                 },
                 "questions": question_data,
             },
@@ -559,6 +560,15 @@ class AttemptDetailView(generics.RetrieveAPIView):
         except QuizAttempt.DoesNotExist:
             return Response({"error": "Attempt not found."}, status=status.HTTP_404_NOT_FOUND)
 
+        cache_key = f"attempt_detail_questions_{attempt_id}"
+        cached_res = cache.get(cache_key)
+        if cached_res and attempt.submitted_at is None:
+            elapsed = (timezone.now() - attempt.started_at).total_seconds()
+            remaining = max(0, (attempt.quiz.duration_minutes * 60) - elapsed)
+            cached_res["timer"] = int(remaining)
+            cached_res["remaining_time_seconds"] = int(remaining)
+            return Response(cached_res, status=status.HTTP_200_OK)
+
         user_answers = UserAnswer.objects.filter(attempt=attempt)
         answer_map = {
             ua.question_id: {
@@ -587,7 +597,7 @@ class AttemptDetailView(generics.RetrieveAPIView):
             remaining = 0
             is_completed = True
 
-        return Response({
+        resp_data = {
             "attempt_id": attempt.id,
             "quiz_title": attempt.quiz.title,
             "started_at": attempt.started_at,
@@ -606,10 +616,13 @@ class AttemptDetailView(generics.RetrieveAPIView):
                 "difficulty": attempt.quiz.difficulty,
                 "duration_minutes": attempt.quiz.duration_minutes,
                 "time_limit_minutes": attempt.quiz.duration_minutes,
-                "total_questions": attempt.quiz.question_set.count()
+                "total_questions": len(question_data)
             },
             "questions": question_data,
-        }, status=status.HTTP_200_OK)
+        }
+        if attempt.submitted_at is None:
+            cache.set(cache_key, resp_data, 60)
+        return Response(resp_data, status=status.HTTP_200_OK)
 
 
     

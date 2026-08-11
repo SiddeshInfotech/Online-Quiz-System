@@ -127,15 +127,21 @@ class AttemptQuestionSerializer(serializers.ModelSerializer):
         return text
 
     def get_options(self, obj):
+        if hasattr(obj, '_cached_opts_list'):
+            return obj._cached_opts_list
+
         if hasattr(obj, 'options') and isinstance(obj.options, list) and obj.options:
             opts_list = [clean_quiz_text(opt) for opt in obj.options if opt is not None]
         else:
             if hasattr(obj, '_prefetched_objects_cache') and 'options' in obj._prefetched_objects_cache:
-                opts = obj._prefetched_objects_cache['options'].all()
-                opts = sorted(opts, key=lambda x: x.id)
+                opts = list(obj._prefetched_objects_cache['options'])
+            elif hasattr(obj, 'options') and hasattr(obj.options, 'all'):
+                opts = list(obj.options.all())
             else:
-                opts = obj.options.all().order_by('id')
-            opts_list = [clean_quiz_text(opt.option_text) for opt in opts if opt.option_text is not None]
+                opts = []
+            
+            opts = sorted(opts, key=lambda x: getattr(x, 'id', 0))
+            opts_list = [clean_quiz_text(opt.option_text) for opt in opts if getattr(opt, 'option_text', None) is not None]
 
         # 🛡️ BULLETPROOF GUARANTEE: Exactly 4 options strictly enforced!
         distractors = ["TypeError", "AttributeError", "SyntaxError", "None", "Compilation Error", "Undefined Behavior", "0", "1"]
@@ -147,6 +153,7 @@ class AttemptQuestionSerializer(serializers.ModelSerializer):
                 opts_list.append(dist)
                 seen.add(dist)
 
+        obj._cached_opts_list = opts_list
         return opts_list
 
     def get_choices(self, obj):
