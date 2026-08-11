@@ -1003,13 +1003,10 @@ Return ONLY valid JSON.
         Generate AI explanations (list of strings) using OpenRouter.
         """
         models_to_try = [
-            "openrouter/free",
-            "google/gemma-4-31b-it:free",
+            "openai/gpt-4o-mini",
+            "meta-llama/llama-3.3-70b-instruct",
             "google/gemma-4-26b-a4b-it:free",
-            "cohere/north-mini-code:free",
-            "inclusionai/ling-3.0-flash:free",
-            "meta-llama/llama-3.3-70b-instruct:free",
-            "deepseek/deepseek-r1:free"
+            "openrouter/free"
         ]
 
         last_error = None
@@ -1034,7 +1031,7 @@ Return ONLY valid JSON.
                     ],
                     "response_format": {"type": "json_object"},
                     "temperature": 0.7,
-                    "max_tokens": 2000,
+                    "max_tokens": 1500,
                 }
 
                 response = requests.post(
