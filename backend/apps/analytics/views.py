@@ -140,14 +140,14 @@ class DashboardSummaryView(APIView):
         avg_score = completed_stats['avg_score'] or 0
         total_time_spent = completed_stats['total_time'] or 0
 
-        # ✅ OPTIMIZATION: Batch user answers statistics in a single aggregate query
-        user_answers_stats = UserAnswer.objects.filter(attempt__user=user).aggregate(
-            total_answered=Count('id', filter=~Q(selected_option_id__isnull=True)),
+        # ✅ Batch user answers statistics in a single aggregate query across all completed attempts
+        user_answers_stats = UserAnswer.objects.filter(attempt__user=user, attempt__submitted_at__isnull=False).aggregate(
+            total_questions=Count('id'),
             correct_answers=Count('id', filter=Q(is_correct=True))
         )
-        total_answered = user_answers_stats['total_answered'] or 0
+        total_questions = user_answers_stats['total_questions'] or 0
         correct_answers = user_answers_stats['correct_answers'] or 0
-        accuracy = round((correct_answers / total_answered * 100), 2) if total_answered > 0 else 0
+        accuracy = round((correct_answers / total_questions * 100), 2) if total_questions > 0 else 0
 
         # Calculate current week bounds (Sun - Sat)
         now_dt = timezone.now()
@@ -186,14 +186,14 @@ class DashboardSummaryView(APIView):
         else:
             time_spent_formatted = "0m"
 
-        # Accuracy in current week
+        # Accuracy in current week (Total Correct Answers / Total Questions Presented in Completed Quizzes * 100)
         weekly_answers_stats = UserAnswer.objects.filter(attempt__in=weekly_attempts_qs).aggregate(
-            total_answered=Count('id', filter=~Q(selected_option_id__isnull=True)),
+            total_questions=Count('id'),
             correct_answers=Count('id', filter=Q(is_correct=True))
         )
-        w_total_ans = weekly_answers_stats['total_answered'] or 0
+        w_total_questions = weekly_answers_stats['total_questions'] or 0
         w_correct_ans = weekly_answers_stats['correct_answers'] or 0
-        weekly_accuracy = round((w_correct_ans / w_total_ans * 100), 1) if w_total_ans > 0 else 0
+        weekly_accuracy = round((w_correct_ans / w_total_questions * 100), 1) if w_total_questions > 0 else 0
 
         # Construct Sun - Sat 7-day chart array
         day_names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
