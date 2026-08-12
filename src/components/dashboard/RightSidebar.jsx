@@ -65,7 +65,7 @@ export const TopNotificationsPanel = ({ notifications = [] }) => {
                         {notif.text}
                       </p>
                       <Link
-                        to={notif.actionUrl || "/profile"}
+                        to={notif.actionUrl ? (notif.actionUrl.includes("edit=true") ? notif.actionUrl : `${notif.actionUrl}?edit=true`) : "/profile?edit=true"}
                         className="inline-flex items-center gap-1 text-[11px] font-bold text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 mt-1.5 group"
                       >
                         <span>Complete Profile</span>

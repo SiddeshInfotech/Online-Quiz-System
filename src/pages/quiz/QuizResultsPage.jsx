@@ -5,7 +5,7 @@ import Button from "../../components/ui/Button";
 import { useAuth } from "../../hooks/useAuth";
 import { getCurrentPlan } from "../pricing/PricingPage";
 
-// Components
+import { ArrowLeft } from "lucide-react";
 import ResultHero from "./components/results/ResultHero";
 import ResultStats from "./components/results/ResultStats";
 import PerformanceSummary from "./components/results/PerformanceSummary";
@@ -140,6 +140,17 @@ const QuizResultsPage = () => {
         </div>
       )}
       <div className="max-w-5xl mx-auto space-y-6">
+
+        {/* Top Back Navigation */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={handleBackToDashboard}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-app hover:text-violet-600 surface border border-app rounded-xl px-4 py-2 shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
+          >
+            <ArrowLeft size={16} />
+            <span>Back to Dashboard</span>
+          </button>
+        </div>
 
         {/* Header Section */}
         <ResultHero result={result} isLoading={isLoading} />

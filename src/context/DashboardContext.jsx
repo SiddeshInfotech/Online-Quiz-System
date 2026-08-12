@@ -60,7 +60,7 @@ export const DashboardProvider = ({ children }) => {
         time: "Pinned",
         isRead: false,
         iconType: "target",
-        actionUrl: "/profile",
+        actionUrl: "/profile?edit=true",
       });
     }
 

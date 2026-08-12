@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, Lock, Sparkles } from "lucide-react";
+import { Check, Lock, Sparkles, Loader2 } from "lucide-react";
 import Card from "../ui/Card/Card";
 import Button from "../ui/Button/Button";
 import ProgressBar from "./ProgressBar";
@@ -13,6 +14,8 @@ const rarityColors = {
 };
 
 const BadgeCard = ({ badge, onClaim, className = "" }) => {
+  const [isClaiming, setIsClaiming] = useState(false);
+
   if (!badge) return null;
 
   const {
@@ -34,6 +37,17 @@ const BadgeCard = ({ badge, onClaim, className = "" }) => {
   const isLocked = is_unlocked === false;
   const isClaimable = is_unlocked === true && is_claimed === false;
   const isClaimed = is_claimed === true;
+
+  const handleClaimClick = async (e) => {
+    e.preventDefault();
+    if (isClaiming || !onClaim) return;
+    setIsClaiming(true);
+    try {
+      await onClaim(badge);
+    } finally {
+      setIsClaiming(false);
+    }
+  };
 
   // Card outline styles for theme
   const cardStyle = isClaimable
@@ -127,14 +141,21 @@ const BadgeCard = ({ badge, onClaim, className = "" }) => {
             {isClaimable ? (
               <Button
                 variant="primary"
-                className="w-full justify-center text-xs font-bold py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white rounded-xl shadow-lg shadow-violet-600/30 border border-violet-400/30 animate-pulse"
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (onClaim) onClaim(badge);
-                }}
+                disabled={isClaiming}
+                className="w-full justify-center text-xs font-bold py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white rounded-xl shadow-lg shadow-violet-600/30 border border-violet-400/30 disabled:opacity-75 cursor-pointer"
+                onClick={handleClaimClick}
               >
-                <Sparkles size={14} className="mr-1.5" />
-                Claim +{xp_reward} XP
+                {isClaiming ? (
+                  <span className="flex items-center justify-center gap-1.5">
+                    <Loader2 size={14} className="animate-spin" />
+                    Claiming...
+                  </span>
+                ) : (
+                  <>
+                    <Sparkles size={14} className="mr-1.5" />
+                    Claim +{xp_reward} XP
+                  </>
+                )}
               </Button>
             ) : isClaimed ? (
               <div className="w-full py-2 bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5">

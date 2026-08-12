@@ -413,12 +413,12 @@ const QuizAttemptPage = () => {
         isLoading={isLoading}
       />
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8 flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-3 md:py-4 flex flex-col lg:flex-row gap-5 items-start">
         {/* Left Col: Question & Navigation */}
-        <div className="flex-1 w-full flex flex-col gap-6">
+        <div className="flex-1 w-full flex flex-col gap-3">
           
           {/* Autosave Indicator */}
-          <div className="h-6 flex items-center justify-end">
+          <div className="flex items-center justify-end min-h-[20px]">
              {autosaveStatus === "saving" && (
                 <span className="text-xs font-medium text-app-muted flex items-center gap-1.5 animate-pulse">
                   <div className="w-3 h-3 border-2 border-app border-t-slate-500 rounded-full animate-spin" />
@@ -469,7 +469,7 @@ const QuizAttemptPage = () => {
           )}
 
           {/* Navigation Buttons */}
-          <div className="flex items-center justify-between pt-4 gap-2">
+          <div className="flex items-center justify-between pt-2 gap-2">
             <Button
               variant="secondary"
               onClick={handlePrev}
@@ -479,17 +479,6 @@ const QuizAttemptPage = () => {
               <ChevronLeft size={18} className="mr-1" />
               Previous
             </Button>
-
-            {currentIndex < questions.length - 1 && (
-              <Button
-                variant="outline"
-                onClick={() => setShowSubmitModal(true)}
-                disabled={isLoading || isSubmitting}
-                className="hidden sm:flex border-violet-300 dark:border-violet-700 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 font-semibold"
-              >
-                Submit Early
-              </Button>
-            )}
 
             <Button
               variant="primary"

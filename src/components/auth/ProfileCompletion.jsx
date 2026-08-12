@@ -166,7 +166,7 @@ const ProfileCompletion = ({ inModal = true }) => {
 
           {/* Quick selection chips for programming subjects */}
           <div className="flex flex-wrap gap-1.5 pt-1">
-            {["C", "C++", "Python", "JavaScript", "React", "Java", "Django", "Node.js"].map((tech) => (
+            {["C", "C++", "Python", "Java", "JavaScript", "TypeScript", "React", "Node.js", "Django", "Flask", "Rust"].map((tech) => (
               <button
                 key={tech}
                 type="button"

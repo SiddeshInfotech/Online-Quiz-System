@@ -174,9 +174,9 @@ const SignupForm = ({ onSuccess, inModal = false }) => {
             )}
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="mt-5 space-y-3.5">
-                {/* 🔥 Username Field */}
-                <div className="relative">
+            <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+                {/* Username + Email Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Input
                         type="text"
                         name="username"
@@ -186,10 +186,19 @@ const SignupForm = ({ onSuccess, inModal = false }) => {
                         leftIcon={UserPlus}
                         required
                     />
+                    <Input
+                        type="email"
+                        name="email"
+                        placeholder="Email Address"
+                        value={localFormData.email}
+                        onChange={handleChange}
+                        leftIcon={Mail}
+                        required
+                    />
                 </div>
 
-                {/* First + Last Name */}
-                <div className="grid grid-cols-2 gap-3">
+                {/* First + Last Name Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Input
                         name="firstName"
                         placeholder="First Name"
@@ -206,48 +215,37 @@ const SignupForm = ({ onSuccess, inModal = false }) => {
                     />
                 </div>
 
-                {/* Email */}
-                <Input
-                    type="email"
-                    name="email"
-                    placeholder="Email Address"
-                    value={localFormData.email}
-                    onChange={handleChange}
-                    leftIcon={Mail}
-                    required
-                />
-
-                {/* Password */}
-                <div>
-                    <PasswordInput
-                        name="password"
-                        placeholder="Password"
-                        value={localFormData.password}
-                        onChange={handleChange}
-                    />
-                    <PasswordStrengthIndicator password={localFormData.password} />
+                {/* Password + Confirm Password Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <PasswordInput
+                            name="password"
+                            placeholder="Password"
+                            value={localFormData.password}
+                            onChange={handleChange}
+                        />
+                    </div>
+                    <div>
+                        <PasswordInput
+                            name="confirmPassword"
+                            placeholder="Confirm Password"
+                            value={localFormData.confirmPassword}
+                            onChange={handleChange}
+                        />
+                    </div>
                 </div>
-
-                {/* Confirm Password */}
-                <div>
-                    <PasswordInput
-                        name="confirmPassword"
-                        placeholder="Confirm Password"
-                        value={localFormData.confirmPassword}
-                        onChange={handleChange}
-                    />
-                    {localFormData.confirmPassword && localFormData.password !== localFormData.confirmPassword && (
-                        <p className="mt-1 text-xs text-red-500 font-medium">
-                            Passwords do not match
-                        </p>
-                    )}
-                </div>
+                {localFormData.password && <PasswordStrengthIndicator password={localFormData.password} />}
+                {localFormData.confirmPassword && localFormData.password !== localFormData.confirmPassword && (
+                    <p className="text-xs text-red-500 font-medium">
+                        Passwords do not match
+                    </p>
+                )}
 
                 {/* Checkbox */}
-                <label className="flex cursor-pointer items-start gap-3 text-sm text-app-2">
+                <label className="flex cursor-pointer items-center gap-2.5 text-xs text-app-2 pt-1">
                     <input
                         type="checkbox"
-                        className="mt-1 h-4 w-4 rounded accent-violet-600"
+                        className="h-4 w-4 rounded accent-violet-600"
                         required
                     />
                     <span>
@@ -272,24 +270,24 @@ const SignupForm = ({ onSuccess, inModal = false }) => {
                 <button
                     type="submit"
                     disabled={isLoading || !isPasswordStrong(localFormData.password) || localFormData.password !== localFormData.confirmPassword}
-                    className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-3 font-semibold text-white transition hover:shadow-lg hover:shadow-violet-500/30 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-3 font-semibold text-white transition hover:shadow-lg hover:shadow-violet-500/30 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm mt-1"
                 >
                     {isLoading ? "Creating Account..." : "Create Account →"}
                 </button>
             </form>
 
             {/* Divider */}
-            <div className="my-5">
+            <div className="my-3.5">
                 <AuthDivider />
             </div>
-            <div className="space-y-4">
+            <div>
                 <SocialButton provider="google" onSuccess={handleGoogleSuccess} />
             </div>
 
             {/* Footer */}
-            <div className="mt-5">
+            <div className="mt-3.5">
                 {inModal ? (
-                    <p className="text-center text-sm text-app-muted">
+                    <p className="text-center text-xs sm:text-sm text-app-muted">
                         Already have an account?{" "}
                         <button onClick={() => changeView('login')} className="font-semibold text-violet-600 hover:text-violet-700 cursor-pointer">
                             Sign In

@@ -12,19 +12,19 @@
 
 :root {
   /* Surfaces */
-  --bg-app: #F8FAFC;
-  --bg-surface: #FFFFFF;
-  --bg-elevated: #FFFFFF;
-  --bg-subtle: #F1F5F9;
+  --bg-app: #F0F4F8;       /* Clean cool slate page background */
+  --bg-surface: #FFFFFF;   /* Crisp white card surface */
+  --bg-elevated: #FFFFFF;  /* Crisp white elevated card surface */
+  --bg-subtle: #E2E8F0;    /* Distinct sub-containers, inputs, and toggle backgrounds */
 
   /* Text */
-  --text-primary: #0F172A;
-  --text-secondary: #475569;
-  --text-muted: #64748B;
+  --text-primary: #0F172A;   /* Deep slate-900 for high readability */
+  --text-secondary: #334155; /* Slate-700 for subtitles */
+  --text-muted: #64748B;     /* Slate-500 for muted text */
 
   /* Borders */
-  --border: #E2E8F0;
-  --border-strong: #CBD5E1;
+  --border: #CBD5E1;        /* Slate-300 for crisp, visible card borders */
+  --border-strong: #94A3B8; /* Slate-400 for strong borders */
 
   /* Brand accent (unchanged in light) */
   --accent: #7C3AED;
@@ -35,7 +35,7 @@
   /* violet-100 */
   --accent-contrast: #FFFFFF;
 
-  /* Signature gradients  the hero glow / CTA use these */
+  /* Signature gradients — the hero glow / CTA use these */
   --grad-primary: linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%);
   --hero-glow-1: rgba(124, 58, 237, 0.18);
   --hero-glow-2: rgba(79, 70, 229, 0.14);
@@ -127,6 +127,12 @@ button {
 
 .surface-subtle {
   background-color: var(--bg-subtle);
+}
+
+/* Light mode card border & shadow enhancement */
+html:not(.dark) .surface,
+html:not(.dark) .surface-elev {
+  box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
 }
 
 .text-app {

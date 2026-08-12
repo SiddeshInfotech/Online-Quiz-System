@@ -80,56 +80,41 @@ const AuthModal = () => {
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4 sm:p-6"
+          className="fixed inset-0 z-50 w-screen h-screen min-h-screen flex items-center justify-center p-4 sm:p-6 md:p-8 overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.25 }}
         >
-          {/* Backdrop */}
-          <motion.div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+          {/* Full Screen Background Image */}
+          <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
+            <img
+              src={authImage}
+              alt="Authentication Background"
+              className="w-full h-full object-cover select-none"
+            />
+            {/* Dark Overlay with Backdrop Blur */}
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-md" />
+          </div>
+
+          {/* Close Button (Top-Right) */}
+          <button
             onClick={closeModal}
-          />
-
-          {/* Modal Container: 50 / 50 Split */}
-          <motion.div
-            className="relative w-full max-w-[950px] max-h-[88vh] my-auto rounded-2xl md:rounded-3xl shadow-2xl surface border border-app/50 flex flex-col md:flex-row bg-[var(--bg-surface)] text-[var(--text-app)] overflow-hidden"
-            initial={{ scale: 0.95, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.95, opacity: 0, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="absolute top-5 right-5 z-30 p-2.5 rounded-full surface border border-app text-app-muted hover:text-app hover:border-violet-500/50 shadow-xl transition-all cursor-pointer"
+            aria-label="Close authentication screen"
           >
-            {/* Close Button */}
-            <button
-              onClick={closeModal}
-              className="absolute top-4 right-4 z-20 p-2 rounded-full surface-elev text-app-muted hover:text-app hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer"
-            >
-              <X size={20} />
-            </button>
+            <X size={22} />
+          </button>
 
-            {/* Left Side: 50% Full-bleed Image */}
-            <div className="hidden md:block w-1/2 relative bg-slate-950 self-stretch overflow-hidden min-h-[450px]">
-              <img
-                src={authImage}
-                alt="Authentication"
-                className="w-full h-full object-cover select-none"
-              />
-            </div>
-
-            {/* Mobile Header (replaces left side image on small screens) */}
-            <div className="md:hidden flex items-center gap-3 p-6 pb-0">
-               <Logo isDarkBg={false} />
-            </div>
-
-            {/* Right Side: 50% Form with internal scrolling */}
-            <div className="w-full md:w-1/2 flex flex-col max-h-[88vh] overflow-y-auto">
-              <div className="p-6 sm:p-8 md:p-9 flex flex-col">
-                {renderView()}
-              </div>
-            </div>
+          {/* Centered Form Card */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 12 }}
+            transition={{ duration: 0.2 }}
+            className="relative z-20 w-full max-w-[620px] my-auto p-6 sm:p-8 md:p-9 surface border border-app/60 rounded-3xl shadow-2xl max-h-[92vh] overflow-y-auto text-[var(--text-app)]"
+          >
+            {renderView()}
           </motion.div>
         </motion.div>
       )}

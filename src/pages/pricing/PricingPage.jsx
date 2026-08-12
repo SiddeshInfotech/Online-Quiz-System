@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import Card from "../../components/ui/Card/Card";
 import Button from "../../components/ui/Button/Button";
-import Navbar from "../../components/layout/Navbar";
+
 import { AuthContext } from "../../context/AuthContext";
 import subscriptionService from "../../services/subscriptionService";
 import CancelSubscriptionModal from "../../components/common/CancelSubscriptionModal";
@@ -101,7 +101,7 @@ const FAQ = () => {
 };
 
 const PricingPage = () => {
-  const { currentUser, updateUser } = useContext(AuthContext);
+  const { currentUser, updateUser, token } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -137,20 +137,31 @@ const PricingPage = () => {
     const loadSubscriptionDetails = async () => {
       try {
         setLoading(true);
-        const [subRes, plansRes] = await Promise.allSettled([
-          subscriptionService.getSubscription(),
-          subscriptionService.getPlans(),
-        ]);
+        const hasToken = Boolean(token || localStorage.getItem("quizgen_token"));
+
+        const plansPromise = subscriptionService.getPlans().catch((err) => {
+          console.warn("Failed to load plans:", err);
+          return [];
+        });
+
+        const subPromise = (currentUser || hasToken)
+          ? subscriptionService.getSubscription().catch((err) => {
+              console.warn("Failed to load user subscription:", err);
+              return null;
+            })
+          : Promise.resolve(null);
+
+        const [plansRes, subRes] = await Promise.all([plansPromise, subPromise]);
 
         if (isMounted) {
-          if (subRes.status === "fulfilled" && subRes.value) {
-            setSubscriptionData(subRes.value);
-            const activePlan = subRes.value.plan?.toLowerCase() || (subRes.value.is_pro ? "pro" : "free");
-            setCurrentPlan(activePlan, updateUser, currentUser);
+          if (Array.isArray(plansRes)) {
+            setPlansData(plansRes);
           }
 
-          if (plansRes.status === "fulfilled" && Array.isArray(plansRes.value)) {
-            setPlansData(plansRes.value);
+          if (subRes) {
+            setSubscriptionData(subRes);
+            const activePlan = subRes.plan?.toLowerCase() || (subRes.is_pro ? "pro" : "free");
+            setCurrentPlan(activePlan, updateUser, currentUser);
           }
         }
       } catch (err) {
@@ -170,7 +181,7 @@ const PricingPage = () => {
       isMounted = false;
       window.removeEventListener("app:refresh-plan", handlePlanChange);
     };
-  }, []);
+  }, [currentUser, token]);
 
   const isPro = Boolean(
     subscriptionData?.is_pro ||
@@ -180,6 +191,11 @@ const PricingPage = () => {
   );
 
   const handleUpgrade = async () => {
+    // If user is not logged in, navigate to login page gracefully
+    if (!currentUser && !token && !localStorage.getItem("quizgen_token")) {
+      navigate("/login", { state: { from: "/pricing" } });
+      return;
+    }
     if (isPro) return;
     setUpgrading(true);
     setApiError("");
@@ -250,7 +266,7 @@ const PricingPage = () => {
 
   return (
     <>
-      {!currentUser && <Navbar />}
+
 
       <div className="w-full max-w-6xl mx-auto pb-16 pt-6 px-4 sm:px-6">
         {/* Smart back button — returns to origin page */}
@@ -513,77 +529,6 @@ const PricingPage = () => {
           </p>
         </motion.div>
 
-        {/* 4-Row Feature Comparison Table */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-          className="mt-12 max-w-4xl mx-auto"
-        >
-          <Card className="p-8">
-            <h3 className="text-xl font-bold font-space-grotesk text-app mb-6 text-center">
-              Free vs Premium Tier – Final Comparison
-            </h3>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm border-collapse">
-                <thead>
-                  <tr className="border-b border-app">
-                    <th className="py-4 px-4 font-bold text-app">#</th>
-                    <th className="py-4 px-4 font-bold text-app">Feature</th>
-                    <th className="py-4 px-4 font-bold text-center text-app">Free Tier</th>
-                    <th className="py-4 px-4 font-bold text-center text-violet-600 dark:text-violet-400">Premium Tier</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-app">
-                  <tr>
-                    <td className="py-3.5 px-4 font-semibold text-app-muted">1</td>
-                    <td className="py-3.5 px-4 font-medium text-app flex items-center gap-2">
-                      <Code2 size={16} className="text-violet-500" /> AI Quiz Questions
-                    </td>
-                    <td className="py-3.5 px-4 text-center text-app-muted">Only 5 or 10</td>
-                    <td className="py-3.5 px-4 text-center font-bold text-violet-600 dark:text-violet-400 bg-violet-500/5">
-                      5, 10, 15, 20, 25
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td className="py-3.5 px-4 font-semibold text-app-muted">2</td>
-                    <td className="py-3.5 px-4 font-medium text-app flex items-center gap-2">
-                      <BookOpen size={16} className="text-violet-500" /> Quiz Generation / Day
-                    </td>
-                    <td className="py-3.5 px-4 text-center text-app-muted">Only 3 quizzes per day</td>
-                    <td className="py-3.5 px-4 text-center font-bold text-violet-600 dark:text-violet-400 bg-violet-500/5">
-                      10 quizzes per day
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td className="py-3.5 px-4 font-semibold text-app-muted">3</td>
-                    <td className="py-3.5 px-4 font-medium text-app flex items-center gap-2">
-                      <Zap size={16} className="text-violet-500" /> Quiz Attempts
-                    </td>
-                    <td className="py-3.5 px-4 text-center text-app-muted">Limited daily practice</td>
-                    <td className="py-3.5 px-4 text-center font-bold text-violet-600 dark:text-violet-400 bg-violet-500/5">
-                      Unlimited quiz attempts
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td className="py-3.5 px-4 font-semibold text-app-muted">4</td>
-                    <td className="py-3.5 px-4 font-medium text-app flex items-center gap-2">
-                      <RotateCcw size={16} className="text-violet-500" /> Retry / Re-attempt
-                    </td>
-                    <td className="py-3.5 px-4 text-center text-red-500 font-medium">❌ No retry (1 attempt only)</td>
-                    <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-violet-500/5">
-                      ✅ 1 retry allowed (2 total attempts)
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </motion.div>
 
         {/* FAQ Section */}
         <motion.div

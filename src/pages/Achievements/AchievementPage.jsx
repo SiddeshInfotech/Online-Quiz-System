@@ -71,9 +71,6 @@ const AchievementPage = () => {
       const badgeId = badge.badge_id || badge.id;
       const res = await achievementService.claimBadge(badgeId);
 
-      showToast("Badge claimed successfully!");
-      loadData();
-
       if (res && res.celebrate && res.badge) {
         setCelebration({
           badge: { ...res.badge, icon_url: resolveMediaUrl(res.badge.icon_url || res.badge.image_url) },
@@ -83,6 +80,10 @@ const AchievementPage = () => {
         setSelectedBadge({ ...badge, ...res });
         setShowClaimModal(true);
       }
+
+      showToast("Badge claimed successfully!");
+      // Refresh page state asynchronously so it doesn't block celebration popup
+      loadData();
     } catch (error) {
       console.error("Failed to claim badge", error);
       showToast(error.message || "Could not claim badge. Please try again.");

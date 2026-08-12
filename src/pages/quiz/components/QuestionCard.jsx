@@ -123,19 +123,19 @@ const QuestionCard = ({
   const optionsArray = Array.isArray(rawOptions) ? rawOptions : [];
 
   return (
-    <div className="surface rounded-3xl p-6 md:p-10 shadow-sm border border-app relative overflow-hidden">
+    <div className="surface rounded-3xl p-4 md:p-6 shadow-sm border border-app relative overflow-hidden">
       {/* Top action bar */}
-      <div className="flex items-start justify-between mb-6 pb-4 border-b border-app">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-app">
+        <div className="flex items-center gap-3">
           <h2
-            className="text-lg md:text-xl font-bold text-app"
+            className="text-base md:text-lg font-bold text-app"
             tabIndex={-1}
             id="question-heading"
           >
             Question {index + 1}
           </h2>
           {reviewMode && (
-            <div className={`px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1.5 ${question.is_correct ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'}`}>
+            <div className={`px-2.5 py-0.5 rounded-full text-xs font-bold flex items-center gap-1 ${question.is_correct ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'}`}>
               {question.is_correct ? '✅ Correct' : '❌ Incorrect'}
             </div>
           )}
@@ -145,7 +145,7 @@ const QuestionCard = ({
             {selectedOptionId && (
               <button
                 onClick={onClearAnswer}
-                className="text-xs font-medium text-app-muted hover:text-red-600 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                className="text-xs font-medium text-app-muted hover:text-red-600 flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:bg-red-50 transition-colors"
                 title="Clear Answer"
               >
                 <XCircle size={14} />
@@ -154,7 +154,7 @@ const QuestionCard = ({
             )}
             <button
               onClick={onToggleReview}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-xs font-medium ${isMarkedForReview
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-colors text-xs font-medium ${isMarkedForReview
                 ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
                 : "text-app-muted hover:bg-[var(--bg-elevated)] hover:text-app"
                 }`}
@@ -170,24 +170,23 @@ const QuestionCard = ({
       </div>
 
       {/* Question Text */}
-      <div className="prose prose-slate max-w-none mb-8">
+      <div className="prose prose-slate max-w-none mb-3.5">
         {renderQuestionText()}
         {question.image_url && (
           <img
             src={question.image_url}
             alt="Question visual"
-            className="mt-4 max-h-64 rounded-xl object-contain"
+            className="mt-3 max-h-48 rounded-xl object-contain"
           />
         )}
       </div>
 
       {/* Options */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         {optionsArray.length === 0 ? (
-          <div className="p-6 rounded-2xl border-2 border-dashed border-amber-500/30 bg-amber-500/5 text-center text-amber-700 dark:text-amber-400 font-medium space-y-1">
-            <AlertTriangle size={24} className="mx-auto mb-1 opacity-80" />
-            <p className="text-sm font-semibold">No options available for this question.</p>
-            <p className="text-xs opacity-75">If this issue persists, please contact support or try refreshing.</p>
+          <div className="p-4 rounded-2xl border-2 border-dashed border-amber-500/30 bg-amber-500/5 text-center text-amber-700 dark:text-amber-400 font-medium space-y-1">
+            <AlertTriangle size={20} className="mx-auto mb-1 opacity-80" />
+            <p className="text-xs font-semibold">No options available for this question.</p>
           </div>
         ) : (
           optionsArray.map((option, i) => {
@@ -238,7 +237,7 @@ const QuestionCard = ({
               }
             } else {
               if (isSelected) {
-                containerClasses = "border-violet-500 bg-violet-500/10 shadow-md";
+                containerClasses = "border-violet-500 bg-violet-500/10 shadow-sm";
                 circleClasses = "bg-violet-500 border-violet-500 text-white";
                 textClasses = "font-semibold text-violet-700 dark:text-violet-300";
                 indicatorClasses = "border-violet-500";
@@ -256,19 +255,19 @@ const QuestionCard = ({
             return (
               <motion.button
                 key={optionId || i}
-                whileHover={reviewMode || disabled ? {} : { scale: 1.01 }}
-                whileTap={reviewMode || disabled ? {} : { scale: 0.99 }}
+                whileHover={reviewMode || disabled ? {} : { scale: 1.005 }}
+                whileTap={reviewMode || disabled ? {} : { scale: 0.995 }}
                 onClick={() => !reviewMode && !disabled && onSelectOption(optionId)}
                 disabled={reviewMode || disabled}
-                className={`w-full text-left p-4 rounded-2xl border-2 transition-all flex items-start gap-4 ${containerClasses} ${disabled && !reviewMode ? "opacity-70 cursor-not-allowed" : ""}`}
+                className={`w-full text-left py-2.5 px-3.5 sm:py-3 sm:px-4 rounded-xl border-2 transition-all flex items-center gap-3 ${containerClasses} ${disabled && !reviewMode ? "opacity-70 cursor-not-allowed" : ""}`}
               >
                 <div
-                  className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-colors ${circleClasses}`}
+                  className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs border-2 transition-colors ${circleClasses}`}
                 >
                   {letter}
                 </div>
-                <div className="flex-1 mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <span className={`text-base ${textClasses}`}>
+                <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                  <span className={`text-sm sm:text-base ${textClasses}`}>
                     {optionText}
                   </span>
                   {reviewMode && (

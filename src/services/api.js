@@ -97,8 +97,11 @@ api.interceptors.response.use(
         requestUrl.includes("/auth/login/");
 
       if (isAuthEndpoint || originalRequest._retry) {
+        const hadToken = !!getToken();
         clearAuth();
-        window.dispatchEvent(new CustomEvent("auth:logout"));
+        if (hadToken) {
+          window.dispatchEvent(new CustomEvent("auth:logout"));
+        }
         return Promise.reject(error);
       }
 
@@ -120,8 +123,11 @@ api.interceptors.response.use(
 
       if (!refreshToken) {
         isRefreshing = false;
+        const hadToken = !!getToken();
         clearAuth();
-        window.dispatchEvent(new CustomEvent("auth:logout"));
+        if (hadToken) {
+          window.dispatchEvent(new CustomEvent("auth:logout"));
+        }
         return Promise.reject(error);
       }
 

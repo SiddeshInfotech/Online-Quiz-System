@@ -110,7 +110,7 @@ const QuestionPalette = ({
         </div>
       </div>
 
-      {!reviewMode && onSubmitQuiz && (
+      {!reviewMode && onSubmitQuiz && currentQuestionIndex < totalQuestions - 1 && (
         <div className="pt-5 mt-5 border-t border-app">
           <Button
             variant="primary"

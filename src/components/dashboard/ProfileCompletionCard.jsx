@@ -64,8 +64,8 @@ const ProfileCompletionCard = ({ user }) => {
         </div>
 
         {/* Complete Profile Button */}
-        <Link to="/profile" className="shrink-0 w-full sm:w-auto">
-          <Button variant="primary" className="w-full sm:w-auto gap-2 text-xs">
+        <Link to="/profile?edit=true" className="shrink-0 w-full sm:w-auto">
+          <Button variant="primary" className="w-full sm:w-auto gap-2 text-xs cursor-pointer">
             <span>Complete Profile</span>
             <ArrowRight size={15} />
           </Button>

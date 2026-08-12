@@ -85,16 +85,6 @@ const ResultActions = ({
         transition={{ delay: 0.5, duration: 0.4 }}
       >
         <Button 
-          variant="secondary" 
-          size="lg" 
-          className="flex-1"
-          onClick={onBackToLibrary}
-        >
-          <ArrowLeft size={18} className="mr-2" />
-          {returnLabel}
-        </Button>
-
-        <Button 
           variant="outline" 
           size="lg" 
           className="flex-1"

@@ -38,34 +38,21 @@ const BadgeStats = ({ stats, onScrollToClaimable }) => {
   
   const level = stats.level || 1;
   const currentXp = stats.current_xp ?? stats.total_xp ?? 0;
-  const nextLevelXp = stats.next_level_xp ?? (level * 1000);
+  const nextLevelXp = stats.next_level_xp ?? (level * 100);
   const remainingXp = stats.remaining_xp ?? Math.max(0, nextLevelXp - currentXp);
 
-  // Robust percentage calculation handling all backend stat formats
-  let xpPercentage = 0;
+  // Derive starting base XP for current level range
+  const prevLevelXp = stats.prev_level_xp ?? stats.start_level_xp ?? (
+    stats.current_level_xp !== undefined && stats.current_level_xp !== null && stats.current_level_xp < nextLevelXp
+      ? stats.current_level_xp
+      : (nextLevelXp > 0 ? Math.round(nextLevelXp - (nextLevelXp / level)) : 0)
+  );
 
-  if (stats.progress_percentage !== undefined && stats.progress_percentage !== null) {
-    xpPercentage = Number(stats.progress_percentage);
-  } else if (stats.level_progress_percentage !== undefined && stats.level_progress_percentage !== null) {
-    xpPercentage = Number(stats.level_progress_percentage);
-  } else if (stats.level_progress !== undefined && stats.level_progress !== null) {
-    xpPercentage = Number(stats.level_progress);
-  } else if (nextLevelXp > 0) {
-    if (
-      stats.current_level_xp !== undefined &&
-      stats.current_level_xp !== null &&
-      stats.current_level_xp < nextLevelXp &&
-      currentXp > stats.current_level_xp
-    ) {
-      const span = nextLevelXp - stats.current_level_xp;
-      const progress = currentXp - stats.current_level_xp;
-      xpPercentage = Math.round((progress / span) * 100);
-    } else {
-      xpPercentage = Math.round((currentXp / nextLevelXp) * 100);
-    }
-  }
+  const levelSpan = Math.max(1, nextLevelXp - prevLevelXp);
+  const currentLevelProgress = Math.max(0, currentXp - prevLevelXp);
 
-  xpPercentage = Math.min(100, Math.max(0, xpPercentage));
+  // Calculate exact percentage progress inside current level range
+  const xpPercentage = Math.min(100, Math.max(0, Math.round((currentLevelProgress / levelSpan) * 100)));
   
   const claimedCount = stats.claimed_badges ?? 0;
   const claimableCount = stats.claimable_badges ?? 0;
@@ -141,9 +128,6 @@ const BadgeStats = ({ stats, onScrollToClaimable }) => {
               Current XP: <span className="text-app font-bold">{currentXp.toLocaleString()}</span> / Next Level: <span className="text-app font-bold">{nextLevelXp.toLocaleString()}</span>
               <span className="ml-2 text-violet-600 dark:text-violet-400 font-semibold">({remainingXp.toLocaleString()} XP Remaining)</span>
             </div>
-            <span className="text-xs font-extrabold text-violet-600 dark:text-violet-400 bg-violet-500/10 px-2.5 py-1 rounded-lg border border-violet-500/20">
-              {xpPercentage}%
-            </span>
           </div>
         </div>
 
