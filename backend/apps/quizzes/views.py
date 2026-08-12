@@ -145,7 +145,7 @@ class QuizLibraryListView(generics.ListAPIView):
         return queryset.annotate(
             annotated_progress=Subquery(latest_attempt.values('percentage')[:1]),
             annotated_total_questions=Count('question', distinct=True)
-        )
+        ).filter(annotated_total_questions__gt=0)
 
     def list(self, request, *args, **kwargs):
         from django.core.cache import cache

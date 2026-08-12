@@ -411,9 +411,10 @@ class SubmitAttemptView(APIView):
 
         threading.Thread(target=background_recalculate, args=(request.user,), daemon=True).start()
 
-        # Invalidate user dashboard summary cache so recent attempts update immediately
+        # Invalidate user dashboard summary cache & attempt questions cache so state updates immediately
         from django.core.cache import cache
         cache.delete(f"dashboard_summary_{request.user.id}")
+        cache.delete(f"attempt_detail_questions_{attempt.id}")
 
         # Minified response
         elapsed_ms = int((time.time() - start_time) * 1000)

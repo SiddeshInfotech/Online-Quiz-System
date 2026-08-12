@@ -105,7 +105,7 @@ class GlobalLeaderboardView(APIView):
             ranked_users = User.objects.filter(
                 deactivated_at__isnull=True,
                 is_active=True
-            ).order_by('-total_points', '-xp', 'id')[:100]
+            ).order_by('-total_points', '-xp', '-quizzes_completed', 'date_joined', 'id')[:100]
 
             pro_user_ids = set(
                 Subscription.objects.filter(plan='PRO', status='ACTIVE')
