@@ -117,7 +117,7 @@ class UserSubscriptionView(APIView):
                 "export_results": is_pro
             }
         }
-        cache.set(cache_key, response_data, 60)
+        cache.set(cache_key, response_data, 600)
         return Response(response_data, status=status.HTTP_200_OK)
 
 

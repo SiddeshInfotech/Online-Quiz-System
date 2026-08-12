@@ -416,6 +416,10 @@ class SubmitAttemptView(APIView):
         cache.delete(f"dashboard_summary_{request.user.id}")
         cache.delete(f"attempt_detail_questions_{attempt.id}")
 
+        # Trigger background cache prewarmer so returning to dashboard/achievements/feedback is INSTANT
+        from apps.users.services.cache_prewarmer import prewarm_user_cache
+        prewarm_user_cache(request.user.id)
+
         # Minified response
         elapsed_ms = int((time.time() - start_time) * 1000)
         print(f"[SUCCESS] Quiz submitted in {elapsed_ms}ms")

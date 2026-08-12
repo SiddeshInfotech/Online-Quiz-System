@@ -190,7 +190,18 @@ class RecommendedQuizzesListView(generics.ListAPIView):
         
         if user_grade:
             return queryset.filter(grade_level=user_grade)[:5]
-        return queryset.order_by('?')[:5]
+        return queryset.order_by('-created_at')[:5]
+
+    def list(self, request, *args, **kwargs):
+        from django.core.cache import cache
+        cache_key = f"recommended_quizzes_{request.user.id}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+        res = super().list(request, *args, **kwargs)
+        if res.status_code == 200:
+            cache.set(cache_key, res.data, 600)
+        return res
 
 class QuizLibraryMetaView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]

@@ -114,14 +114,15 @@ class FeedbackListView(generics.ListAPIView):
 
     def list(self, request, *args, **kwargs):
         from django.core.cache import cache
-        cache_key = f"public_feedback_list_{request.query_params.urlencode()}"
+        params_str = request.query_params.urlencode()
+        cache_key = f"public_feedback_list_{params_str}" if params_str else "public_feedback_list_global"
         cached = cache.get(cache_key)
         if cached is not None:
             return Response(cached)
 
         res = super().list(request, *args, **kwargs)
         if res.status_code == 200:
-            cache.set(cache_key, res.data, 60)
+            cache.set(cache_key, res.data, 600)
         return res
 
 
@@ -130,23 +131,37 @@ class FeedbackSummaryView(APIView):
 
     def get(self, request):
         from django.core.cache import cache
+        from django.db.models import Count, Avg, Q
         cache_key = "feedback_summary_global"
         cached = cache.get(cache_key)
         if cached is not None:
             return Response(cached)
 
         qs = Feedback.objects.filter(is_hidden=False).exclude(status='Hidden')
-        total_reviews = qs.count()
-        avg_rating = qs.aggregate(Avg('rating'))['rating__avg'] or 0
+        stats = qs.aggregate(
+            total_reviews=Count('id'),
+            avg_rating=Avg('rating'),
+            c1=Count('id', filter=Q(rating=1)),
+            c2=Count('id', filter=Q(rating=2)),
+            c3=Count('id', filter=Q(rating=3)),
+            c4=Count('id', filter=Q(rating=4)),
+            c5=Count('id', filter=Q(rating=5)),
+        )
+        total_reviews = stats['total_reviews'] or 0
+        avg_rating = stats['avg_rating'] or 0.0
         distribution = {
-            str(r): qs.filter(rating=r).count() for r in range(1, 6)
+            "1": stats['c1'] or 0,
+            "2": stats['c2'] or 0,
+            "3": stats['c3'] or 0,
+            "4": stats['c4'] or 0,
+            "5": stats['c5'] or 0,
         }
         res_data = {
-            "average_rating": round(avg_rating, 2),
+            "average_rating": round(float(avg_rating), 2),
             "total_reviews": total_reviews,
             "distribution": distribution
         }
-        cache.set(cache_key, res_data, 60)
+        cache.set(cache_key, res_data, 600)
         return Response(res_data)
 
 

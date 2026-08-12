@@ -23,23 +23,16 @@ class DashboardSummaryView(APIView):
         if cached:
             return Response(cached, status=200)
 
-        current_streak = self._calculate_streak(user)
-        longest_streak = user.longest_streak if hasattr(user, 'longest_streak') else 0
+        current_streak = getattr(user, 'current_streak', 0)
+        longest_streak = getattr(user, 'longest_streak', 0)
 
         total_quizzes = Quiz.objects.filter(status='published').count()
         completed_attempts = QuizAttempt.objects.filter(
             user=user, submitted_at__isnull=False
         )
-        quizzes_completed = completed_attempts.values('quiz_id').distinct().count()
-        total_attempts = completed_attempts.count()
-        progress_percentage = 0
-        if total_quizzes > 0:
-            progress_percentage = round((quizzes_completed / total_quizzes) * 100, 2)
 
-        # ==================== CONTINUE QUIZ LOGIC (FIXED) ====================
+        # ==================== CONTINUE QUIZ LOGIC ====================
         continue_quiz_data = None
-
-        # ✅ Get most recent unsubmitted attempt (NO time window)
         in_progress_attempt = QuizAttempt.objects.filter(
             user=user,
             submitted_at__isnull=True
@@ -59,7 +52,6 @@ class DashboardSummaryView(APIView):
             if remaining <= 0:
                 in_progress_attempt.submitted_at = timezone.now()
                 in_progress_attempt.save()
-                print(f"[AUTO-SUBMIT] Auto-submitted expired attempt {in_progress_attempt.id} for user {user.username}")
             else:
                 # ✅ Standardized response structure
                 continue_quiz_data = {
@@ -78,7 +70,7 @@ class DashboardSummaryView(APIView):
 
         quizzes_available = total_quizzes
 
-        notification_qs = Notification.objects.filter(user=user).order_by('-created_at')[:5]
+        notification_qs = list(Notification.objects.filter(user=user).order_by('-created_at')[:5])
         notifications = [
             {
                 "id": n.id,
@@ -102,17 +94,28 @@ class DashboardSummaryView(APIView):
 
         daily_goal = getattr(user, 'daily_quiz_goal', 3)
         today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        today_completed = QuizAttempt.objects.filter(
-            user=user,
-            submitted_at__isnull=False,
-            submitted_at__gte=today_start
-        ).count()
+
+        # Batch completed attempts statistics in a single aggregate query
+        completed_stats = completed_attempts.aggregate(
+            total_attempts=Count('id'),
+            distinct_quizzes=Count('quiz_id', distinct=True),
+            avg_score=Avg('percentage'),
+            total_time=Sum('time_spent_seconds'),
+            today_completed=Count('id', filter=Q(submitted_at__gte=today_start))
+        )
+        quizzes_completed = completed_stats['distinct_quizzes'] or 0
+        total_attempts = completed_stats['total_attempts'] or 0
+        avg_score = completed_stats['avg_score'] or 0
+        total_time_spent = completed_stats['total_time'] or 0
+        today_completed = completed_stats['today_completed'] or 0
+
+        progress_percentage = 0
+        if total_quizzes > 0:
+            progress_percentage = round((quizzes_completed / total_quizzes) * 100, 2)
+
         todays_goal_progress = min(today_completed, daily_goal)
 
-        recent_attempts = QuizAttempt.objects.filter(
-            user=user, submitted_at__isnull=False
-        ).select_related('quiz').order_by('-submitted_at')[:5]
-
+        recent_attempts = list(completed_attempts.select_related('quiz').order_by('-submitted_at')[:5])
         recent_attempts_data = []
         for attempt in recent_attempts:
             recent_attempts_data.append({
@@ -130,17 +133,6 @@ class DashboardSummaryView(APIView):
                 "status": "Passed" if attempt.percentage >= 40 else "Failed"
             })
 
-        # ✅ OPTIMIZATION: Batch completed attempts statistics in a single aggregate query
-        completed_stats = completed_attempts.aggregate(
-            total_attempts=Count('id'),
-            avg_score=Avg('percentage'),
-            total_time=Sum('time_spent_seconds')
-        )
-        total_attempts = completed_stats['total_attempts'] or 0
-        avg_score = completed_stats['avg_score'] or 0
-        total_time_spent = completed_stats['total_time'] or 0
-
-        # ✅ Batch user answers statistics in a single aggregate query across all completed attempts
         user_answers_stats = UserAnswer.objects.filter(attempt__user=user, attempt__submitted_at__isnull=False).aggregate(
             total_questions=Count('id'),
             correct_answers=Count('id', filter=Q(is_correct=True))
@@ -152,9 +144,6 @@ class DashboardSummaryView(APIView):
         # Calculate current week bounds (Sun - Sat)
         now_dt = timezone.now()
         today_date = timezone.localdate(now_dt)
-
-        # Sunday as start of week (0=Sunday, 1=Monday ... 6=Saturday)
-        # Python weekday: Mon=0, Tue=1, Wed=2, Thu=3, Fri=4, Sat=5, Sun=6
         idx_sun = (today_date.weekday() + 1) % 7
         start_of_week_date = today_date - timedelta(days=idx_sun)
         start_of_week_dt = timezone.make_aware(datetime.combine(start_of_week_date, datetime.min.time()))
@@ -162,17 +151,16 @@ class DashboardSummaryView(APIView):
         # Filter attempts completed/started in current week (Sun - Sat)
         weekly_attempts_qs = completed_attempts.filter(submitted_at__gte=start_of_week_dt)
 
-        weekly_started_count = QuizAttempt.objects.filter(user=user, started_at__gte=start_of_week_dt).count()
-        weekly_quizzes_attempted = max(weekly_attempts_qs.count(), weekly_started_count)
-        weekly_avg_score = round(float(weekly_attempts_qs.aggregate(avg=Avg('percentage'))['avg'] or 0), 1)
+        weekly_stats = weekly_attempts_qs.aggregate(
+            tot_count=Count('id'),
+            avg_score=Avg('percentage'),
+            tot_time=Sum('time_spent_seconds')
+        )
+        weekly_quizzes_attempted = weekly_stats['tot_count'] or 0
+        weekly_avg_score = round(float(weekly_stats['avg_score'] or 0), 1)
+        weekly_time_sec = weekly_stats['tot_time'] or 0
 
-        # Time spent in current week formatted (e.g. 1h 45m, 45m, or 25s)
-        weekly_time_sec = weekly_attempts_qs.aggregate(tot=Sum('time_spent_seconds'))['tot'] or 0
-        if weekly_time_sec == 0 and weekly_attempts_qs.exists():
-            for att in weekly_attempts_qs:
-                if att.submitted_at and att.started_at:
-                    weekly_time_sec += max(1, int((att.submitted_at - att.started_at).total_seconds()))
-
+        # Time spent in current week formatted
         w_hours = weekly_time_sec // 3600
         w_mins = (weekly_time_sec % 3600) // 60
         w_secs = weekly_time_sec % 60
@@ -186,7 +174,7 @@ class DashboardSummaryView(APIView):
         else:
             time_spent_formatted = "0m"
 
-        # Accuracy in current week (Total Correct Answers / Total Questions Presented in Completed Quizzes * 100)
+        # Accuracy in current week
         weekly_answers_stats = UserAnswer.objects.filter(attempt__in=weekly_attempts_qs).aggregate(
             total_questions=Count('id'),
             correct_answers=Count('id', filter=Q(is_correct=True))
@@ -232,8 +220,8 @@ class DashboardSummaryView(APIView):
             }
         }
 
-        level = user.level
-        current_xp = user.xp
+        level = getattr(user, 'level', 1)
+        current_xp = getattr(user, 'xp', 0)
         next_level_xp = level * 100
         while next_level_xp <= current_xp:
             next_level_xp += 100
@@ -409,7 +397,7 @@ class DashboardSummaryView(APIView):
         res_data["total_attempts_remaining"] = daily_attempt_remaining
         res_data["attempts_remaining"] = daily_attempt_remaining
 
-        cache.set(cache_key, res_data, 300)
+        cache.set(cache_key, res_data, 1800)
         return Response(res_data)
 
     def _calculate_streak(self, user):

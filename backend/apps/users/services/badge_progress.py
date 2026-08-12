@@ -31,7 +31,7 @@ class BadgeProgressHelper:
         attempts_list = list(QuizAttempt.objects.filter(
             user=user, submitted_at__isnull=False
         ).select_related('quiz').only(
-            'id', 'user_id', 'quiz_id', 'percentage', 'submitted_at', 'started_at', 'score'
+            'id', 'user_id', 'quiz_id', 'percentage', 'submitted_at', 'started_at', 'score', 'time_spent_seconds'
         ).order_by('-submitted_at')[:100])
         
         attempt_ids = [a.id for a in attempts_list]
