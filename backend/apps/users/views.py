@@ -140,18 +140,24 @@ class LoginView(generics.GenericAPIView):
         if serializer.is_valid():
             user = serializer.validated_data['user']
 
-            # ✅ Check if user is suspended or deleted FIRST
-            if getattr(user, 'status', None) == 'suspended' or (not user.is_active and getattr(user, 'suspension_reason', None)):
-                return Response({
-                    "error": "Account Suspended",
-                    "detail": "Your account has been suspended by an administrator. Please contact support for assistance.",
-                    "reason": getattr(user, 'suspension_reason', None) or "Suspended by admin"
-                }, status=status.HTTP_403_FORBIDDEN)
-
+            # 1. Check if user is deleted FIRST
             if getattr(user, 'status', None) == 'deleted' or getattr(user, 'is_deleted', False):
                 return Response({
                     "error": "Account Deleted",
-                    "detail": "This account has been deleted. Please contact support if you believe this is an error."
+                    "detail": "This account has been deleted. Please contact support if you believe this is an error.",
+                    "message": "This account has been deleted. Please contact support if you believe this is an error.",
+                    "deleted": True
+                }, status=status.HTTP_403_FORBIDDEN)
+
+            # 2. Check if user is suspended FIRST (before any email verification or active check)
+            if getattr(user, 'status', None) == 'suspended' or getattr(user, 'suspension_reason', None) or getattr(user, 'suspended_at', None):
+                reason = getattr(user, 'suspension_reason', None) or "Your account has been suspended by an administrator."
+                return Response({
+                    "error": "Account Suspended",
+                    "detail": f"Your account has been suspended by an administrator. Reason: {reason}",
+                    "message": f"Your account has been suspended by an administrator. Reason: {reason}",
+                    "reason": reason,
+                    "suspended": True
                 }, status=status.HTTP_403_FORBIDDEN)
 
             # If user is admin/staff/superuser, ensure active status and bypass verification
@@ -165,14 +171,14 @@ class LoginView(generics.GenericAPIView):
                 user.save()
 
             elif not user.is_active:
-                # BUGFIX (#4): check deactivation FIRST so a deactivated user
-                # gets the correct message instead of "Email not verified".
                 if getattr(user, 'deactivated_at', None):
                     return Response({
                         "error": f"Your account was deactivated on {user.deactivated_at.strftime('%Y-%m-%d')}. Please contact support to reactivate.",
+                        "detail": f"Your account was deactivated on {user.deactivated_at.strftime('%Y-%m-%d')}. Please contact support to reactivate.",
                         "deactivated": True,
                     }, status=status.HTTP_403_FORBIDDEN)
-                # ✅ Check if user is unverified (has pending OTP or never logged in)
+
+                # Check if user is unverified (has pending OTP or never logged in)
                 otp_exists = OTPVerification.objects.filter(
                     user=user,
                     purpose='Email Verification'
@@ -196,6 +202,7 @@ class LoginView(generics.GenericAPIView):
 
                     return Response({
                         "error": "Email not verified. A new OTP has been sent to your email.",
+                        "detail": "Email not verified. A new OTP has been sent to your email.",
                         "requires_verification": True,
                         "email": user.email,
                     }, status=status.HTTP_403_FORBIDDEN)
