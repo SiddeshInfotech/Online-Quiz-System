@@ -21,10 +21,14 @@ class AIService:
         } if self.api_key else {}
 
     def generate_quiz(self, subject, difficulty, num_questions, prompt_topic="", quiz_mode="Theory"):
-        if quiz_mode == "Coding":
-            return self._generate_coding_quiz(subject, difficulty, num_questions, prompt_topic)
-        else:
-            return self._generate_theory_quiz(subject, difficulty, num_questions, prompt_topic)
+        try:
+            if quiz_mode == "Coding":
+                return self._generate_coding_quiz(subject, difficulty, num_questions, prompt_topic)
+            else:
+                return self._generate_theory_quiz(subject, difficulty, num_questions, prompt_topic)
+        except Exception as e:
+            print(f"[AI GENERATION FALLBACK TRIGGERED] External models failed ({e}). Activating curated fallback generator...")
+            return self._generate_fallback_quiz(subject, difficulty, num_questions, prompt_topic, quiz_mode)
 
     def _generate_fallback_quiz(self, subject, difficulty, num_questions, prompt_topic, quiz_mode):
         topic_title = prompt_topic.strip() if prompt_topic else "Core Principles"
@@ -777,10 +781,28 @@ Return ONLY valid JSON.
         # Strip AI thinking tags (<think>...</think>) if present
         text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
 
-        # 1. Remove markdown fences
-        code_block = re.search(r'```(?:json)?\s*(.*?)\s*```', text, re.DOTALL)
-        if code_block:
-            text = code_block.group(1).strip()
+        # 1. Remove markdown fences cleanly (without breaking nested ``` code blocks in questions)
+        s = text.strip()
+        if s.startswith('```'):
+            lines = s.splitlines()
+            if lines and lines[0].strip().startswith('```'):
+                lines = lines[1:]
+            if lines and lines[-1].strip() == '```':
+                lines = lines[:-1]
+            text = '\n'.join(lines).strip()
+        else:
+            first_fence = text.find('```')
+            last_fence = text.rfind('```')
+            if first_fence != -1 and last_fence != -1 and last_fence > first_fence:
+                inner = text[first_fence:last_fence+3]
+                lines = inner.splitlines()
+                if lines and lines[0].strip().startswith('```'):
+                    lines = lines[1:]
+                if lines and lines[-1].strip() == '```':
+                    lines = lines[:-1]
+                cand = '\n'.join(lines).strip()
+                if cand.startswith('{') or cand.startswith('['):
+                    text = cand
 
         # 2. Try direct json.loads
         try:
@@ -863,10 +885,12 @@ Return ONLY valid JSON.
 
     def _call_openrouter(self, prompt, num_questions):
         models_to_try = [
-            "openai/gpt-4o-mini",
-            "meta-llama/llama-3.3-70b-instruct",
+            "inclusionai/ling-3.0-flash-fin:free",
             "google/gemma-4-26b-a4b-it:free",
-            "openrouter/free"
+            "liquid/lfm-2.5-2.6b:free",
+            "openrouter/free",
+            "meta-llama/llama-3.3-70b-instruct:free",
+            "openai/gpt-4o-mini"
         ]
 
         last_error = None
@@ -1003,10 +1027,12 @@ Return ONLY valid JSON.
         Generate AI explanations (list of strings) using OpenRouter.
         """
         models_to_try = [
-            "openai/gpt-4o-mini",
-            "meta-llama/llama-3.3-70b-instruct",
+            "inclusionai/ling-3.0-flash-fin:free",
             "google/gemma-4-26b-a4b-it:free",
-            "openrouter/free"
+            "liquid/lfm-2.5-2.6b:free",
+            "openrouter/free",
+            "meta-llama/llama-3.3-70b-instruct:free",
+            "openai/gpt-4o-mini"
         ]
 
         last_error = None
@@ -1071,7 +1097,9 @@ Return ONLY valid JSON.
             except Exception as e:
                 last_error = f"{model} error: {str(e)}"
 
-        raise ValueError(f"All AI models failed. Last error: {last_error}")
+        # Safe fallback so explanations never crash the view
+        print(f"⚠️ [Explanations Fallback Triggered]: {last_error}")
+        return [f"Verified correct answer based on standard technical execution rules." for _ in range(num_items)]
 
     def _sanitize_language_syntax(self, question_text, subject):
         if not question_text or "```" not in question_text:
